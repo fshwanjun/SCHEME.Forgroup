@@ -33,7 +33,7 @@ export default function StudioPage() {
         <img className="w-full h-auto md:hidden block" src="/images/dummy/studio.jpg" alt="studio" draggable={false} />
         <div className="w-full grid grid-cols-3 gap-y-10 gap-x-4">
           <div className="flex flex-col gap-2">
-            <h6>Experience</h6>
+            <h5>Experience</h5>
             <div className="flex flex-col">
               <span>
                 Lorem ipsum dolor <br />
@@ -51,7 +51,7 @@ export default function StudioPage() {
             </div>
           </div>
           <div className="flex flex-col gap-2">
-            <h6>Services</h6>
+            <h5>Services</h5>
             <div className="flex flex-col">
               <span>
                 Brand identitly
@@ -76,7 +76,7 @@ export default function StudioPage() {
             </div>
           </div>
           <div className="flex flex-col gap-2">
-            <h6>Clients</h6>
+            <h5>Clients</h5>
             <div className="flex flex-col">
               <span>
                 Google
@@ -104,7 +104,7 @@ export default function StudioPage() {
             </div>
           </div>
           <div className="flex flex-col gap-2">
-            <h6>Address</h6>
+            <h5>Address</h5>
             <div className="flex flex-col">
               <span>
                 55, Dosan-daero 26-gil, Gangnam-gu,
@@ -114,7 +114,7 @@ export default function StudioPage() {
             </div>
           </div>
           <div className="flex flex-col gap-2">
-            <h6>Contact</h6>
+            <h5>Contact</h5>
             <div className="flex flex-col">
               <span>
                 for@abcdefghijk.com
@@ -124,7 +124,7 @@ export default function StudioPage() {
             </div>
           </div>
           <div className="flex flex-col gap-2">
-            <h6>Social</h6>
+            <h5>Social</h5>
             <div className="flex flex-col">
               <span>
                 @FORFORFOR

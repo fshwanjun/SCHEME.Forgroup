@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
   --header-height: 88px;
@@ -52,8 +52,11 @@ svg {
   h4 {
     @apply text-lg md:text-2xl xl:text-3xl;
   }
-  h6 {
+  h5 {
     @apply text-sm leading-[130%] font-bold;
+  }
+  h6 {
+    @apply text-sm leading-[130%];
   }
   p {
     @apply text-lg md:text-xl xl:text-2xl;
@@ -85,8 +88,4 @@ span {
 
 .home-container {
   @apply w-full min-h-[calc(100vh-var(--header-height))] overflow-x-hidden;
-}
-
-header {
-  /* mix-blend-mode: difference !important; */
 }
