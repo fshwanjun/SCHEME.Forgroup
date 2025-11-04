@@ -1,108 +1,58 @@
-'use client';
+import { useState, DetailedHTMLProps, HTMLAttributes, useMemo, useRef, Children, useEffect } from 'react';
+import { useIntersectionObserver } from './index';
 
-import React, { useRef, useEffect } from 'react';
-import { gsap } from 'gsap';
-import { Observer } from 'gsap/Observer';
+export type InfiniteScrollEndHandler = () => void;
 
-gsap.registerPlugin(Observer);
+export interface InfiniteScrollProps extends DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement> {
+  /**
+   * 비활성화 여부
+   */
+  disabled?: boolean;
 
-interface InfiniteScrollItem {
-  content: React.ReactNode;
+  /**
+   * 마진
+   */
+  rootMargin?: string;
+
+  /**
+   * 스크롤 끝 이벤트 메서드
+   */
+  onEnd?: InfiniteScrollEndHandler;
 }
 
-interface InfiniteScrollProps {
-  width?: string;
-  maxHeight?: string;
-  negativeMargin?: string;
-  items?: InfiniteScrollItem[];
-  itemMinHeight?: number;
-}
+export default function InfiniteScroll({
+  disabled,
+  rootMargin,
+  onEnd,
+  children,
+  ...props
+}: InfiniteScrollProps): React.ReactNode {
+  const [domState, setDomState] = useState<Element | null>(null);
+  const triggeredRef = useRef(false);
+  const childrenCount = useMemo(() => Children.count(children), [children]);
 
-const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
-  width = '30rem',
-  maxHeight = '100%',
-  negativeMargin = '-0.5em',
-  items = [],
-  itemMinHeight = 150,
-}) => {
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
+  // Reset trigger when children change (new content appended)
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    if (items.length === 0) return;
+    triggeredRef.current = false;
+  }, [childrenCount]);
 
-    const divItems = gsap.utils.toArray<HTMLDivElement>(container.children);
-    if (!divItems.length) return;
-
-    const firstItem = divItems[0];
-    const itemStyle = getComputedStyle(firstItem);
-    const itemHeight = firstItem.offsetHeight;
-    const itemMarginTop = parseFloat(itemStyle.marginTop) || 0;
-    const totalItemHeight = itemHeight + itemMarginTop;
-    const totalHeight = itemHeight * items.length + itemMarginTop * (items.length - 1);
-
-    const wrapFn = gsap.utils.wrap(-totalHeight, totalHeight);
-
-    divItems.forEach((child, i) => {
-      const y = i * totalItemHeight;
-      gsap.set(child, { y });
-    });
-
-    const observer = Observer.create({
-      target: container,
-      type: 'wheel',
-      preventDefault: true,
-      onChange: ({ deltaY, event }) => {
-        const d = event.type === 'wheel' ? -deltaY : deltaY;
-        divItems.forEach((child) => {
-          gsap.to(child, {
-            duration: 0.5,
-            ease: 'expo.out',
-            modifiers: {
-              y: gsap.utils.unitize(wrapFn),
-            },
-          });
-        });
-      },
-    });
-
-    return () => {
-      observer.kill();
-    };
-  }, [items, negativeMargin]);
+  useIntersectionObserver(
+    domState,
+    (entry) => {
+      // DOM이 보일 경우 - 한 번만 트리거, 컨텐츠 갱신 시 초기화
+      if (entry.isIntersecting && !triggeredRef.current) {
+        triggeredRef.current = true;
+        onEnd?.();
+      }
+    },
+    { rootMargin },
+  );
 
   return (
-    <>
-      <style>
-        {`
-          .infinite-scroll-wrapper {
-            max-height: ${maxHeight};
-          }
+    <div {...props} className="w-full flex flex-col items-center">
+      {children}
 
-          .infinite-scroll-container {
-            width: ${width};
-          }
-
-          .infinite-scroll-item {
-            height: ${itemMinHeight}px;
-            margin-top: ${negativeMargin};
-          }
-        `}
-      </style>
-
-      <div className="infinite-scroll-wrapper" ref={wrapperRef}>
-        <div className="infinite-scroll-container" ref={containerRef}>
-          {items.map((item, i) => (
-            <div className="infinite-scroll-item" key={i}>
-              {item.content}
-            </div>
-          ))}
-        </div>
-      </div>
-    </>
+      {!disabled ? <div ref={setDomState} style={{ width: '100%', height: 1 }} aria-hidden /> : null}
+    </div>
   );
-};
-
-export default InfiniteScroll;
+}
