@@ -3,7 +3,6 @@
 import Homecontainer from '@/components/Homecontainer';
 import useWindowSize from '@/util/useWindowSize';
 import { useEffect, useState } from 'react';
-import { cn } from '@/util/cn';
 
 export default function StudioPage() {
   const { height } = useWindowSize();
@@ -11,7 +10,7 @@ export default function StudioPage() {
   useEffect(() => setMounted(true), []);
   const isShort = mounted && height < 880;
   return (
-    <Homecontainer addClassName="flex md:flex-row flex-col gap-[var(--x-padding)] md:h-full h-fit overflow-x-hidden">
+    <Homecontainer addClassName="studio-typography flex md:flex-row flex-col gap-[var(--x-padding)] md:h-full h-fit overflow-x-hidden">
       <div className="h-full md:block hidden md:shrink-0 overflow-hidden">
         <img
           className="lg:h-full h-auto lg:w-auto w-[40vw] object-contain max-w-none"
@@ -21,7 +20,7 @@ export default function StudioPage() {
         />
       </div>
       <div className="flex flex-col justify-between">
-        <h3 className={cn(isShort && 'text-xl md:text-2xl', 'leading-[130%]')}>
+        <h3>
           FOR is a creative collaboration between Moon Kim and Phan Thao Dang. The Korean-German duo strives to create
           distinctive perspectives and attitudes that deliver ideas through in-depth analysis and open dialogue.
           Adapting flexibly and practically to the unique context and challenges of each project, their work spans
