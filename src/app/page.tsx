@@ -20,9 +20,8 @@ export default function Home() {
   const list = useMemo(
     () =>
       Array.from({ length: state * 5 }).map((_, j) => (
-        <>
+        <div key={j}>
           <SteppedRow
-            key={j}
             spacing={40}
             direction="rtl"
             items={IMAGE_ORDER.map((id) => ({
@@ -32,7 +31,6 @@ export default function Home() {
             }))}
           />
           <SteppedRow
-            key={j}
             spacing={40}
             direction="ltr"
             items={IMAGE_ORDER.map((id) => ({
@@ -41,7 +39,7 @@ export default function Home() {
               aspect: IMAGE_LAYOUT_CONFIG[id].aspect,
             }))}
           />
-        </>
+        </div>
       )),
     [state],
   );
