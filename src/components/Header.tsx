@@ -36,6 +36,13 @@ export default function Header() {
   }, [isProjectSlug]);
 
   const colorClass = isProjectSlug && !isPastHero ? 'text-white' : 'text-black';
+  const [logoPlayNonce, setLogoPlayNonce] = useState(0);
+
+  useEffect(() => {
+    const handler = () => setLogoPlayNonce((n) => n + 1);
+    window.addEventListener('header-logo-play', handler as EventListener);
+    return () => window.removeEventListener('header-logo-play', handler as EventListener);
+  }, []);
 
   return (
     <header className="fixed w-full top-0 z-100 h-(--header-height) isolate">
@@ -43,7 +50,7 @@ export default function Header() {
         <Link
           href="/"
           className={`font-semibold text-[64px] leading-[64px] transition-colors duration-300 ${colorClass}`}>
-          <LogoInline className="transition-colors duration-300" width={200} height={65} />
+          <LogoInline className="transition-colors duration-300" width={200} height={65} playTrigger={logoPlayNonce} />
         </Link>
         <nav className="flex items-center gap-6 text-sm">
           {navItems.map(({ href, label }) => {

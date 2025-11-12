@@ -7,16 +7,19 @@ export default function LogoInline({
   width = 200,
   height = 65,
   className,
+  playTrigger,
 }: {
   src?: string;
   width?: number;
   height?: number;
   className?: string;
+  playTrigger?: number | string;
 }) {
   const [markup, setMarkup] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
+    setMarkup(null);
     fetch(src, { cache: 'force-cache' })
       .then((r) => r.text())
       .then((text) => {
@@ -29,7 +32,7 @@ export default function LogoInline({
     return () => {
       active = false;
     };
-  }, [src]);
+  }, [src, playTrigger]);
 
   return (
     <span

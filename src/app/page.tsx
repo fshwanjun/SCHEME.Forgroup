@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import InfiniteScroll, { InfiniteScrollEndHandler } from '@/util';
 import SteppedRow, { type Aspect } from '@/components/SteppedRow';
 
@@ -16,6 +16,35 @@ const IMAGE_ORDER = ['main-0', 'main-1', 'main-2', 'main-3'] as const;
 
 export default function Home() {
   const [state, setState] = useState(1);
+  const [showIntro, setShowIntro] = useState<boolean>(false);
+  const [introPhase, setIntroPhase] = useState<'idle' | 'playing' | 'fading' | 'done'>('idle');
+
+  useEffect(() => {
+    // Show intro only on first visit in this session
+    if (typeof window === 'undefined') return;
+    const shown = sessionStorage.getItem('homeIntroShown');
+    if (!shown) {
+      setShowIntro(true);
+      setIntroPhase('playing');
+      // Intro timings
+      const INTRO_PLAY_MS = 1600; // logo motion duration before fade
+      const FADE_MS = 600; // fade out duration
+      const t1 = setTimeout(() => {
+        setIntroPhase('fading');
+        // trigger header logo play aligned with home reveal
+        window.dispatchEvent(new Event('header-logo-play'));
+      }, INTRO_PLAY_MS);
+      const t2 = setTimeout(() => {
+        setIntroPhase('done');
+        setShowIntro(false);
+        sessionStorage.setItem('homeIntroShown', '1');
+      }, INTRO_PLAY_MS + FADE_MS);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
+    }
+  }, []);
 
   const list = useMemo(
     () =>
@@ -49,10 +78,29 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="flex">
-      <InfiniteScroll onEnd={handleEnd} rootMargin="0px 0px 300px 0px">
-        <div className="flex flex-col">{list}</div>
-      </InfiniteScroll>
+    <div className="flex relative">
+      {/* Intro overlay */}
+      {showIntro ? (
+        <div
+          className={`fixed inset-0 bg-white z-[200] transition-opacity duration-500 ${
+            introPhase === 'fading' ? 'opacity-0' : 'opacity-100'
+          }`}
+          aria-hidden>
+          <div className="w-full h-full flex items-center justify-center">
+            {/* Centered logo; reuse the same asset the header uses to keep motion consistent */}
+            <img src="/header.svg" alt="intro logo" width={240} height={80} draggable={false} />
+          </div>
+        </div>
+      ) : null}
+      {/* Home content container fades in when intro ends */}
+      <div
+        className={`flex flex-1 transition-opacity duration-500 ${
+          introPhase === 'idle' || introPhase === 'playing' ? 'opacity-0' : 'opacity-100'
+        }`}>
+        <InfiniteScroll onEnd={handleEnd} rootMargin="0px 0px 300px 0px">
+          <div className="flex flex-col">{list}</div>
+        </InfiniteScroll>
+      </div>
     </div>
   );
 }
