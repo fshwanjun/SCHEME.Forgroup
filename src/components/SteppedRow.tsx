@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import useWindowSize from '@/util/useWindowSize';
+import HoverDistortImage from './HoverDistortImage';
 
 export type Aspect = `${number}/${number}`;
 
@@ -23,8 +24,6 @@ export default function SteppedRow({
   items,
   spacing = 40,
   outerSubtractPx = 80,
-  direction = 'rtl',
-  itemsPerRow,
   className,
 }: {
   items: SteppedItem[];
@@ -104,8 +103,7 @@ export default function SteppedRow({
           key={i}
           className="absolute"
           style={{
-            right: direction === 'rtl' && layout ? `${layout.rights[i]}px` : undefined,
-            left: direction === 'ltr' && layout ? `${layout.rights[i]}px` : undefined,
+            right: layout ? `${layout.rights[i]}px` : undefined,
             top: layout ? `${layout.tops[i]}px` : undefined,
             width: layout
               ? `${layout.widths[i]}px`
@@ -113,11 +111,11 @@ export default function SteppedRow({
               ? `${it.widthPercent}%`
               : undefined,
           }}>
-          <img
-            className="w-full h-auto object-cover"
+          <HoverDistortImage
             src={it.src}
             alt=""
-            style={{ aspectRatio: it.aspect.replace('/', ' / ') }}
+            aspectRatio={it.aspect.replace('/', ' / ')}
+            className="w-full"
           />
         </div>
       ))}

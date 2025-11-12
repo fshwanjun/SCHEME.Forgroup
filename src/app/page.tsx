@@ -54,15 +54,6 @@ export default function Home() {
               aspect: IMAGE_LAYOUT_CONFIG[id].aspect,
             }))}
           />
-          <SteppedRow
-            spacing={40}
-            direction="ltr"
-            items={IMAGE_ORDER.map((id) => ({
-              src: `./images/main/${id}.jpg`,
-              widthPercent: IMAGE_LAYOUT_CONFIG[id].widthPercent,
-              aspect: IMAGE_LAYOUT_CONFIG[id].aspect,
-            }))}
-          />
         </div>
       )),
     [state],
