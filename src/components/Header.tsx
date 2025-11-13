@@ -52,12 +52,12 @@ export default function Header() {
           className={`font-semibold text-[64px] leading-[64px] transition-colors duration-300 ${colorClass}`}>
           <LogoInline className="transition-colors duration-300" width={200} height={65} playTrigger={logoPlayNonce} />
         </Link>
-        <nav className="flex items-center gap-6 text-sm">
+        <nav className="flex items-center gap-6 ">
           {navItems.map(({ href, label }) => {
             const active = pathname === href || (href !== '/' && pathname.startsWith(href));
             return (
               <Link key={href} href={href} aria-current={active ? 'page' : undefined}>
-                <h4 className={`transition-colors duration-300 ${colorClass}`}>{label}</h4>
+                <h4 className={`text-[20px] font-bold transition-colors duration-300 ${colorClass}`}>{label}</h4>
               </Link>
             );
           })}

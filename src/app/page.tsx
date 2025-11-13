@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import InfiniteScroll, { InfiniteScrollEndHandler } from '@/util';
-import SteppedRow, { type Aspect } from '@/components/SteppedRow';
+import SteppedRow, { type Aspect, type FrameRule } from '@/components/SteppedRow';
+import ImageCard from '@/components/ImageCard';
+import HomeGallery from '@/components/HomeGallery';
 
 // Manage widths and aspects here per image id
 const IMAGE_LAYOUT_CONFIG: Record<string, { widthPercent?: number; aspect: Aspect }> = {
@@ -13,6 +15,13 @@ const IMAGE_LAYOUT_CONFIG: Record<string, { widthPercent?: number; aspect: Aspec
 };
 
 const IMAGE_ORDER = ['main-0', 'main-1', 'main-2', 'main-3'] as const;
+
+const IMAGE_FRAME_RULES: FrameRule[] = [
+  { projectId: 'main-0', orientation: 'vertical' },
+  { projectId: 'main-1', orientation: 'vertical' },
+  { projectId: 'main-2', orientation: 'horizontal' },
+  { projectId: 'main-3', orientation: 'vertical' },
+];
 
 export default function Home() {
   const [state, setState] = useState(1);
@@ -41,23 +50,50 @@ export default function Home() {
     };
   }, []);
 
+  // Disable page scroll while intro is visible
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const originalOverflow = document.documentElement.style.overflow;
+    const originalBodyOverflow = document.body.style.overflow;
+    if (showIntro) {
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.documentElement.style.overflow = originalOverflow || '';
+      document.body.style.overflow = originalBodyOverflow || '';
+    }
+    return () => {
+      document.documentElement.style.overflow = originalOverflow || '';
+      document.body.style.overflow = originalBodyOverflow || '';
+    };
+  }, [showIntro]);
   const list = useMemo(
     () =>
       Array.from({ length: state * 5 }).map((_, j) => (
-        <div key={j}>
-          <SteppedRow
-            spacing={40}
+          <HomeGallery key={j} />
+      )),
+    [state],
+  );
+
+  
+          {/* <ImageCard
+            projectId={1}
+            horizontalSrc={'./images/main/main-0.jpg'}
+            orientation={'horizontal'}
+            className="w-full"
+            aspectRatio={'4 / 3'}
+          /> */}
+          {/* <SteppedRow
+            spacing={10}
             direction="rtl"
             items={IMAGE_ORDER.map((id) => ({
               src: `./images/main/${id}.jpg`,
               widthPercent: IMAGE_LAYOUT_CONFIG[id].widthPercent,
               aspect: IMAGE_LAYOUT_CONFIG[id].aspect,
+              projectId: id,
             }))}
-          />
-        </div>
-      )),
-    [state],
-  );
+            frameRules={IMAGE_FRAME_RULES}
+          /> */}
 
   const handleEnd = useCallback<InfiniteScrollEndHandler>(() => {
     setState((state) => state + 1);
@@ -91,7 +127,7 @@ export default function Home() {
           introPhase === 'idle' || introPhase === 'playing' ? 'opacity-0' : 'opacity-100'
         }`}>
         <InfiniteScroll onEnd={handleEnd} rootMargin="0px 0px 300px 0px">
-          <div className="flex flex-col">{list}</div>
+          <div className="flex flex-col w-full relative">{list}</div>
         </InfiniteScroll>
       </div>
     </div>

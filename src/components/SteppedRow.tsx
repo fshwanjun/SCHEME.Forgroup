@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import useWindowSize from '@/util/useWindowSize';
-import HoverDistortImage from './HoverDistortImage';
+import ImageCard from './ImageCard';
 
 export type Aspect = `${number}/${number}`;
 
@@ -10,6 +10,20 @@ export type SteppedItem = {
   src: string;
   aspect: Aspect;
   widthPercent?: number;
+  projectId?: string | number;
+  src3x4?: string; // 세로형 3:4
+  src4x3?: string; // 가로형 4:3
+};
+
+export type FrameRule = {
+  projectId?: string | number;
+  orientation?: 'vertical' | 'horizontal';
+  widthPercent?: number;
+  aspect?: Aspect;
+};
+
+type EnrichedItem = SteppedItem & {
+  orientation: 'vertical' | 'horizontal';
 };
 
 function getHeightFactor(aspect: Aspect): number {
@@ -22,13 +36,16 @@ function getHeightFactor(aspect: Aspect): number {
 
 export default function SteppedRow({
   items,
-  spacing = 40,
-  outerSubtractPx = 80,
+  spacing = 20,
+  outerSubtractPx = 40,
+  frameRules,
+  direction = 'rtl',
   className,
 }: {
   items: SteppedItem[];
   spacing?: number;
   outerSubtractPx?: number;
+  frameRules?: FrameRule[];
   direction?: 'rtl' | 'ltr';
   itemsPerRow?: number;
   className?: string;
@@ -43,6 +60,30 @@ export default function SteppedRow({
     containerHeight: number;
   } | null>(null);
 
+  const enrichedItems = useMemo<EnrichedItem[]>(() => {
+    return items.map((item, index) => {
+      const frame = frameRules?.[index];
+      const orientation =
+        frame?.orientation ?? (item.aspect === '3/4' ? 'vertical' : 'horizontal');
+      const derivedAspect: Aspect =
+        frame?.aspect ??
+        (frame?.orientation
+          ? frame.orientation === 'vertical'
+            ? '3/4'
+            : '4/3'
+          : item.aspect);
+      return {
+        ...item,
+        aspect: derivedAspect,
+        widthPercent: frame?.widthPercent ?? item.widthPercent,
+        projectId: frame?.projectId ?? item.projectId ?? index,
+        src3x4: item.src3x4 ?? item.src,
+        src4x3: item.src4x3 ?? item.src,
+        orientation,
+      } as EnrichedItem;
+    });
+  }, [items, frameRules]);
+
   useEffect(() => {
     const el = containerRef.current;
     const computedFromWindow = Math.max(0, windowWidth - outerSubtractPx);
@@ -53,8 +94,10 @@ export default function SteppedRow({
     }
 
     // Compute missing widthPercent when exactly one item omits it
-    const providedPercents = items.map((it) => it.widthPercent).filter((v): v is number => typeof v === 'number');
-    let computedPercents: number[] = items.map((it) => it.widthPercent ?? NaN);
+    const providedPercents = enrichedItems
+      .map((it) => it.widthPercent)
+      .filter((v): v is number => typeof v === 'number');
+    let computedPercents: number[] = enrichedItems.map((it) => it.widthPercent ?? NaN);
     const missingIndexes = computedPercents.map((v, idx) => (Number.isNaN(v) ? idx : -1)).filter((idx) => idx >= 0);
 
     if (missingIndexes.length === 1) {
@@ -67,10 +110,10 @@ export default function SteppedRow({
     computedPercents = computedPercents.map((v) => (Number.isFinite(v) ? v : 0));
 
     // Only between-item gaps; no extra on outer ends inside the row container
-    const contentWidth = Math.max(0, containerWidth - (items.length - 1) * spacing);
+    const contentWidth = Math.max(0, containerWidth - (enrichedItems.length - 1) * spacing);
 
     const widths = computedPercents.map((p) => (contentWidth * p) / 100);
-    const heights = items.map((it, idx) => widths[idx] * getHeightFactor(it.aspect));
+    const heights = enrichedItems.map((it, idx) => widths[idx] * getHeightFactor(it.aspect));
 
     const rights: number[] = [];
     const tops: number[] = [];
@@ -84,10 +127,10 @@ export default function SteppedRow({
       accHeight += heights[i];
     });
 
-    const containerHeight = accHeight + (items.length - 1) * spacing;
+    const containerHeight = accHeight + (enrichedItems.length - 1) * spacing;
 
     setLayout({ widths, heights, tops, rights, containerHeight });
-  }, [items, spacing, outerSubtractPx, windowWidth]);
+  }, [enrichedItems, items.length, spacing, outerSubtractPx, windowWidth]);
 
   const containerStyle = useMemo(() => {
     return {
@@ -98,12 +141,13 @@ export default function SteppedRow({
 
   return (
     <div ref={containerRef} className={`w-full relative${className ? ` ${className}` : ''}`} style={containerStyle}>
-      {items.map((it, i) => (
+      {enrichedItems.map((it, i) => (
         <div
           key={i}
           className="absolute"
           style={{
-            right: layout ? `${layout.rights[i]}px` : undefined,
+            right: direction === 'rtl' && layout ? `${layout.rights[i]}px` : undefined,
+            left: direction === 'ltr' && layout ? `${layout.rights[i]}px` : undefined,
             top: layout ? `${layout.tops[i]}px` : undefined,
             width: layout
               ? `${layout.widths[i]}px`
@@ -111,14 +155,17 @@ export default function SteppedRow({
               ? `${it.widthPercent}%`
               : undefined,
           }}>
-          <HoverDistortImage
-            src={it.src}
-            alt=""
-            aspectRatio={it.aspect.replace('/', ' / ')}
+          <ImageCard
+            projectId={it.projectId ?? i}
+            verticalSrc={it.src3x4 ?? it.src}
+            horizontalSrc={it.src4x3 ?? it.src}
+            orientation={it.orientation}
             className="w-full"
+            aspectRatio={it.aspect.replace('/', ' / ')}
           />
         </div>
       ))}
+    
     </div>
   );
 }
