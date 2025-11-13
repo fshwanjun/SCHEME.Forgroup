@@ -60,10 +60,19 @@ const PROJECT_IMAGES: ProjectImage[] = ['main-0', 'main-1', 'main-2', 'main-3'].
   horizontalSrc: `./images/main/${id}.jpg`,
 }));
 
-function shuffleArray<T>(input: T[]): T[] {
+function createSeededRandom(seed: number) {
+  let state = seed;
+  return () => {
+    state = (state * 1664525 + 1013904223) % 4294967296;
+    return state / 4294967296;
+  };
+}
+
+function shuffleWithSeed<T>(input: T[], seed: number): T[] {
   const arr = [...input];
+  const rand = createSeededRandom(seed);
   for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rand() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
@@ -82,7 +91,7 @@ export default function HomeGallery() {
         assignments.push(PROJECT_IMAGES[withinCycle]);
       } else {
         if (!shuffleCache[cycle]) {
-          shuffleCache[cycle] = shuffleArray(PROJECT_IMAGES);
+          shuffleCache[cycle] = shuffleWithSeed(PROJECT_IMAGES, cycle);
         }
         assignments.push(shuffleCache[cycle][withinCycle]);
       }
