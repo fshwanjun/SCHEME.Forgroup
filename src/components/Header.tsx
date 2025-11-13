@@ -35,9 +35,9 @@ export default function Header() {
     };
   }, [isProjectSlug]);
 
-  const baseTextClass = 'text-white';
+  const baseTextClass = 'text-black';
   const blendClass =
-    'mix-blend-exclusion supports-[mix-blend-mode:mix-blend-exclusion]:mix-blend-exclusion supports-[mix-blend-mode:exclusion]:text-white';
+    'mix-blend-exclusion supports-[mix-blend-mode:mix-blend-exclusion]:mix-blend-exclusion supports-[mix-blend-mode:exclusion]:text-black';
   const layoutClass = 'mx-auto px-(--x-padding) pt-6 flex items-start justify-between';
   const [logoPlayNonce, setLogoPlayNonce] = useState(0);
 
@@ -49,37 +49,37 @@ export default function Header() {
 
   return (
     <>
-    <header className={`fixed w-full top-0 z-100 h-(--header-height) isolate mix-blend-exclusion`}>
-      <div className="relative w-full">
-        <div className={`${layoutClass} relative z-10 ${blendClass} ${baseTextClass}`}>
-          <Link
-            href="/"
-            className={`font-semibold text-[64px] leading-[64px] transition-colors duration-300 ${blendClass} ${baseTextClass}`}>
-            <LogoInline
-              className={`transition-colors duration-300 ${blendClass} ${baseTextClass}`}
-              width={200}
-              height={65}
-              playTrigger={logoPlayNonce}
-            />
-          </Link>
-          <nav className={`flex items-center gap-6 ${blendClass} ${baseTextClass}`}>
-            {navItems.map(({ href, label }) => {
-              const active = pathname === href || (href !== '/' && pathname.startsWith(href));
-              return (
-                <Link key={href} href={href} aria-current={active ? 'page' : undefined}>
-                  <h4 className={`text-[20px] font-bold transition-colors duration-300 ${blendClass} ${baseTextClass}`}>
-                    {label}
-                  </h4>
-                </Link>
-              );
-            })}
-          </nav>
+      <header className={`fixed w-full top-0 z-100 h-(--header-height) isolate`}>
+        <div className="relative w-full">
+          <div className={`${layoutClass} relative z-10 ${blendClass} ${baseTextClass}`}>
+            <Link
+              href="/"
+              className={`font-semibold text-[64px] leading-[64px] transition-colors duration-300 ${blendClass} ${baseTextClass}`}>
+              <LogoInline
+                className={`transition-colors duration-300 ${blendClass} ${baseTextClass}`}
+                width={200}
+                height={65}
+                playTrigger={logoPlayNonce}
+              />
+            </Link>
+            <nav className={`flex items-center gap-6 ${blendClass} ${baseTextClass}`}>
+              {navItems.map(({ href, label }) => {
+                const active = pathname === href || (href !== '/' && pathname.startsWith(href));
+                return (
+                  <Link key={href} href={href} aria-current={active ? 'page' : undefined}>
+                    <h4
+                      className={`text-[20px] font-bold transition-colors duration-300 ${blendClass} ${baseTextClass}`}>
+                      {label}
+                    </h4>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
         </div>
+      </header>
 
-      </div>
-    </header>
-    
-    <div className={`fixed w-full top-0 z-0 h-(--header-height) isolate text-white`}>
+      {/* <div className={`fixed w-full top-0 z-0 h-(--header-height) isolate text-white`}>
       <div
           className={`${layoutClass} absolute inset-0 text-white pointer-events-none select-none`}
           aria-hidden>
@@ -99,7 +99,7 @@ export default function Header() {
             ))}
           </nav>
       </div>
-    </div>
+    </div> */}
     </>
   );
 }
