@@ -1,5 +1,5 @@
 import { useState, DetailedHTMLProps, HTMLAttributes, useMemo, useRef, Children, useEffect } from 'react';
-import { useIntersectionObserver } from './index';
+import { useIntersection } from '@/hooks/useIntersectionObserver';
 
 export type InfiniteScrollEndHandler = () => void;
 
@@ -36,9 +36,9 @@ export default function InfiniteScroll({
     triggeredRef.current = false;
   }, [childrenCount]);
 
-  useIntersectionObserver(
+  useIntersection(
     domState,
-    (entry) => {
+    (entry: IntersectionObserverEntry) => {
       // DOM이 보일 경우 - 한 번만 트리거, 컨텐츠 갱신 시 초기화
       if (entry.isIntersecting && !triggeredRef.current) {
         triggeredRef.current = true;
@@ -49,7 +49,7 @@ export default function InfiniteScroll({
   );
 
   return (
-    <div {...props} className="w-full flex flex-col items-center">
+    <div {...props} className="flex w-full flex-col items-center">
       {children}
 
       {!disabled ? <div ref={setDomState} style={{ width: '100%', height: 1 }} aria-hidden /> : null}

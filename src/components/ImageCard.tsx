@@ -1,5 +1,6 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import React from 'react';
 import HoverDistortImage from './HoverDistortImage';
 
@@ -12,6 +13,7 @@ export default function ImageCard({
   onClickProject,
   aspectRatio,
   enableHoverEffect = true,
+  layoutId,
 }: {
   projectId?: string | number;
   verticalSrc?: string; // 3:4 이미지 URL
@@ -19,25 +21,20 @@ export default function ImageCard({
   orientation?: 'vertical' | 'horizontal';
   className?: string;
   aspectRatio?: string; // 선택적으로 강제 비율, 예: "3 / 4" | "4 / 3"
-  onClickProject?: (projectId?: string | number) => void;
+  onClickProject?: (projectId?: string | number, rect?: DOMRect) => void;
   enableHoverEffect?: boolean;
+  layoutId?: string;
 }) {
   const hasVertical = Boolean(verticalSrc);
   const hasHorizontal = Boolean(horizontalSrc);
-  const resolvedOrientation =
-    orientation ?? (hasVertical ? 'vertical' : hasHorizontal ? 'horizontal' : 'vertical');
-  const src =
-    resolvedOrientation === 'vertical'
-      ? verticalSrc ?? horizontalSrc
-      : horizontalSrc ?? verticalSrc;
-  const computedAspect =
-    aspectRatio ?? (resolvedOrientation === 'vertical' ? '3 / 4' : '4 / 3');
+  const resolvedOrientation = orientation ?? (hasVertical ? 'vertical' : hasHorizontal ? 'horizontal' : 'vertical');
+  const src = resolvedOrientation === 'vertical' ? (verticalSrc ?? horizontalSrc) : (horizontalSrc ?? verticalSrc);
+  const computedAspect = aspectRatio ?? (resolvedOrientation === 'vertical' ? '3 / 4' : '4 / 3');
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (onClickProject) {
-      onClickProject(projectId);
+      onClickProject(projectId, e.currentTarget.getBoundingClientRect());
     } else {
-      // fallback: 전역 이벤트로 프로젝트 id 알림
       window.dispatchEvent(
         new CustomEvent('image-card-click', {
           detail: { projectId },
@@ -52,29 +49,28 @@ export default function ImageCard({
     <HoverDistortImage
       src={src}
       aspectRatio={computedAspect}
-      className="w-full h-full object-cover"
+      className="h-full w-full object-cover"
       preserveAspect="xMidYMid slice"
     />
   ) : (
-    <img
+    <motion.img
       src={src}
       alt=""
-      className="w-full h-auto object-cover block"
+      className="block h-auto w-full object-cover"
       draggable={false}
       style={{ aspectRatio: computedAspect }}
+      layoutId={layoutId ? `${layoutId}-img` : undefined}
     />
   );
 
   return (
-    <button
-      type="button"
+    <motion.div
+      layoutId={layoutId}
       onClick={handleClick}
-      className={`block relative ${className ?? ''}`}
+      className={`relative block ${className ?? ''}`}
       style={{ aspectRatio: computedAspect, lineHeight: 0, cursor: 'pointer' }}
       aria-label={projectId ? `Open project ${projectId}` : 'Open project'}>
       {imageContent}
-    </button>
+    </motion.div>
   );
 }
-
-

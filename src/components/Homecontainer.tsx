@@ -1,7 +1,19 @@
-import { cn } from "@/util/cn";
+import { cn } from '@/lib/utils';
+import Header from '@/components/Header';
 
-export default function Homecontainer({ children, addClassName }: { children: React.ReactNode, addClassName?: string }) {
+export default function HomeContainer({
+  children,
+  addClassName,
+  isFixed = true,
+}: {
+  children: React.ReactNode;
+  addClassName?: string;
+  isFixed?: boolean;
+}) {
   return (
-    <main className={cn("home-container mx-auto px-[var(--x-padding)] pt-[calc(var(--header-height)+20px)] pb-10 overflow-hidden inset-0", addClassName)}>{children}</main>
-  )
+    <main className={cn('home-container', addClassName)}>
+      <Header isFixed={isFixed} />
+      {children}
+    </main>
+  );
 }

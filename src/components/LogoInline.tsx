@@ -1,18 +1,17 @@
 'use client';
 
+import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 
 export default function LogoInline({
   src = '/header.svg',
-  width = 200,
-  height = 65,
-  className,
+  width = 300,
+  height = 200,
   playTrigger,
 }: {
   src?: string;
   width?: number;
   height?: number;
-  className?: string;
   playTrigger?: number | string;
 }) {
   const [markup, setMarkup] = useState<string | null>(null);
@@ -35,23 +34,18 @@ export default function LogoInline({
   }, [src, playTrigger]);
 
   return (
-    <span
-      className={`logo-inline block ${className ?? ''}`}
-      style={{ width, height, lineHeight: 0 }}
+    <div
+      className="logo-inline flex items-center justify-center overflow-hidden"
+      style={{ width, height }}
       aria-label="SCHEME.Forgroup logo"
       role="img"
       suppressHydrationWarning>
       {markup ? (
-        <span
-          // Ensure the inline SVG scales and inherits currentColor
-          style={{ display: 'block' }}
-          dangerouslySetInnerHTML={{ __html: markup }}
-        />
+        <div className="flex scale-180 items-center justify-center" dangerouslySetInnerHTML={{ __html: markup }} />
       ) : null}
       <style jsx>{`
         .logo-inline :global(svg) {
           display: block;
-          width: 100%;
           height: 100%;
         }
         /* Make fills inherit text color, even if SVG uses presentation attributes */
@@ -60,6 +54,6 @@ export default function LogoInline({
           stroke: currentColor;
         }
       `}</style>
-    </span>
+    </div>
   );
 }

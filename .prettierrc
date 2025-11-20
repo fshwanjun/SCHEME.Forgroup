@@ -7,5 +7,6 @@
   "printWidth": 120,
   "arrowParens": "always",
   "orderedImports": true,
-  "jsxBracketSameLine": true
+  "jsxBracketSameLine": true,
+  "plugins": ["prettier-plugin-tailwindcss"]
 }

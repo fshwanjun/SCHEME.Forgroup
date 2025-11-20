@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import ImageCard from '@/components/ImageCard';
+import HomeContainer from '@/components/HomeContainer';
 
 const COVER_IMAGES = ['main-0', 'main-1', 'main-2', 'main-3'].map((id) => ({
   projectId: id,
@@ -64,17 +65,14 @@ export default function ProjectPage() {
       }
 
       return (
-        <div
-          key={`${frame.top}-${frame.left ?? frame.right ?? index}`}
-          className="absolute"
-          style={baseStyle}>
+        <div key={`${frame.top}-${frame.left ?? frame.right ?? index}`} className="absolute" style={baseStyle}>
           <ImageCard
             projectId={image.projectId}
             verticalSrc={image.verticalSrc}
             horizontalSrc={image.horizontalSrc}
             orientation={frame.orientation}
             aspectRatio={frame.orientation === 'vertical' ? '3 / 4' : '4 / 3'}
-            className="overflow-hidden w-full"
+            className="w-full overflow-hidden"
             enableHoverEffect={false}
           />
         </div>
@@ -99,10 +97,10 @@ export default function ProjectPage() {
   }, [expanded]);
 
   return (
-    <main className="relative min-h-screen px-[20px] pb-[160px]">
+    <HomeContainer isFixed={true}>
       <div className="relative" style={containerStyle}>
         {cards}
       </div>
-    </main>
+    </HomeContainer>
   );
 }
