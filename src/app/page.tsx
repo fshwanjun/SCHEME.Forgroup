@@ -21,7 +21,7 @@ export default function Home() {
       const rect = selected.rect;
       const scaleX = window.innerWidth / rect.width;
       const scaleY = window.innerHeight / rect.height;
-      // 화면을 꽉 채우기 위해 더 작은 스케일을 기준으로 하거나, (Fit)
+      // 화면을 꽉 채우기 위해 더 작은 스케일을 기준으로 하거나,
       // 더 큰 스케일을 기준으로 하여 꽉 채울 수 있음 (Cover).
       // 여기서는 약간의 여백을 두거나 딱 맞게 설정. "확대해서 중앙으로"이므로 Fit을 우선 시도.
       // 1.02 정도 곱해서 여백 없이 꽉 차게 조정 가능.
