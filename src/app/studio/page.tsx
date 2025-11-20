@@ -10,7 +10,7 @@ export default function StudioPage() {
           <img
             className="h-full w-auto max-w-full object-contain object-top"
             src="/images/dummy/studio.jpg"
-            alt="studio"
+            alt="studio1"
             draggable={false}
           />
         </div>
