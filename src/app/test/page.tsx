@@ -4,7 +4,7 @@ import LogoInline from '@/components/LogoInline';
 export default function TestPage() {
   return (
     <div className="flex h-full w-full items-center justify-center">
-      <LogoInline
+      {/* <LogoInline
         variant="svg"
         lottieSrc="/data.json" // 또는 lottieData={jsonObject}
         src="/data.svg"
@@ -12,7 +12,7 @@ export default function TestPage() {
         height={320}
         autoplay
         loop
-      />
+      /> */}
     </div>
   );
 }
