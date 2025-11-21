@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import React from 'react';
 import HoverDistortImage from './HoverDistortImage';
 
@@ -13,7 +12,6 @@ export default function ImageCard({
   onClickProject,
   aspectRatio,
   enableHoverEffect = true,
-  layoutId,
 }: {
   projectId?: string | number;
   verticalSrc?: string; // 3:4 이미지 URL
@@ -23,7 +21,6 @@ export default function ImageCard({
   aspectRatio?: string; // 선택적으로 강제 비율, 예: "3 / 4" | "4 / 3"
   onClickProject?: (projectId?: string | number, rect?: DOMRect) => void;
   enableHoverEffect?: boolean;
-  layoutId?: string;
 }) {
   const hasVertical = Boolean(verticalSrc);
   const hasHorizontal = Boolean(horizontalSrc);
@@ -32,12 +29,13 @@ export default function ImageCard({
   const computedAspect = aspectRatio ?? (resolvedOrientation === 'vertical' ? '3 / 4' : '4 / 3');
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation(); // 이벤트 전파 중단 (window 클릭 리스너 실행 방지)
     if (onClickProject) {
       onClickProject(projectId, e.currentTarget.getBoundingClientRect());
     } else {
       window.dispatchEvent(
         new CustomEvent('image-card-click', {
-          detail: { projectId },
+          detail: { projectId, rect: e.currentTarget.getBoundingClientRect() },
         }),
       );
     }
@@ -53,24 +51,23 @@ export default function ImageCard({
       preserveAspect="xMidYMid slice"
     />
   ) : (
-    <motion.img
+    <img
       src={src}
       alt=""
       className="block h-auto w-full object-cover"
       draggable={false}
       style={{ aspectRatio: computedAspect }}
-      layoutId={layoutId ? `${layoutId}-img` : undefined}
     />
   );
 
   return (
-    <motion.div
-      layoutId={layoutId}
+    <div
+      id={projectId ? `project-${projectId}` : undefined}
       onClick={handleClick}
       className={`relative block ${className ?? ''}`}
       style={{ aspectRatio: computedAspect, lineHeight: 0, cursor: 'pointer' }}
       aria-label={projectId ? `Open project ${projectId}` : 'Open project'}>
       {imageContent}
-    </motion.div>
+    </div>
   );
 }

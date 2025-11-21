@@ -116,6 +116,18 @@ span {
   z-index: 180;
 }
 
+/* Hide scrollbar globally */
+::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+html {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
 @media (hover: hover) {
   .md\:custom-scroll::-webkit-scrollbar,
   .lg\:custom-scroll::-webkit-scrollbar,
@@ -137,12 +149,6 @@ span {
   .custom-scroll::-webkit-scrollbar-thumb {
     background: rgb(0 0 0 / 0.1);
     border-radius: 9999px;
-  }
-  ::-webkit-scrollbar {
-    width: 0;
-  }
-  ::-webkit-scrollbar-track {
-    background: transparent;
   }
 }
 

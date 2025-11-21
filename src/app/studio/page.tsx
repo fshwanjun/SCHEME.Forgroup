@@ -1,3 +1,4 @@
+import Header from '@/components/Header';
 import HomeContainer from '@/components/HomeContainer';
 
 export default function StudioPage() {
@@ -5,12 +6,13 @@ export default function StudioPage() {
     <HomeContainer
       isFixed={false}
       addClassName="studio-typography p-5 max-h-screen h-full overflow-y-hidden flex flex-col gap-5">
+      <Header isFixed={false} />
       <div className="page-studio">
         <div className="relative hidden h-full min-h-0 overflow-hidden md:flex md:max-w-[40%] md:min-w-0 md:flex-[0_0_50%]">
           <img
             className="h-full w-auto max-w-full object-contain object-top"
             src="/images/dummy/studio.jpg"
-            alt="studio1"
+            alt="studio"
             draggable={false}
           />
         </div>

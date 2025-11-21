@@ -243,7 +243,12 @@ export default function HomeGallery({ onSelectImage, selectedProjectId }: HomeGa
 
   return (
     <section className="HomeGallery relative mb-[20px] w-full px-[20px]">
-      <div className="grid w-full grid-cols-16 gap-[20px]">
+      <div
+        className="grid w-full grid-cols-16 gap-[20px]"
+        style={{
+          columnGap: 'var(--gallery-gap, 20px)',
+          rowGap: 'var(--gallery-gap, 20px)',
+        }}>
         {FRAME_CLASSES.map((frameClass, index) => {
           // 🌟 핵심 수정: 건너뛸 행에 속하는 프레임은 렌더링하지 않습니다.
           if (framesToSkip.has(index)) {
@@ -255,6 +260,7 @@ export default function HomeGallery({ onSelectImage, selectedProjectId }: HomeGa
           const aspectRatio = orientation === 'vertical' ? '3 / 4' : '4 / 3';
           const src = orientation === 'vertical' ? assignment.verticalSrc : assignment.horizontalSrc;
           const isSelected = selectedProjectId != null && assignment.projectId === selectedProjectId;
+          const isOtherSelected = selectedProjectId != null && !isSelected;
 
           return (
             <div
@@ -264,7 +270,9 @@ export default function HomeGallery({ onSelectImage, selectedProjectId }: HomeGa
               className={`${frameClass.replace(
                 /row-start-(\d+)/,
                 (_, p1) => `row-start-${parseInt(p1, 10) - skipRows}`,
-              )} relative transition-transform duration-500 ${isSelected ? 'z-30' : ''}`}>
+              )} relative transition-transform duration-500 ${isSelected ? 'z-50' : ''} ${
+                isOtherSelected ? 'pointer-events-none' : ''
+              }`}>
               <ImageCard
                 projectId={assignment.projectId}
                 verticalSrc={assignment.verticalSrc}
@@ -272,14 +280,14 @@ export default function HomeGallery({ onSelectImage, selectedProjectId }: HomeGa
                 orientation={orientation}
                 aspectRatio={aspectRatio}
                 className="h-full w-full"
-                enableHoverEffect={!isSelected}
-                layoutId={isSelected ? `card-${assignment.projectId}` : undefined}
-                onClickProject={() =>
+                enableHoverEffect={!isSelected && !isOtherSelected}
+                onClickProject={(_pid, rect) =>
                   onSelectImage?.({
                     projectId: assignment.projectId,
                     src,
                     orientation,
                     aspectRatio,
+                    rect,
                   })
                 }
               />

@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import ImageCard from '@/components/ImageCard';
 import HomeContainer from '@/components/HomeContainer';
+import Header from '@/components/Header';
 
-const COVER_IMAGES = ['main-0', 'main-1', 'main-2', 'main-3'].map((id) => ({
+const COVER_IMAGES = ['main_0', 'main_1', 'main_2', 'main_3'].map((id) => ({
   projectId: id,
-  verticalSrc: `./images/main/${id}.jpg`,
-  horizontalSrc: `./images/main/${id}.jpg`,
+  verticalSrc: `/images/main/${id}.jpeg`,
+  horizontalSrc: `/images/main/${id}.jpeg`,
 }));
 
 const COVER_FRAMES: Array<{
@@ -65,7 +66,7 @@ export default function ProjectPage() {
       }
 
       return (
-        <div key={`${frame.top}-${frame.left ?? frame.right ?? index}`} className="absolute" style={baseStyle}>
+        <div key={`${frame.top}-${frame.left ?? frame.right ?? index}`} className="absolute my-20" style={baseStyle}>
           <ImageCard
             projectId={image.projectId}
             verticalSrc={image.verticalSrc}
@@ -97,10 +98,13 @@ export default function ProjectPage() {
   }, [expanded]);
 
   return (
-    <HomeContainer isFixed={true}>
-      <div className="relative" style={containerStyle}>
-        {cards}
-      </div>
-    </HomeContainer>
+    <>
+      <Header isFixed={true} />
+      <HomeContainer>
+        <div className="relative" style={containerStyle}>
+          {cards}
+        </div>
+      </HomeContainer>
+    </>
   );
 }
