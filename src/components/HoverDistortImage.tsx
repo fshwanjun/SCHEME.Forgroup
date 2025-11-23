@@ -4,15 +4,14 @@ import React, { useCallback, useEffect, useId, useRef } from 'react';
 
 export default function HoverDistortImage({
   src,
-  alt,
+  alt = '',
   className,
   aspectRatio,
   distortionScale = 200, // strength of distortion
   radiusPx = 400, // lens radius in element pixels
   blurStd = 4, // blur on displacement map to avoid banding
-  preserveAspect = 'xMidYMid slice',
+  preserveAspect = 'xMaxYMax',
   distortionEnabled = true,
-  easingFactor = 0.08,
 }: {
   src: string;
   alt?: string;
@@ -42,7 +41,6 @@ export default function HoverDistortImage({
     | 'xMidYMax slice'
     | 'xMaxYMax slice';
   distortionEnabled?: boolean;
-  easingFactor?: number;
 }) {
   const id = useId().replace(/:/g, '-');
   const filterId = `hover-distort-${id}`;
@@ -61,13 +59,7 @@ export default function HoverDistortImage({
 
   const prevMousePosRef = useRef<{ x: number; y: number } | null>(null);
   // 💡 마우스 이동 감지 타이머 Ref 추가
-  const mouseMoveTimerRef = useRef<number | null>(null);
-
-  // Hydration mismatch 방지를 위해 useEffect 내부에서 distortionEnabled 사용
-  const [isMounted, setIsMounted] = React.useState(false);
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  const mouseMoveTimerRef = useRef<number | null>(null); // Create offscreen canvas once
 
   useEffect(() => {
     if (!distortionEnabled) return;
@@ -144,8 +136,6 @@ export default function HoverDistortImage({
       ctx.putImageData(img, 0, 0);
       const url = c.toDataURL('image/png');
       imgEl.setAttribute('href', url);
-      // 💡 xlink:href 호환성 추가 및 width/height 조정
-      imgEl.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', url);
     },
     [radiusPx, distortionEnabled],
   );
@@ -155,12 +145,15 @@ export default function HoverDistortImage({
     if (animatingRef.current) return;
     animatingRef.current = true;
 
+    // 💡 LERP 가중치 상수를 정의합니다. (현재 0.1)
+    const EASING_FACTOR = 0.08;
+
     const step = () => {
       const cp = currentPctRef.current;
       const tp = targetPctRef.current;
 
-      const nx = cp.x + (tp.x - cp.x) * easingFactor;
-      const ny = cp.y + (tp.y - cp.y) * easingFactor;
+      const nx = cp.x + (tp.x - cp.x) * EASING_FACTOR;
+      const ny = cp.y + (tp.y - cp.y) * EASING_FACTOR;
 
       currentPctRef.current = { x: nx, y: ny };
       updateDisplacementMap(nx, ny);
@@ -168,7 +161,7 @@ export default function HoverDistortImage({
       const cs = currentScaleRef.current;
       const ts = targetScaleRef.current;
 
-      const ns = cs + (ts - cs) * easingFactor;
+      const ns = cs + (ts - cs) * EASING_FACTOR;
 
       currentScaleRef.current = ns;
       if (feDispRef.current) {
@@ -186,7 +179,7 @@ export default function HoverDistortImage({
       animRafRef.current = requestAnimationFrame(step);
     };
     animRafRef.current = requestAnimationFrame(step);
-  }, [distortionEnabled, updateDisplacementMap, easingFactor]);
+  }, [distortionEnabled, updateDisplacementMap]);
 
   const handleEnter = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -263,21 +256,6 @@ export default function HoverDistortImage({
       }
     : {};
 
-  if (!isMounted) {
-    return (
-      <div
-        className={`relative ${className ?? ''}`}
-        style={
-          {
-            aspectRatio: aspectRatio,
-            lineHeight: 0,
-          } as React.CSSProperties
-        }>
-        <img src={src} alt={alt ?? ''} className="block h-full w-full object-cover" style={{ objectFit: 'cover' }} />
-      </div>
-    );
-  }
-
   return (
     <div
       ref={wrapperRef}
@@ -292,7 +270,7 @@ export default function HoverDistortImage({
       <svg className="block h-full w-full" xmlns="http://www.w3.org/2000/svg">
         {distortionEnabled ? (
           <defs>
-            <filter id={filterId} x="-20%" y="-20%" width="140%" height="140%" colorInterpolationFilters="sRGB">
+            <filter id={filterId} x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
               <feImage
                 ref={feImageRef}
                 x="0"
