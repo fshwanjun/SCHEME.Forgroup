@@ -1,19 +1,12 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase"; // 새로 내보낸 함수를 가져옵니다.
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase'; // 새로 내보낸 함수를 가져옵니다.
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ArrowLeft,
   Trash2,
@@ -25,10 +18,10 @@ import {
   List as ListIcon,
   GripVertical,
   Save,
-} from "lucide-react";
-import ImageUploader from "./ImageUploader";
-import SortableImageList, { DetailImage } from "./SortableImageList";
-import Link from "next/link";
+} from 'lucide-react';
+import ImageUploader from './ImageUploader';
+import SortableImageList, { DetailImage } from './SortableImageList';
+import Link from 'next/link';
 import {
   DndContext,
   closestCenter,
@@ -37,25 +30,19 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
-} from "@dnd-kit/core";
+} from '@dnd-kit/core';
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // 프로젝트 상태 타입 정의
-type ProjectStatus = "ready" | "published" | "hidden";
+type ProjectStatus = 'ready' | 'published' | 'hidden';
 
 // 프로젝트 컨텐츠 데이터 인터페이스
 interface ProjectContent {
@@ -72,15 +59,15 @@ interface ProjectContent {
 }
 
 const defaultContent: ProjectContent = {
-  project: "",
+  project: '',
   year: new Date().getFullYear(),
-  client: "",
-  services: "",
-  product: "",
+  client: '',
+  services: '',
+  product: '',
   keyword: [],
-  challenge: "",
-  thumbnail43: "",
-  thumbnail34: "",
+  challenge: '',
+  thumbnail43: '',
+  thumbnail34: '',
   detailImages: [],
 };
 
@@ -109,8 +96,7 @@ function SortableProjectItem({
   onDelete: (id: number) => void;
   onStatusChange: (id: number, status: ProjectStatus) => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id: project.id });
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: project.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -118,9 +104,9 @@ function SortableProjectItem({
   };
 
   const statusColors: Record<ProjectStatus, string> = {
-    ready: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-    published: "bg-green-500/20 text-green-400 border-green-500/30",
-    hidden: "bg-red-900/20 text-red-400 border-red-900/30",
+    ready: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+    published: 'bg-green-500/20 text-green-400 border-green-500/30',
+    hidden: 'bg-red-900/20 text-red-400 border-red-900/30',
   };
 
   return (
@@ -128,54 +114,40 @@ function SortableProjectItem({
       ref={setNodeRef}
       style={style}
       onClick={() => onEdit(project)}
-      className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 bg-stone-900 border border-stone-800 rounded-lg group hover:border-stone-600 transition-colors cursor-pointer"
-    >
-      <div className="flex items-start sm:items-center gap-3 w-full sm:w-auto flex-1">
+      className="group flex cursor-pointer flex-col gap-3 rounded-lg border border-stone-800 bg-stone-900 p-4 transition-colors hover:border-stone-600 sm:flex-row sm:items-center sm:gap-4">
+      <div className="flex w-full flex-1 items-start gap-3 sm:w-auto sm:items-center">
         <button
           {...attributes}
           {...listeners}
           onClick={(e) => e.stopPropagation()}
-          className="cursor-grab active:cursor-grabbing text-stone-500 hover:text-stone-300 p-1 rounded hover:bg-stone-800 shrink-0 mt-0.5 sm:mt-0"
-        >
+          className="mt-0.5 shrink-0 cursor-grab rounded p-1 text-stone-500 hover:bg-stone-800 hover:text-stone-300 active:cursor-grabbing sm:mt-0">
           <GripVertical className="h-5 w-5" />
         </button>
-        <div className="flex-1 flex flex-col justify-between min-w-0">
-          <div className="flex flex-row items-center gap-2 mb-1">
-            <h4 className="text-stone-200 font-medium truncate">
-              {project.title}
-            </h4>
+        <div className="flex min-w-0 flex-1 flex-col justify-between">
+          <div className="mb-1 flex flex-row items-center gap-2">
+            <h4 className="truncate font-medium text-stone-200">{project.title}</h4>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-mono text-stone-500 bg-stone-800 px-1.5 py-0.5 rounded">
-              /{project.slug}
-            </span>
+            <span className="rounded bg-stone-800 px-1.5 py-0.5 font-mono text-xs text-stone-500">/{project.slug}</span>
             <span className="text-xs text-stone-600">
               {project.updated_at
-                ? `${new Date(project.updated_at).toLocaleDateString(
-                    "ko-KR"
-                  )} (수정됨)`
-                : new Date(project.created_at).toLocaleDateString("ko-KR")}
+                ? `${new Date(project.updated_at).toLocaleDateString('en-US')} (Edited)`
+                : new Date(project.created_at).toLocaleDateString('en-US')}
             </span>
           </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto pl-9 sm:pl-0">
+      <div className="flex w-full items-center justify-between gap-3 pl-9 sm:w-auto sm:justify-end sm:pl-0">
         <div onClick={(e) => e.stopPropagation()}>
-          <Select
-            value={project.status}
-            onValueChange={(value) =>
-              onStatusChange(project.id, value as ProjectStatus)
-            }
-          >
+          <Select value={project.status} onValueChange={(value) => onStatusChange(project.id, value as ProjectStatus)}>
             <SelectTrigger
-              className={`h-6 text-[10px] uppercase tracking-wider px-2 w-[90px] sm:w-[100px] border ${
+              className={`h-6 w-[90px] border px-2 text-[10px] tracking-wider uppercase sm:w-[100px] ${
                 statusColors[project.status] || statusColors.ready
-              }`}
-            >
+              }`}>
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-stone-900 border-stone-800 text-stone-200">
+            <SelectContent className="border-stone-800 bg-stone-900 text-stone-200">
               <SelectItem value="ready" className="text-xs">
                 Ready
               </SelectItem>
@@ -193,9 +165,8 @@ function SortableProjectItem({
             href={`/project/${project.slug}`}
             target="_blank"
             onClick={(e) => e.stopPropagation()}
-            className="p-2 text-stone-500 hover:text-stone-200 hover:bg-stone-800 rounded-md"
-            title="새 탭에서 보기"
-          >
+            className="rounded-md p-2 text-stone-500 hover:bg-stone-800 hover:text-stone-200"
+            title="Open in new tab">
             <ExternalLink className="h-4 w-4" />
           </Link>
           <Button
@@ -205,8 +176,7 @@ function SortableProjectItem({
               e.stopPropagation();
               onEdit(project);
             }}
-            className="text-stone-500 hover:text-stone-200 hover:bg-stone-800 h-9 w-9"
-          >
+            className="h-9 w-9 text-stone-500 hover:bg-stone-800 hover:text-stone-200">
             <Edit className="h-4 w-4" />
           </Button>
           <Button
@@ -216,8 +186,7 @@ function SortableProjectItem({
               e.stopPropagation();
               onDelete(project.id);
             }}
-            className="text-stone-500 hover:text-red-400 hover:bg-stone-800 h-9 w-9"
-          >
+            className="h-9 w-9 text-stone-500 hover:bg-stone-800 hover:text-red-400">
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
@@ -228,14 +197,13 @@ function SortableProjectItem({
 
 export default function ProjectManager() {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [slug, setSlug] = useState("");
-  const [status, setStatus] = useState<ProjectStatus>("ready");
-  const [contentData, setContentData] =
-    useState<ProjectContent>(defaultContent); // 👈 컨텐츠 데이터 State
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [slug, setSlug] = useState('');
+  const [status, setStatus] = useState<ProjectStatus>('ready');
+  const [contentData, setContentData] = useState<ProjectContent>(defaultContent); // 👈 컨텐츠 데이터 State
   const [loading, setLoading] = useState(false);
-  const [viewMode, setViewMode] = useState<"card" | "list">("list");
+  const [viewMode, setViewMode] = useState<'card' | 'list'>('list');
   const [isOrderChanged, setIsOrderChanged] = useState(false); // 👈 순서 변경 여부
 
   // 상태 변수
@@ -248,7 +216,7 @@ export default function ProjectManager() {
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
-      element.scrollIntoView({ behavior: "smooth", block: "start" });
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
@@ -257,7 +225,7 @@ export default function ProjectManager() {
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   // 1. 프로젝트 목록 불러오기 (Read)
@@ -265,13 +233,13 @@ export default function ProjectManager() {
     const fetchProjects = async () => {
       setLoading(true);
       const { data, error } = await supabase
-        .from("project")
-        .select("*")
-        .order("display_order", { ascending: true }) // 👈 display_order 기준 정렬
-        .order("created_at", { ascending: false });
+        .from('project')
+        .select('*')
+        .order('display_order', { ascending: true }) // 👈 display_order 기준 정렬
+        .order('created_at', { ascending: false });
 
       if (error) {
-        console.error("프로젝트 로드 에러:", error);
+        console.error('프로젝트 로드 에러:', error);
       } else {
         setProjects((data as Project[]) || []);
         setIsOrderChanged(false); // 로드 시 변경 상태 초기화
@@ -287,7 +255,7 @@ export default function ProjectManager() {
     setTitle(project.title);
     setDescription(project.description);
     setSlug(project.slug);
-    setStatus(project.status || "ready");
+    setStatus(project.status || 'ready');
 
     // 컨텐츠 데이터 로드
     if (project.contents) {
@@ -303,10 +271,10 @@ export default function ProjectManager() {
 
   // 2-1. 새 프로젝트 모드 진입
   const handleCreateNew = () => {
-    setTitle("");
-    setDescription("");
-    setSlug("");
-    setStatus("ready");
+    setTitle('');
+    setDescription('');
+    setSlug('');
+    setStatus('ready');
     setContentData(defaultContent); // 👈 초기화
     setEditingId(null);
     setIsEditing(false);
@@ -320,12 +288,11 @@ export default function ProjectManager() {
 
   // 3. 프로젝트 저장 또는 수정 (Create / Update)
   const handleSave = async () => {
-    if (!title || !description || !slug)
-      return alert("제목, 내용, 슬러그를 모두 입력해주세요!");
+    if (!title || !description || !slug) return alert('Please enter title, description, and slug!');
 
-    if (slug.includes(" ") || slug !== encodeURIComponent(slug)) {
+    if (slug.includes(' ') || slug !== encodeURIComponent(slug)) {
       return alert(
-        "슬러그는 공백이나 특수문자를 포함할 수 없습니다. 영문, 숫자, 하이픈(-)만 권장합니다."
+        'Slug cannot contain spaces or special characters. English letters, numbers, and hyphens (-) are recommended.',
       );
     }
 
@@ -333,10 +300,7 @@ export default function ProjectManager() {
 
     let error = null;
     // display_order는 신규 생성 시 가장 마지막 순서(큰 값)로 설정하면 좋음 (간단히 0 또는 max+1)
-    const maxOrder =
-      projects.length > 0
-        ? Math.max(...projects.map((p) => p.display_order || 0))
-        : 0;
+    const maxOrder = projects.length > 0 ? Math.max(...projects.map((p) => p.display_order || 0)) : 0;
 
     const payload = {
       title,
@@ -349,7 +313,7 @@ export default function ProjectManager() {
 
     if (isEditing && editingId) {
       const { error: updateError } = await supabase
-        .from("project")
+        .from('project')
         .update({
           title,
           description,
@@ -358,27 +322,25 @@ export default function ProjectManager() {
           contents: contentData, // 👈 컨텐츠 데이터 업데이트
           updated_at: new Date().toISOString(),
         })
-        .eq("id", editingId);
+        .eq('id', editingId);
       error = updateError;
     } else {
-      const { error: insertError } = await supabase
-        .from("project")
-        .insert([payload]);
+      const { error: insertError } = await supabase.from('project').insert([payload]);
       error = insertError;
     }
 
     if (error) {
       console.error(error);
-      if (error.code === "23505") {
-        alert("🚨 슬러그가 이미 존재합니다. 다른 슬러그를 사용해주세요.");
+      if (error.code === '23505') {
+        alert('🚨 Slug already exists. Please use a different slug.');
       } else {
-        alert("처리 중 에러 발생: " + error.message);
+        alert('Error during processing: ' + error.message);
       }
     } else {
-      setTitle("");
-      setDescription("");
-      setSlug("");
-      setStatus("ready");
+      setTitle('');
+      setDescription('');
+      setSlug('');
+      setStatus('ready');
       setIsEditing(false);
       setEditingId(null);
       setIsDialogOpen(false);
@@ -389,25 +351,25 @@ export default function ProjectManager() {
 
   // 4. 프로젝트 삭제 (Delete)
   const handleDelete = async (id: number) => {
-    if (!confirm("정말로 이 프로젝트를 삭제하시겠습니까?")) return;
+    if (!confirm('Are you sure you want to delete this project?')) return;
     setLoading(true);
-    const { error } = await supabase.from("project").delete().eq("id", id);
+    const { error } = await supabase.from('project').delete().eq('id', id);
     if (error) {
-      console.error("삭제 에러:", error);
-      alert("프로젝트 삭제에 실패했습니다.");
+      console.error('삭제 에러:', error);
+      alert('Failed to delete project.');
     } else {
       setRefreshTrigger((prev) => prev + 1);
-      alert("프로젝트가 성공적으로 삭제되었습니다.");
+      alert('Project successfully deleted.');
     }
     setLoading(false);
   };
 
   // 5. 수정 취소 (다이얼로그 닫기)
   const handleCancel = () => {
-    setTitle("");
-    setDescription("");
-    setSlug("");
-    setStatus("ready");
+    setTitle('');
+    setDescription('');
+    setSlug('');
+    setStatus('ready');
     setContentData(defaultContent); // 👈 초기화
     setIsEditing(false);
     setEditingId(null);
@@ -430,7 +392,7 @@ export default function ProjectManager() {
   // 7. 순서 저장 로직
   const handleSaveOrder = async () => {
     if (!isOrderChanged) return;
-    if (!confirm("변경된 순서를 저장하시겠습니까?")) return;
+    if (!confirm('Do you want to save the changed order?')) return;
 
     setLoading(true);
 
@@ -449,49 +411,47 @@ export default function ProjectManager() {
 
     const promises = projects.map((project, index) =>
       supabase
-        .from("project")
+        .from('project')
         .update({ display_order: index + 1 })
-        .eq("id", project.id)
+        .eq('id', project.id),
     );
 
     try {
       await Promise.all(promises);
       setIsOrderChanged(false);
-      alert("순서가 저장되었습니다.");
+      alert('Order saved.');
     } catch (error) {
-      console.error("순서 저장 에러:", error);
-      alert("순서 저장 중 문제가 발생했습니다.");
+      console.error('순서 저장 에러:', error);
+      alert('Problem occurred while saving order.');
     }
 
     setLoading(false);
   };
 
   const statusColors: Record<ProjectStatus, string> = {
-    ready: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-    published: "bg-green-500/20 text-green-400 border-green-500/30",
-    hidden: "bg-red-900/20 text-red-400 border-red-900/30",
+    ready: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+    published: 'bg-green-500/20 text-green-400 border-green-500/30',
+    hidden: 'bg-red-900/20 text-red-400 border-red-900/30',
   };
 
   // 8. 상태 변경 핸들러 (리스트 뷰에서 직접 변경)
   const handleStatusChange = async (id: number, newStatus: ProjectStatus) => {
     // 낙관적 업데이트 (UI 먼저 반영)
-    setProjects((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, status: newStatus } : p))
-    );
+    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, status: newStatus } : p)));
 
     setIsOrderChanged(true); // 👈 상태 변경 시 저장 버튼 활성화
 
     const { error } = await supabase
-      .from("project")
+      .from('project')
       .update({
         status: newStatus,
         updated_at: new Date().toISOString(), // 👈 수정 시간 업데이트
       })
-      .eq("id", id);
+      .eq('id', id);
 
     if (error) {
-      console.error("상태 변경 에러:", error);
-      alert("상태 변경에 실패했습니다.");
+      console.error('상태 변경 에러:', error);
+      alert('Failed to change status.');
       setRefreshTrigger((prev) => prev + 1); // 실패 시 롤백을 위해 새로고침
     }
   };
@@ -501,60 +461,50 @@ export default function ProjectManager() {
       {/* ===== 입력/수정 폼 (List를 대체하여 표시) ===== */}
       {isDialogOpen ? (
         <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-          <div className="flex items-center gap-4 mb-6">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleCancel}
-              className="text-stone-400 hover:text-stone-100"
-            >
+          <div className="mb-6 flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={handleCancel} className="text-stone-400 hover:text-stone-100">
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
               <h3 className="text-xl font-semibold text-stone-100">
-                {isEditing ? "프로젝트 수정" : "새 프로젝트 등록"}
+                {isEditing ? 'Edit Project' : 'Register New Project'}
               </h3>
               <p className="text-sm text-stone-400">
-                {isEditing
-                  ? "기존 프로젝트 내용을 수정합니다."
-                  : "새로운 프로젝트를 추가합니다."}
+                {isEditing ? 'Edit existing project content.' : 'Add a new project.'}
               </p>
             </div>
           </div>
 
-          <Card className="bg-stone-900 border-stone-800">
-            <CardContent className="p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="border-stone-800 bg-stone-900">
+            <CardContent className="space-y-6 p-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="title" className="text-stone-300">
-                    제목
+                    Title
                   </Label>
                   <Input
                     id="title"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     disabled={loading}
-                    placeholder="프로젝트 제목"
-                    className="bg-stone-950 border-stone-800 text-stone-200"
+                    placeholder="Project Title"
+                    className="border-stone-800 bg-stone-950 text-stone-200"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-stone-300">상태 (Status)</Label>
+                  <Label className="text-stone-300">Status</Label>
                   <Select
                     value={status}
                     onValueChange={(value) => setStatus(value as ProjectStatus)}
-                    disabled={loading}
-                  >
-                    <SelectTrigger className="bg-stone-950 border-stone-800 text-stone-200">
-                      <SelectValue placeholder="상태 선택" />
+                    disabled={loading}>
+                    <SelectTrigger className="border-stone-800 bg-stone-950 text-stone-200">
+                      <SelectValue placeholder="Select Status" />
                     </SelectTrigger>
-                    <SelectContent className="bg-stone-900 border-stone-800 text-stone-200">
-                      <SelectItem value="ready">Ready (준비 중)</SelectItem>
-                      <SelectItem value="published">
-                        Published (공개)
-                      </SelectItem>
-                      <SelectItem value="hidden">Hidden (숨김)</SelectItem>
+                    <SelectContent className="border-stone-800 bg-stone-900 text-stone-200">
+                      <SelectItem value="ready">Ready</SelectItem>
+                      <SelectItem value="published">Published</SelectItem>
+                      <SelectItem value="hidden">Hidden</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -562,24 +512,24 @@ export default function ProjectManager() {
 
               <div className="space-y-2">
                 <Label htmlFor="slug" className="text-stone-300">
-                  프로젝트 슬러그 (URL 경로)
+                  Project Slug (URL Path)
                 </Label>
                 <Input
                   id="slug"
                   value={slug}
                   onChange={(e) => setSlug(e.target.value)}
                   disabled={loading}
-                  placeholder="예: my-first-project"
-                  className="bg-stone-950 border-stone-800 text-stone-200"
+                  placeholder="e.g., my-first-project"
+                  className="border-stone-800 bg-stone-950 text-stone-200"
                 />
                 <p className="text-xs text-stone-500">
-                  URL에 사용됩니다. 영문, 숫자, 하이픈(-)만 사용하세요.
+                  Used in URL. Use only English letters, numbers, and hyphens (-).
                 </p>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="description" className="text-stone-300">
-                  간단 설명 (Summary)
+                  Summary
                 </Label>
                 <Textarea
                   id="description"
@@ -587,24 +537,20 @@ export default function ProjectManager() {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   disabled={loading}
-                  placeholder="프로젝트 목록에 표시될 간단한 설명을 입력하세요"
-                  className="bg-stone-950 border-stone-800 text-stone-200 resize-none"
+                  placeholder="Enter a brief description to be displayed in the project list"
+                  className="resize-none border-stone-800 bg-stone-950 text-stone-200"
                 />
               </div>
 
               {/* ===== 상세 컨텐츠 정보 (JSONB) ===== */}
-              <div className="space-y-4 pt-4 border-t border-stone-800">
-                <h4 className="text-lg font-medium text-stone-200">
-                  썸네일 이미지 (Thumbnails)
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4 border-t border-stone-800 pt-4">
+                <h4 className="text-lg font-medium text-stone-200">Thumbnail Images</h4>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <ImageUploader
-                      label="가로형 썸네일 (4:3)"
+                      label="Landscape Thumbnail (4:3)"
                       value={contentData.thumbnail43}
-                      onChange={(url) =>
-                        handleContentChange("thumbnail43", url)
-                      }
+                      onChange={(url) => handleContentChange('thumbnail43', url)}
                       bucketName="images"
                       folderPath="projects/thumbnails/4x3"
                       disabled={loading}
@@ -612,11 +558,9 @@ export default function ProjectManager() {
                   </div>
                   <div className="space-y-2">
                     <ImageUploader
-                      label="세로형 썸네일 (3:4)"
+                      label="Portrait Thumbnail (3:4)"
                       value={contentData.thumbnail34}
-                      onChange={(url) =>
-                        handleContentChange("thumbnail34", url)
-                      }
+                      onChange={(url) => handleContentChange('thumbnail34', url)}
                       bucketName="images"
                       folderPath="projects/thumbnails/3x4"
                       disabled={loading}
@@ -626,32 +570,26 @@ export default function ProjectManager() {
               </div>
 
               {/* ===== 상세 이미지 관리 섹션 (순서 변경 가능) ===== */}
-              <div className="space-y-4 pt-4 border-t border-stone-800">
+              <div className="space-y-4 border-t border-stone-800 pt-4">
                 <SortableImageList
                   images={contentData.detailImages || []}
-                  onImagesChange={(images) =>
-                    handleContentChange("detailImages", images)
-                  }
+                  onImagesChange={(images) => handleContentChange('detailImages', images)}
                   folderPath="projects/details"
                 />
               </div>
 
               {/* ===== 상세 컨텐츠 정보 (JSONB) ===== */}
-              <div className="space-y-4 pt-4 border-t border-stone-800">
-                <h4 className="text-lg font-medium text-stone-200">
-                  상세 정보 (Contents)
-                </h4>
+              <div className="space-y-4 border-t border-stone-800 pt-4">
+                <h4 className="text-lg font-medium text-stone-200">Contents</h4>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label className="text-stone-300">Project Name</Label>
                     <Input
                       value={contentData.project}
-                      onChange={(e) =>
-                        handleContentChange("project", e.target.value)
-                      }
-                      className="bg-stone-950 border-stone-800 text-stone-200"
-                      placeholder="프로젝트 명칭"
+                      onChange={(e) => handleContentChange('project', e.target.value)}
+                      className="border-stone-800 bg-stone-950 text-stone-200"
+                      placeholder="Project Name"
                     />
                   </div>
                   <div className="space-y-2">
@@ -659,33 +597,27 @@ export default function ProjectManager() {
                     <Input
                       type="number"
                       value={contentData.year}
-                      onChange={(e) =>
-                        handleContentChange("year", parseInt(e.target.value))
-                      }
-                      className="bg-stone-950 border-stone-800 text-stone-200"
+                      onChange={(e) => handleContentChange('year', parseInt(e.target.value))}
+                      className="border-stone-800 bg-stone-950 text-stone-200"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label className="text-stone-300">Client</Label>
                     <Input
                       value={contentData.client}
-                      onChange={(e) =>
-                        handleContentChange("client", e.target.value)
-                      }
-                      className="bg-stone-950 border-stone-800 text-stone-200"
+                      onChange={(e) => handleContentChange('client', e.target.value)}
+                      className="border-stone-800 bg-stone-950 text-stone-200"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-stone-300">Services</Label>
                     <Input
                       value={contentData.services}
-                      onChange={(e) =>
-                        handleContentChange("services", e.target.value)
-                      }
-                      className="bg-stone-950 border-stone-800 text-stone-200"
+                      onChange={(e) => handleContentChange('services', e.target.value)}
+                      className="border-stone-800 bg-stone-950 text-stone-200"
                     />
                   </div>
                 </div>
@@ -694,154 +626,129 @@ export default function ProjectManager() {
                   <Label className="text-stone-300">Product</Label>
                   <Input
                     value={contentData.product}
-                    onChange={(e) =>
-                      handleContentChange("product", e.target.value)
-                    }
-                    className="bg-stone-950 border-stone-800 text-stone-200"
+                    onChange={(e) => handleContentChange('product', e.target.value)}
+                    className="border-stone-800 bg-stone-950 text-stone-200"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-stone-300">
-                    Keywords (쉼표로 구분)
-                  </Label>
+                  <Label className="text-stone-300">Keywords (separated by comma)</Label>
                   <Input
-                    value={contentData.keyword.join(", ")}
+                    value={contentData.keyword.join(', ')}
                     onChange={(e) =>
                       handleContentChange(
-                        "keyword",
-                        e.target.value.split(",").map((k) => k.trim())
+                        'keyword',
+                        e.target.value.split(',').map((k) => k.trim()),
                       )
                     }
-                    className="bg-stone-950 border-stone-800 text-stone-200"
-                    placeholder="예: Branding, UI/UX, Web Design"
+                    className="border-stone-800 bg-stone-950 text-stone-200"
+                    placeholder="e.g., Branding, UI/UX, Web Design"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-stone-300">
-                    Challenge (Long Text)
-                  </Label>
+                  <Label className="text-stone-300">Challenge (Long Text)</Label>
                   <Textarea
                     rows={6}
                     value={contentData.challenge}
-                    onChange={(e) =>
-                      handleContentChange("challenge", e.target.value)
-                    }
-                    className="bg-stone-950 border-stone-800 text-stone-200"
-                    placeholder="프로젝트의 도전 과제 및 상세 설명을 입력하세요"
+                    onChange={(e) => handleContentChange('challenge', e.target.value)}
+                    className="border-stone-800 bg-stone-950 text-stone-200"
+                    placeholder="Enter project challenges and detailed description"
                   />
                 </div>
               </div>
             </CardContent>
-            <CardFooter className="flex justify-end gap-3 p-6 border-t border-stone-800">
+            <CardFooter className="flex justify-end gap-3 border-t border-stone-800 p-6">
               <Button
                 variant="outline"
                 onClick={handleCancel}
-                className="border-stone-700 text-stone-400 hover:text-stone-200 hover:bg-stone-800 hover:border-stone-600"
-              >
-                취소
+                className="border-stone-700 text-stone-400 hover:border-stone-600 hover:bg-stone-800 hover:text-stone-200">
+                Cancel
               </Button>
               <Button
                 onClick={handleSave}
                 disabled={loading}
-                className="bg-stone-100 text-stone-900 hover:bg-stone-200"
-              >
-                {loading ? "저장 중..." : isEditing ? "수정하기" : "등록하기"}
+                className="bg-stone-100 text-stone-900 hover:bg-stone-200">
+                {loading ? 'Saving...' : isEditing ? 'Update' : 'Register'}
               </Button>
             </CardFooter>
           </Card>
         </div>
       ) : (
-        <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
+        <div className="animate-in fade-in slide-in-from-left-4 space-y-6 duration-300">
           {/* ===== 상단 액션 바 ===== */}
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start">
+          <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+            <div className="flex w-full items-center justify-between gap-4 md:w-auto md:justify-start">
               <h3 className="text-xl font-semibold text-stone-200">
-                등록된 프로젝트 목록{" "}
-                <span className="text-stone-500 text-sm ml-2">
-                  ({projects.length}개)
-                </span>
+                Registered Project List <span className="ml-2 text-sm text-stone-500">({projects.length})</span>
               </h3>
               {/* 뷰 모드 토글 버튼 */}
-              <div className="flex items-center bg-stone-900 rounded-md p-1 border border-stone-800">
+              <div className="flex items-center rounded-md border border-stone-800 bg-stone-900 p-1">
                 <button
-                  onClick={() => setViewMode("list")}
-                  className={`p-1.5 rounded transition-colors ${
-                    viewMode === "list"
-                      ? "bg-stone-800 text-stone-100 shadow-sm"
-                      : "text-stone-500 hover:text-stone-300"
+                  onClick={() => setViewMode('list')}
+                  className={`rounded p-1.5 transition-colors ${
+                    viewMode === 'list'
+                      ? 'bg-stone-800 text-stone-100 shadow-sm'
+                      : 'text-stone-500 hover:text-stone-300'
                   }`}
-                  title="리스트 뷰 (순서 변경 가능)"
-                >
+                  title="List View (Order changeable)">
                   <ListIcon className="h-4 w-4" />
                 </button>
                 <button
-                  onClick={() => setViewMode("card")}
-                  className={`p-1.5 rounded transition-colors ${
-                    viewMode === "card"
-                      ? "bg-stone-800 text-stone-100 shadow-sm"
-                      : "text-stone-500 hover:text-stone-300"
+                  onClick={() => setViewMode('card')}
+                  className={`rounded p-1.5 transition-colors ${
+                    viewMode === 'card'
+                      ? 'bg-stone-800 text-stone-100 shadow-sm'
+                      : 'text-stone-500 hover:text-stone-300'
                   }`}
-                  title="카드 뷰"
-                >
+                  title="Card View">
                   <LayoutGrid className="h-4 w-4" />
                 </button>
               </div>
             </div>
 
-            <div className="flex gap-2 items-center w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+            <div className="flex w-full items-center gap-2 overflow-x-auto pb-1 md:w-auto md:pb-0">
               {/* 순서 저장 버튼 (순서 변경 시에만 활성화) */}
               {isOrderChanged && (
                 <Button
                   onClick={handleSaveOrder}
                   disabled={loading}
-                  className="bg-blue-600 hover:bg-blue-700 text-white animate-in fade-in zoom-in duration-200 shrink-0"
-                >
-                  <Save className="h-4 w-4 mr-2" /> 저장
+                  className="animate-in fade-in zoom-in shrink-0 bg-blue-600 text-white duration-200 hover:bg-blue-700">
+                  <Save className="mr-2 h-4 w-4" /> Save
                 </Button>
               )}
 
               <Link href="/project" target="_blank" className="shrink-0">
                 <Button
                   variant="outline"
-                  className="gap-2 bg-stone-800 text-stone-200 border-stone-700 hover:bg-stone-200 hover:text-stone-900 hover:border-stone-600"
-                >
-                  전체 보기 <ExternalLink className="h-4 w-4" />
+                  className="gap-2 border-stone-700 bg-stone-800 text-stone-200 hover:border-stone-600 hover:bg-stone-200 hover:text-stone-900">
+                  View All <ExternalLink className="h-4 w-4" />
                 </Button>
               </Link>
               <Button
                 variant="outline"
                 onClick={handleCreateNew}
-                className="gap-2 bg-stone-800 text-stone-200 border-stone-700 hover:bg-stone-200 hover:text-stone-900 hover:border-stone-600 shrink-0"
-              >
-                <Plus className="h-4 w-4" /> 새 프로젝트
+                className="shrink-0 gap-2 border-stone-700 bg-stone-800 text-stone-200 hover:border-stone-600 hover:bg-stone-200 hover:text-stone-900">
+                <Plus className="h-4 w-4" /> New Project
               </Button>
             </div>
           </div>
 
           {/* ===== 프로젝트 목록 (Read) ===== */}
           {loading && !projects.length ? (
-            <div className="text-center p-12 text-stone-500 border border-dashed border-stone-800 rounded-lg">
-              <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 opacity-50" />
-              프로젝트를 불러오는 중입니다...
+            <div className="rounded-lg border border-dashed border-stone-800 p-12 text-center text-stone-500">
+              <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin opacity-50" />
+              Loading projects...
             </div>
           ) : projects.length === 0 ? (
-            <div className="text-center p-12 text-stone-500 border border-dashed border-stone-800 rounded-lg bg-stone-900/50">
-              등록된 프로젝트가 없습니다. 새 프로젝트 버튼을 눌러 추가해보세요.
+            <div className="rounded-lg border border-dashed border-stone-800 bg-stone-900/50 p-12 text-center text-stone-500">
+              No projects registered. Click the New Project button to add one.
             </div>
-          ) : viewMode === "list" ? (
+          ) : viewMode === 'list' ? (
             /* === 리스트 뷰 (순서 변경 가능) === */
             <div className="space-y-2">
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext
-                  items={projects.map((p) => p.id)}
-                  strategy={verticalListSortingStrategy}
-                >
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={projects.map((p) => p.id)} strategy={verticalListSortingStrategy}>
                   {projects.map((project) => (
                     <SortableProjectItem
                       key={project.id}
@@ -856,53 +763,44 @@ export default function ProjectManager() {
             </div>
           ) : (
             /* === 카드 뷰 (기존 그리드) === */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {projects.map((item) => (
                 <Card
                   key={item.id}
                   onClick={() => handleEdit(item)}
-                  className={`p-5 transition-all bg-stone-900 border-stone-800 shadow-sm hover:shadow-md hover:border-stone-600 flex flex-col h-full cursor-pointer`}
-                >
-                  <div className="flex-1 mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <CardTitle className="text-lg truncate text-stone-200">
-                        {item.title}
-                      </CardTitle>
+                  className={`flex h-full cursor-pointer flex-col border-stone-800 bg-stone-900 p-5 shadow-sm transition-all hover:border-stone-600 hover:shadow-md`}>
+                  <div className="mb-4 flex-1">
+                    <div className="mb-2 flex items-center justify-between">
+                      <CardTitle className="truncate text-lg text-stone-200">{item.title}</CardTitle>
                       <span
-                        className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border ${
+                        className={`rounded border px-1.5 py-0.5 text-[10px] tracking-wider uppercase ${
                           statusColors[item.status] || statusColors.ready
-                        }`}
-                      >
+                        }`}>
                         {item.status}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="px-2 py-0.5 rounded bg-stone-800 text-stone-400 text-xs font-mono border border-stone-700">
+                    <div className="mb-3 flex items-center gap-2">
+                      <span className="rounded border border-stone-700 bg-stone-800 px-2 py-0.5 font-mono text-xs text-stone-400">
                         /{item.slug}
                       </span>
                       <Link
                         href={`/project/${item.slug}`}
                         target="_blank"
                         onClick={(e) => e.stopPropagation()}
-                        className="text-stone-600 hover:text-stone-300 transition-colors"
-                        title="새 탭에서 보기"
-                      >
+                        className="text-stone-600 transition-colors hover:text-stone-300"
+                        title="새 탭에서 보기">
                         <ExternalLink className="h-3 w-3" />
                       </Link>
                     </div>
-                    <CardDescription className="line-clamp-3 text-stone-400">
-                      {item.description}
-                    </CardDescription>
+                    <CardDescription className="line-clamp-3 text-stone-400">{item.description}</CardDescription>
                   </div>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-stone-800">
+                  <div className="flex items-center justify-between border-t border-stone-800 pt-4">
                     <span className="text-xs text-stone-600">
                       {item.updated_at
-                        ? `${new Date(item.updated_at).toLocaleDateString(
-                            "ko-KR"
-                          )} (수정됨)`
-                        : new Date(item.created_at).toLocaleDateString("ko-KR")}
+                        ? `${new Date(item.updated_at).toLocaleDateString('en-US')} (Edited)`
+                        : new Date(item.created_at).toLocaleDateString('en-US')}
                     </span>
                     <div className="flex items-center gap-1">
                       <Button
@@ -912,9 +810,8 @@ export default function ProjectManager() {
                           e.stopPropagation();
                           handleEdit(item);
                         }}
-                        title="수정"
-                        className="h-8 w-8 text-stone-500 hover:text-stone-200 hover:bg-stone-800"
-                      >
+                        title="Edit"
+                        className="h-8 w-8 text-stone-500 hover:bg-stone-800 hover:text-stone-200">
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button
@@ -925,9 +822,8 @@ export default function ProjectManager() {
                           handleDelete(item.id);
                         }}
                         disabled={loading}
-                        title="삭제"
-                        className="h-8 w-8 text-stone-500 hover:text-red-400 hover:bg-stone-800"
-                      >
+                        title="Delete"
+                        className="h-8 w-8 text-stone-500 hover:bg-stone-800 hover:text-red-400">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>

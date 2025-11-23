@@ -186,7 +186,10 @@ svg {
     @apply text-[12px] leading-[100%] font-bold capitalize;
   }
   .studio-typography span {
-    @apply text-[12px] leading-[100%] font-normal tracking-[0] uppercase;
+    @apply text-[12px] leading-[120%] font-normal tracking-[0] uppercase;
+  }
+  .studio-typography li {
+    @apply !my-0 text-[12px] leading-[120%] font-normal tracking-[0] uppercase;
   }
   /* h1 {
     @apply text-5xl md:text-6xl;

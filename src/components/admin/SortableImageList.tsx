@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   DndContext,
@@ -8,17 +8,12 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  rectSortingStrategy,
-} from "@dnd-kit/sortable";
-import { SortableImageItem } from "./SortableImageItem";
-import { Label } from "@/components/ui/label";
-import ImageUploader from "./ImageUploader";
-import { useState } from "react";
+} from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, rectSortingStrategy } from '@dnd-kit/sortable';
+import { SortableImageItem } from './SortableImageItem';
+import { Label } from '@/components/ui/label';
+import ImageUploader from './ImageUploader';
+import { useState } from 'react';
 
 export interface DetailImage {
   id: string;
@@ -31,16 +26,12 @@ interface SortableImageListProps {
   folderPath: string;
 }
 
-export default function SortableImageList({
-  images,
-  onImagesChange,
-  folderPath,
-}: SortableImageListProps) {
+export default function SortableImageList({ images, onImagesChange, folderPath }: SortableImageListProps) {
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -62,36 +53,23 @@ export default function SortableImageList({
   };
 
   const handleRemoveImage = (id: string) => {
-    if (confirm("이 이미지를 목록에서 제거하시겠습니까?")) {
+    if (confirm('Do you want to remove this image from the list?')) {
       onImagesChange(images.filter((img) => img.id !== id));
     }
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <Label className="text-stone-300">
-          상세 이미지 목록 (순서 변경 가능)
-        </Label>
-        <span className="text-xs text-stone-500">
-          {images.length}개의 이미지
-        </span>
+      <div className="flex items-center justify-between">
+        <Label className="text-stone-300">Detail Image List (Order changeable)</Label>
+        <span className="text-xs text-stone-500">{images.length} images</span>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={images} strategy={rectSortingStrategy}>
             {images.map((image) => (
-              <SortableImageItem
-                key={image.id}
-                id={image.id}
-                url={image.url}
-                onRemove={handleRemoveImage}
-              />
+              <SortableImageItem key={image.id} id={image.id} url={image.url} onRemove={handleRemoveImage} />
             ))}
           </SortableContext>
         </DndContext>

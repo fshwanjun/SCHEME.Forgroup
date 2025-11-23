@@ -22,7 +22,7 @@ export default function ImageUploader({
   onChange,
   bucketName = "images",
   folderPath = "uploads",
-  label = "이미지 업로드",
+  label = "Upload Image",
   disabled = false,
 }: ImageUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
@@ -34,13 +34,13 @@ export default function ImageUploader({
 
     // 파일 유효성 검사 (이미지 파일만 허용)
     if (!file.type.startsWith("image/")) {
-      alert("이미지 파일만 업로드할 수 있습니다.");
+      alert("Only image files can be uploaded.");
       return;
     }
 
     // 파일 크기 제한 (예: 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert("파일 크기는 5MB 이하여야 합니다.");
+      alert("File size must be 5MB or less.");
       return;
     }
 
@@ -69,7 +69,7 @@ export default function ImageUploader({
       onChange(publicUrl);
     } catch (error: any) {
       console.error("Upload error:", error);
-      alert("이미지 업로드 중 오류가 발생했습니다: " + error.message);
+      alert("Error occurred while uploading image: " + error.message);
     } finally {
       setIsUploading(false);
       // 입력값 초기화하여 같은 파일 다시 선택 가능하게 함
@@ -82,7 +82,7 @@ export default function ImageUploader({
   const handleRemove = () => {
     // 실제 스토리지에서 삭제하는 로직은 선택 사항 (여기서는 URL만 지움)
     // 필요하다면 supabase.storage.from(bucketName).remove([path]) 호출 가능
-    if (confirm("이미지를 제거하시겠습니까?")) {
+    if (confirm("Are you sure you want to remove the image?")) {
       onChange("");
     }
   };
@@ -106,7 +106,7 @@ export default function ImageUploader({
           {isUploading ? (
             <>
               <Loader2 className="h-8 w-8 text-stone-500 animate-spin" />
-              <p className="text-sm text-stone-500">업로드 중...</p>
+              <p className="text-sm text-stone-500">Uploading...</p>
             </>
           ) : (
             <>
@@ -115,7 +115,7 @@ export default function ImageUploader({
               </div>
               <div className="text-center">
                 <p className="text-sm font-medium text-stone-300">
-                  클릭하여 이미지 선택
+                  Click to select image
                 </p>
                 <p className="text-xs text-stone-500 mt-1">
                   PNG, JPG, GIF up to 5MB
@@ -140,7 +140,7 @@ export default function ImageUploader({
               onClick={() => window.open(value, "_blank")}
               className="h-8 text-xs"
             >
-              <ImageIcon className="h-3 w-3 mr-1.5" /> 원본 보기
+              <ImageIcon className="h-3 w-3 mr-1.5" /> View Original
             </Button>
             <Button
               variant="destructive"
@@ -149,7 +149,7 @@ export default function ImageUploader({
               disabled={disabled}
               className="h-8 text-xs"
             >
-              <X className="h-3 w-3 mr-1.5" /> 제거
+              <X className="h-3 w-3 mr-1.5" /> Remove
             </Button>
           </div>
         </div>
