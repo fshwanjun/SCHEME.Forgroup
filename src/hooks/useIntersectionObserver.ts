@@ -27,7 +27,11 @@ export function useIntersection(target: Element | null, handler: IntersectionHan
       (entries) => {
         entries.forEach((entry) => handlerRef.current(entry));
       },
-      options,
+      {
+        root: options.root,
+        rootMargin: options.rootMargin,
+        threshold: options.threshold,
+      },
     );
 
     observer.observe(target);

@@ -2,7 +2,6 @@
 
 import React from 'react';
 import HoverDistortImage from './HoverDistortImage';
-import Image from 'next/image';
 
 export default function ImageCard({
   projectId,
@@ -52,13 +51,12 @@ export default function ImageCard({
       preserveAspect="xMidYMid slice"
     />
   ) : (
-    <Image
+    <img
       src={src}
-      alt="Image"
-      width={100}
-      height={100}
+      alt=""
       className="block h-auto w-full object-cover"
       draggable={false}
+      style={{ aspectRatio: computedAspect }}
     />
   );
 

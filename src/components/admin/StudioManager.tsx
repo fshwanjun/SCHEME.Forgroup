@@ -195,8 +195,8 @@ export default function StudioManager() {
           const parsed = typeof content === 'string' ? JSON.parse(content) : content;
 
           // 마이그레이션: 기존 string 데이터를 ListItem[] 형태로 변환
-          const migrateList = (field: any): ListItem[] => {
-            if (Array.isArray(field)) return field;
+          const migrateList = (field: unknown): ListItem[] => {
+            if (Array.isArray(field)) return field as ListItem[];
             if (typeof field === 'string' && field.trim() !== '') {
               return field.split('\n').map((text, idx) => ({
                 id: `migrated-${idx}-${Date.now()}`,

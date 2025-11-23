@@ -6,7 +6,6 @@ import { useState } from 'react';
 import AdminShell from '@/components/admin/AdminShell';
 import StudioManager from '@/components/admin/StudioManager';
 import ProjectManager from '@/components/admin/ProjectManager';
-import { cn } from '@/lib/utils';
 
 type Tab = 'studio' | 'project';
 

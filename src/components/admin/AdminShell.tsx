@@ -4,13 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, Loader2, LayoutDashboard, FileText, FolderKanban, Settings, LogOut, Menu, X } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Loader2, FileText, FolderKanban, LogOut, Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AdminShellProps {

@@ -282,7 +282,7 @@ export default function ProjectManager() {
   };
 
   // 컨텐츠 필드 핸들러
-  const handleContentChange = (field: keyof ProjectContent, value: any) => {
+  const handleContentChange = (field: keyof ProjectContent, value: ProjectContent[keyof ProjectContent]) => {
     setContentData((prev) => ({ ...prev, [field]: value }));
   };
 
