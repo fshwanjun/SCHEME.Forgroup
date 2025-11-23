@@ -18,10 +18,17 @@ export default function Header({ isFixed = true }: { isFixed?: boolean }) {
   if (!isVisible) return null;
 
   return (
-    <header className={cn('w-full', isFixed ? 'pointer-events-none fixed top-0 z-999 px-5 pt-5' : 'relative')}>
+    <header className={cn('w-full', isFixed ? 'pointer-events-none fixed top-0 z-50 px-5 pt-5' : 'relative')}>
       <div className="relative mx-auto flex items-start justify-between">
-        <Link href="/ " className="pointer-events-auto select-none">
-          <LogoInline src="/data.svg" width={200} height={85} />
+        <Link href="/" className="pointer-events-auto select-none">
+          <LogoInline
+            src="/data.svg"
+            width={200}
+            height={85}
+            // 홈으로 돌아왔을 때 애니메이션을 재시작하기 위해 key를 변경합니다.
+            // 홈('/')에서는 'home-logo', 그 외 페이지에서는 'sub-logo'를 키로 사용합니다.
+            key={pathname === '/' ? 'home-logo' : 'sub-logo'}
+          />
         </Link>
         <nav className="flex gap-5">
           {navItems.map(({ href, label }) => {

@@ -239,15 +239,15 @@ export default function HomeGallery({ onSelectImage, selectedProjectId }: HomeGa
       }
     }
     return assignments;
-  }, []); // skipRows에 의존하지 않음
+  }, [projectCount, totalFrames]); // skipRows에 의존하지 않음
 
   return (
     <section className="HomeGallery relative mb-[20px] w-full px-[20px]">
       <div
         className="grid w-full grid-cols-16 gap-[20px]"
         style={{
-          columnGap: 'var(--gallery-gap, 20px)',
-          rowGap: 'var(--gallery-gap, 20px)',
+          columnGap: 20,
+          rowGap: 20,
         }}>
         {FRAME_CLASSES.map((frameClass, index) => {
           // 🌟 핵심 수정: 건너뛸 행에 속하는 프레임은 렌더링하지 않습니다.

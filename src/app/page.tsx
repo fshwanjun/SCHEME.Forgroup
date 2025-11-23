@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useIntersection } from '@/hooks/useIntersectionObserver';
 import Header from '@/components/Header';
+import IntroLogo from '@/components/IntroLogo';
 
 export default function Home() {
   // section ID 배열: 초기값 [0, 1, 2] (3개 section)
@@ -16,6 +17,7 @@ export default function Home() {
   const [triggerElement, setTriggerElement] = useState<HTMLElement | null>(null);
   const triggeredRef = useRef(false);
   const isInitialZoomRef = useRef(false); // 최초 줌 계산 여부 추적
+  const containerRef = useRef<HTMLDivElement>(null); // motion.div 참조 추가
 
   // 페이지 로드 시 스크롤 최상단 이동 및 복원 방지
   useEffect(() => {
@@ -31,49 +33,17 @@ export default function Home() {
     };
   }, []);
 
-  // 이미지가 선택된 상태에서 외부 클릭 시 줌 아웃 처리
-  useEffect(() => {
-    if (!selected) return;
-
-    const handleClickOutside = (e: MouseEvent) => {
-      // 선택된 프로젝트의 DOM 요소를 찾음
-      const selectedElement = document.getElementById(`project-${selected.projectId}`);
-
-      // 클릭된 요소가 선택된 이미지 내부가 아니라면 줌 아웃
-      if (selectedElement && !selectedElement.contains(e.target as Node)) {
-        isInitialZoomRef.current = false;
-        setSelected(null);
-      }
-    };
-
-    // 캡처링 단계가 아니라 버블링 단계에서 처리하되,
-    // 이미지 클릭 이벤트가 먼저 처리되고(stopPropagation 없이),
-    // 그 다음 window 클릭이 처리되도록 함.
-    // 단, 이미지 클릭 시 setSelected가 호출되는데, 상태 변경은 비동기이므로
-    // 여기서 바로 닫히지 않도록 주의해야 함.
-    // 이미지 클릭 핸들러에서 e.stopPropagation()을 하면 여기 도달하지 않음.
-    // 하지만 ImageCard는 stopPropagation을 하지 않음.
-
-    // 안전하게 setTimeout을 주거나, capture 단계 사용 등을 고려.
-    // 여기서는 간단히 window 클릭을 감지.
-    const timer = setTimeout(() => {
-      window.addEventListener('click', handleClickOutside);
-    }, 0);
-
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('click', handleClickOutside);
-    };
-  }, [selected]);
+  // 이미지가 선택된 상태에서 외부 클릭 시 줌 아웃 처리는 제거됨 (이미지 클릭 시 줌 아웃으로 변경)
 
   const handleSelectImage = useCallback((image: GallerySelection) => {
     // console.log('handleSelectImage:', image);
     isInitialZoomRef.current = true; // 이미지 선택 시 초기 줌 플래그 설정
 
-    // 이미 선택된 이미지를 다시 클릭하면 아무 동작도 하지 않음 (줌 아웃 방지)
+    // 이미 선택된 이미지를 다시 클릭하면 줌 아웃
     setSelected((current) => {
       if (current?.projectId === image.projectId) {
-        return current;
+        isInitialZoomRef.current = false;
+        return null;
       }
       return image;
     });
@@ -151,21 +121,46 @@ export default function Home() {
       const scaledGap = 20 / scale;
       document.documentElement.style.setProperty('--gallery-gap', `${scaledGap}px`);
 
-      // 현재 이미지의 중심 좌표 (스크롤 포함되지 않은 viewport 기준)
+      // Transform Origin 설정
+      // motion.div가 스크롤이나 섹션 제거로 인해 위치가 바뀌었을 수 있으므로,
+      // 실제 motion.div의 현재 위치를 기준으로 뷰포트 좌상단(0,0)이 motion.div 내부의 어디인지 계산합니다.
+      let originX = 0;
+      let originY = 0;
+
+      if (containerRef.current) {
+        const containerRect = containerRef.current.getBoundingClientRect();
+        // 뷰포트 좌상단(0,0)은 motion.div의 좌상단으로부터 (-left, -top) 만큼 떨어져 있음
+        originX = -containerRect.left;
+        originY = -containerRect.top;
+      } else {
+        // fallback (초기 로드 등)
+        originX = window.scrollX;
+        originY = window.scrollY;
+      }
+
+      // 이미지의 중심 좌표 (뷰포트 기준)
       const imageCenterX = rect.left + rect.width / 2;
       const imageCenterY = rect.top + rect.height / 2;
 
-      // 화면의 중심 좌표
+      // 화면의 중심 좌표 (뷰포트 기준)
       const screenCenterX = window.innerWidth / 2;
       const screenCenterY = window.innerHeight / 2;
 
-      // Transform Origin (absolute in document)
-      const originX = imageCenterX + scrollX;
-      const originY = imageCenterY + scrollY;
+      // 목표: 이미지의 중심을 화면의 중심으로 이동
+      // 변환 식: Target = Origin + (Point - Origin) * Scale + Translate
+      // ScreenCenter = 0 + (ImageCenter - 0) * Scale + Translate  (Origin이 뷰포트 좌상단(0,0) 기준일 때 상대좌표)
+      // Translate = ScreenCenter - ImageCenter * Scale
 
-      // 이동해야 할 거리
-      const tx = screenCenterX - imageCenterX;
-      const ty = screenCenterY - imageCenterY;
+      const tx = screenCenterX - imageCenterX * scale;
+      const ty = screenCenterY - imageCenterY * scale;
+
+      console.log('Zoom Calc (New):', {
+        scale,
+        scroll: { x: scrollX, y: scrollY },
+        imageCenter: { x: imageCenterX, y: imageCenterY },
+        translate: { x: tx, y: ty },
+        origin: { x: originX, y: originY },
+      });
 
       setZoomStyle({ x: tx, y: ty, scale, originX, originY });
       document.body.style.overflow = 'hidden';
@@ -173,9 +168,15 @@ export default function Home() {
 
     calculateZoom();
 
-    window.addEventListener('resize', calculateZoom);
+    // 윈도우 리사이즈 시 줌 아웃
+    const handleResize = () => {
+      setSelected(null);
+      isInitialZoomRef.current = false;
+    };
+
+    window.addEventListener('resize', handleResize);
     return () => {
-      window.removeEventListener('resize', calculateZoom);
+      window.removeEventListener('resize', handleResize);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected]);
@@ -275,8 +276,10 @@ export default function Home() {
 
   return (
     <>
+      <IntroLogo />
       <Header />
       <motion.div
+        ref={containerRef}
         animate={{
           x: zoomStyle.x,
           y: zoomStyle.y,

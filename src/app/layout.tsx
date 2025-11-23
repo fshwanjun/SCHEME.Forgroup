@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import './globals.css';
-import Header from '@/components/Header';
-
 const abcrom = localFont({
   src: [
     { path: '../../public/fonts/ABCROM-NormalRegular.woff2', weight: '400', style: 'normal' },
@@ -22,10 +20,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko" className={abcrom.variable}>
-      <body className={abcrom.className}>
-        {/* <Header />/ */}
-        {children}
-      </body>
+      <body className={abcrom.className}>{children}</body>
     </html>
   );
 }

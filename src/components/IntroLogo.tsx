@@ -32,6 +32,28 @@ export default function IntroLogo({ duration = 8000 }: { duration?: number }) {
     };
   }, [duration]);
 
+  useEffect(() => {
+    console.log('IntroLogo Phase:', phase); // 디버깅용 로그
+
+    if (phase !== 'hidden') {
+      document.body.style.setProperty('overflow', 'hidden', 'important');
+      document.documentElement.style.setProperty('overflow', 'hidden', 'important');
+    } else {
+      document.body.style.removeProperty('overflow');
+      document.documentElement.style.removeProperty('overflow');
+      // 일부 브라우저 호환성을 위한 fallback
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    }
+
+    return () => {
+      document.body.style.removeProperty('overflow');
+      document.documentElement.style.removeProperty('overflow');
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    };
+  }, [phase]);
+
   if (phase === 'hidden') {
     return null;
   }
