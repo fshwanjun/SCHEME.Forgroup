@@ -4,7 +4,6 @@ import React, { useCallback, useEffect, useId, useRef } from 'react';
 
 export default function HoverDistortImage({
   src,
-  alt = '',
   className,
   aspectRatio,
   distortionScale = 200, // strength of distortion

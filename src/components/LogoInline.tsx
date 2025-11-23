@@ -1,6 +1,5 @@
 'use client';
 
-import { cn } from '@/lib/utils';
 import { useEffect, useState, useMemo } from 'react';
 
 // SVG 마크업을 전역적으로 캐싱하여 재로드 방지
@@ -10,7 +9,6 @@ export default function LogoInline({
   src = '/header.svg',
   width = 300,
   height = 200,
-  playTrigger,
 }: {
   src?: string;
   width?: number;
