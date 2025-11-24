@@ -233,7 +233,7 @@ span {
 }
 
 .page-studio {
-  @apply flex h-full w-full flex-col gap-y-5 overflow-hidden md:flex-row md:gap-x-5 md:gap-y-0;
+  @apply flex h-full w-full flex-col gap-y-5 md:flex-row md:gap-x-5 md:gap-y-0 md:overflow-hidden;
 }
 
 @utility custom-scroll {

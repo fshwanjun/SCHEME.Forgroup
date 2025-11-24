@@ -82,7 +82,7 @@ export default async function StudioPage() {
   return (
     <HomeContainer
       isFixed={false}
-      addClassName="studio-typography p-5 max-h-screen h-full overflow-y-hidden flex flex-col gap-5">
+      addClassName="studio-typography p-5 min-h-screen h-full flex flex-col gap-5 overflow-y-auto md:max-h-screen md:overflow-y-hidden">
       <Header isFixed={false} />
       <div className="page-studio">
         {/* [좌측] 데스크탑 이미지 영역 (40%) */}
