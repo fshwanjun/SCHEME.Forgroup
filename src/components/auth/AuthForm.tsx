@@ -28,14 +28,14 @@ export default function AuthForm() {
     let error = null;
 
     if (isSigningUp) {
-      // 회원가입 로직
+      // Sign-up flow
       const result = await supabase.auth.signUp({
         email,
         password,
       });
       error = result.error;
     } else {
-      // 로그인 로직
+      // Sign-in flow
       const result = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -46,15 +46,15 @@ export default function AuthForm() {
     setLoading(false);
 
     if (error) {
-      alert(`인증 실패: ${error.message}`);
+      alert(`Authentication failed: ${error.message}`);
     } else if (isSigningUp) {
-      alert("가입이 완료되었습니다. 이메일을 확인하여 인증을 완료해주세요.");
+      alert("Sign-up complete. Please verify your email to activate the account.");
       setIsSigningUp(false);
-      // 회원가입 후 폼 초기화
+      // Reset form after sign-up
       setEmail("");
       setPassword("");
     } else {
-      // 로그인 성공 시: 관리자 페이지로 이동
+      // On successful sign-in, navigate to the admin dashboard
       router.push("/admin");
     }
   };
@@ -63,15 +63,15 @@ export default function AuthForm() {
     <Card className="w-full max-w-sm">
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl text-center">
-          {isSigningUp ? "관리자 회원가입" : "관리자 로그인"}
+          {isSigningUp ? "Admin Sign Up" : "Admin Login"}
         </CardTitle>
         <CardDescription className="text-center">
-          포트폴리오 관리를 위해 접근합니다.
+          Access the portfolio management dashboard.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
         <div className="grid gap-2">
-          <Label htmlFor="email">이메일</Label>
+          <Label htmlFor="email">Email</Label>
           <Input
             id="email"
             type="email"
@@ -81,7 +81,7 @@ export default function AuthForm() {
           />
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="password">비밀번호</Label>
+          <Label htmlFor="password">Password</Label>
           <Input
             id="password"
             type="password"
@@ -95,14 +95,14 @@ export default function AuthForm() {
       </CardContent>
       <CardFooter className="flex flex-col gap-2">
         <Button onClick={handleAuth} disabled={loading} className="w-full">
-          {loading ? "처리 중..." : isSigningUp ? "회원가입" : "로그인"}
+          {loading ? "Processing..." : isSigningUp ? "Sign Up" : "Log In"}
         </Button>
         <Button
           variant="link"
           className="w-full text-stone-500"
           onClick={() => setIsSigningUp((prev) => !prev)}
         >
-          {isSigningUp ? "이미 계정이 있다면 로그인" : "계정이 없다면 회원가입"}
+          {isSigningUp ? "Already have an account? Log in" : "Need an account? Sign up"}
         </Button>
       </CardFooter>
     </Card>
