@@ -146,7 +146,7 @@ export default function HoverDistortImage({
     animatingRef.current = true;
 
     // 💡 LERP 가중치 상수를 정의합니다. (현재 0.1)
-    const EASING_FACTOR = 0.08;
+    const EASING_FACTOR = 0.1;
 
     const step = () => {
       const cp = currentPctRef.current;
