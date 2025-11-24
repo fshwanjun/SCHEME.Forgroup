@@ -2,6 +2,7 @@
 
 import React from 'react';
 import HoverDistortImage from './HoverDistortImage';
+import Image from 'next/image';
 
 export default function ImageCard({
   projectId,
@@ -43,20 +44,27 @@ export default function ImageCard({
 
   if (!src) return null;
 
+  const altText = projectId ? `Project ${projectId} preview` : 'Project preview';
+  const [width, height] = resolvedOrientation === 'vertical' ? [900, 1200] : [1200, 900];
+
   const imageContent = enableHoverEffect ? (
     <HoverDistortImage
       src={src}
+      alt={altText}
       aspectRatio={computedAspect}
       className="h-full w-full object-cover"
       preserveAspect="xMidYMid slice"
     />
   ) : (
-    <img
+    <Image
       src={src}
-      alt=""
+      alt={altText}
       className="block h-auto w-full object-cover"
       draggable={false}
       style={{ aspectRatio: computedAspect }}
+      width={width}
+      height={height}
+      unoptimized
     />
   );
 

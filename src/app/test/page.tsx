@@ -4,7 +4,6 @@ import { useState } from 'react';
 import HoverDistortImage from '@/components/HoverDistortImage';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 
 export default function TestPage() {
   const [distortionScale, setDistortionScale] = useState(200);

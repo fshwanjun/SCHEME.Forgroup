@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, Upload, X, ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 interface ImageUploaderProps {
   value: string;
@@ -117,7 +118,14 @@ export default function ImageUploader({
       ) : (
         // 미리보기 UI
         <div className="group relative flex aspect-video items-center justify-center overflow-hidden rounded-lg border border-stone-800 bg-stone-900 md:aspect-auto md:h-64">
-          <img src={value} alt="Uploaded preview" className="h-full w-full object-contain" />
+          <Image
+            src={value}
+            alt="Uploaded preview"
+            width={1280}
+            height={720}
+            className="h-full w-full object-contain"
+            unoptimized
+          />
 
           <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
             <Button variant="secondary" size="sm" onClick={() => window.open(value, '_blank')} className="h-8 text-xs">

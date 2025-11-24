@@ -13,7 +13,6 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, rectSortingStr
 import { SortableImageItem } from './SortableImageItem';
 import { Label } from '@/components/ui/label';
 import ImageUploader from './ImageUploader';
-import { useState } from 'react';
 
 export interface DetailImage {
   id: string;

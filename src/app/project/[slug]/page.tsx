@@ -1,6 +1,6 @@
 // app/projects/[slug]/page.tsx
 import { supabase } from '@/lib/supabase';
-import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import Header from '@/components/Header';
 
@@ -107,11 +107,14 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                 <h6>{contents.services}</h6>
               </div>
             </div>
-            <div className="h-full w-full overflow-hidden">
-              <img
+            <div className="relative h-full w-full overflow-hidden">
+              <Image
                 className="h-full w-full object-cover"
                 src="/images/dummy/test-0.jpg"
-                alt="studio"
+                alt={`${contents.project} studio hero image`}
+                width={1920}
+                height={1080}
+                priority
                 draggable={false}
               />
             </div>
@@ -157,51 +160,72 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             </div>
             <div className="flex w-full flex-col gap-16 pb-16">
               <div className="max-h-[90vh] w-full overflow-hidden px-[var(--x-padding)] md:shrink-0">
-                <img
+                <Image
                   className="h-auto w-full max-w-none object-contain"
                   src="/images/dummy/dum-0.jpg"
+                  alt={`${contents.project} gallery image 1`}
+                  width={1920}
+                  height={1080}
                   draggable={false}
                 />
               </div>
               <div className="flex max-h-[90vh] w-full justify-start overflow-hidden px-[var(--x-padding)] md:shrink-0">
-                <img
+                <Image
                   className="h-auto w-[45%] max-w-none object-contain"
                   src="/images/dummy/dum-1.jpg"
+                  alt={`${contents.project} gallery image 2`}
+                  width={1200}
+                  height={1600}
                   draggable={false}
                 />
               </div>
               <div className="flex max-h-[90vh] w-full justify-end overflow-hidden px-[var(--x-padding)] md:shrink-0">
-                <img
+                <Image
                   className="h-auto w-[75%] max-w-none object-contain"
                   src="/images/dummy/dum-2.jpg"
+                  alt={`${contents.project} gallery image 3`}
+                  width={1920}
+                  height={1280}
                   draggable={false}
                 />
               </div>
               <div className="flex max-h-[90vh] w-full justify-start overflow-hidden px-[var(--x-padding)] md:shrink-0">
-                <img
+                <Image
                   className="h-auto w-[45%] max-w-none object-contain"
                   src="/images/dummy/dum-3.jpg"
+                  alt={`${contents.project} gallery image 4`}
+                  width={1200}
+                  height={1600}
                   draggable={false}
                 />
               </div>
               <div className="flex max-h-[90vh] w-full justify-center overflow-hidden px-[var(--x-padding)] md:shrink-0">
-                <img
+                <Image
                   className="h-auto w-[75%] max-w-none object-contain"
                   src="/images/dummy/dum-4.jpg"
+                  alt={`${contents.project} gallery image 5`}
+                  width={1920}
+                  height={1280}
                   draggable={false}
                 />
               </div>
               <div className="flex max-h-full w-full justify-between overflow-hidden md:shrink-0">
-                <img
+                <Image
                   className="h-auto w-full max-w-none object-contain"
                   src="/images/dummy/dum-5.jpg"
+                  alt={`${contents.project} gallery image 6`}
+                  width={1920}
+                  height={1280}
                   draggable={false}
                 />
               </div>
               <div className="flex max-h-full w-full justify-between overflow-hidden md:shrink-0">
-                <img
+                <Image
                   className="h-auto w-full max-w-none object-contain"
                   src="/images/dummy/dum-6.jpg"
+                  alt={`${contents.project} gallery image 7`}
+                  width={1920}
+                  height={1280}
                   draggable={false}
                 />
               </div>

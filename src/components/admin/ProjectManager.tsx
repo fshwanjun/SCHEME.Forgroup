@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardTitle } from '@/components/ui/card';
 import {
   ArrowLeft,
   Trash2,
@@ -212,14 +212,6 @@ export default function ProjectManager() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // 스크롤 이동 함수
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
-
   // 드래그 앤 드롭 센서
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -398,12 +390,6 @@ export default function ProjectManager() {
 
     // 모든 프로젝트의 순서를 업데이트 (Batch Update 권장하지만, 여기선 반복문으로 간단히 구현)
     // Supabase의 rpc를 사용하거나 upsert를 사용하면 더 효율적입니다.
-    const updates = projects.map((project, index) => ({
-      id: project.id,
-      title: project.title, // required for upsert if not using partial
-      display_order: index + 1,
-    }));
-
     // upsert를 사용하여 일괄 업데이트 시도 (PK인 id 기준으로 업데이트됨)
     // 주의: 다른 컬럼 데이터가 덮어씌워지지 않도록 주의. 여기서는 display_order만 업데이트하는 것이 안전.
     // 하지만 upsert는 모든 필수 컬럼을 요구할 수 있으므로, 가장 안전한 방법은 loop update입니다.

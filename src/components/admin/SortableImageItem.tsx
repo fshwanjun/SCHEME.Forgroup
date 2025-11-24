@@ -4,6 +4,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 interface SortableImageItemProps {
   id: string;
@@ -30,10 +31,13 @@ export function SortableImageItem({
       style={style}
       className="relative group aspect-square rounded-lg overflow-hidden border border-stone-800 bg-stone-900"
     >
-      <img
+      <Image
         src={url}
         alt="Project detail"
         className="w-full h-full object-cover"
+        width={600}
+        height={600}
+        unoptimized
       />
 
       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">

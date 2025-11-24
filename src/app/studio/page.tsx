@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 
 import Header from '@/components/Header';
 import HomeContainer from '@/components/HomeContainer';
+import Image from 'next/image';
 
 // 리스트 아이템 타입 정의
 interface ListItem {
@@ -71,7 +72,7 @@ export default async function StudioPage() {
       const content = configData.content;
       const parsed = typeof content === 'string' ? JSON.parse(content) : content;
       data = { ...defaultData, ...parsed };
-    } catch (e) {
+    } catch {
       // 파싱 실패 시 description으로 간주 (구버전 호환)
       if (typeof configData.content === 'string') {
         data.description = configData.content;
@@ -87,11 +88,14 @@ export default async function StudioPage() {
         {/* [좌측] 데스크탑 이미지 영역 (40%) */}
         <div className="relative hidden h-full min-h-0 overflow-hidden md:flex md:max-w-[40%] md:min-w-0 md:flex-[0_0_50%]">
           {data.imageUrl ? (
-            <img
+            <Image
               className="h-full w-auto max-w-full object-contain object-top"
               src={data.imageUrl}
-              alt="Studio"
+              alt="Studio preview"
+              width={1200}
+              height={1600}
               draggable={false}
+              unoptimized
             />
           ) : (
             // 이미지가 없을 때도 같은 영역 차지, 빈 공간 유지
@@ -108,7 +112,15 @@ export default async function StudioPage() {
 
           {/* [모바일 전용] 이미지 */}
           {data.imageUrl && (
-            <img className="block h-auto w-full md:hidden" src={data.imageUrl} alt="Studio" draggable={false} />
+            <Image
+              className="block h-auto w-full md:hidden"
+              src={data.imageUrl}
+              alt="Studio preview mobile"
+              width={1200}
+              height={1600}
+              draggable={false}
+              unoptimized
+            />
           )}
 
           {/* 2. 하단 3열 그리드 정보 */}

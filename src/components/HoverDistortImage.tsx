@@ -12,6 +12,7 @@ export default function HoverDistortImage({
   blurStd = 4, // blur on displacement map to avoid banding
   preserveAspect = 'xMaxYMax',
   distortionEnabled = true,
+  easingFactor = 0.1, // lerp smoothing factor
 }: {
   src: string;
   alt?: string;
@@ -41,6 +42,7 @@ export default function HoverDistortImage({
     | 'xMidYMax slice'
     | 'xMaxYMax slice';
   distortionEnabled?: boolean;
+  easingFactor?: number;
 }) {
   const id = useId().replace(/:/g, '-');
   const filterId = `hover-distort-${id}`;
@@ -146,14 +148,14 @@ export default function HoverDistortImage({
     animatingRef.current = true;
 
     // 💡 LERP 가중치 상수를 정의합니다. (현재 0.1)
-    const EASING_FACTOR = 0.1;
+    const lerpFactor = Math.min(Math.max(easingFactor, 0.01), 1);
 
     const step = () => {
       const cp = currentPctRef.current;
       const tp = targetPctRef.current;
 
-      const nx = cp.x + (tp.x - cp.x) * EASING_FACTOR;
-      const ny = cp.y + (tp.y - cp.y) * EASING_FACTOR;
+      const nx = cp.x + (tp.x - cp.x) * lerpFactor;
+      const ny = cp.y + (tp.y - cp.y) * lerpFactor;
 
       currentPctRef.current = { x: nx, y: ny };
       updateDisplacementMap(nx, ny);
@@ -161,7 +163,7 @@ export default function HoverDistortImage({
       const cs = currentScaleRef.current;
       const ts = targetScaleRef.current;
 
-      const ns = cs + (ts - cs) * EASING_FACTOR;
+      const ns = cs + (ts - cs) * lerpFactor;
 
       currentScaleRef.current = ns;
       if (feDispRef.current) {
@@ -179,7 +181,7 @@ export default function HoverDistortImage({
       animRafRef.current = requestAnimationFrame(step);
     };
     animRafRef.current = requestAnimationFrame(step);
-  }, [distortionEnabled, updateDisplacementMap]);
+  }, [distortionEnabled, easingFactor, updateDisplacementMap]);
 
   const handleEnter = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -261,6 +263,9 @@ export default function HoverDistortImage({
       ref={wrapperRef}
       {...eventHandlers}
       className={`relative ${className ?? ''}`}
+      role={alt ? 'img' : undefined}
+      aria-label={alt || undefined}
+      aria-hidden={alt ? undefined : 'true'}
       style={
         {
           aspectRatio: aspectRatio,
