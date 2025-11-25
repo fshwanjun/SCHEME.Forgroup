@@ -1,21 +1,38 @@
 'use client';
 
-import { useEffect, useMemo, useState, useRef, useCallback, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState, useRef, type CSSProperties } from 'react';
+import { motion } from 'framer-motion';
+import { usePathname } from 'next/navigation';
 import HoverDistortImage from '@/components/HoverDistortImage';
 import HomeContainer from '@/components/HomeContainer';
 import Header from '@/components/Header';
+import ProjectDetailContent from '@/components/ProjectDetailContent';
 import { useIntersection } from '@/hooks/useIntersectionObserver';
 import { supabase } from '@/lib/supabase';
 
 interface ProjectContent {
   thumbnail43?: string;
   thumbnail34?: string;
+  project?: string;
+  year?: number;
+  client?: string;
+  services?: string;
+  product?: string;
+  keyword?: string[];
+  challenge?: string;
+  detailImages?: Array<{
+    id: string;
+    url: string;
+    orientation?: 'horizontal' | 'vertical';
+    position?: 'left' | 'center' | 'right' | 'full-cover' | 'full-padding';
+  }>;
 }
 
 interface Project {
   id: number;
   slug: string;
   title: string;
+  description: string;
   contents?: ProjectContent;
 }
 
@@ -52,7 +69,15 @@ const COVER_FRAMES: Array<{
   { marginTop: '118vh', marginLeft: '52%', width: '38vw', orientation: 'horizontal', zIndex: 2 },
 ];
 
+interface SelectedImage {
+  projectId: string;
+  slug: string;
+  rect: DOMRect;
+  imageSrc: string;
+}
+
 export default function ProjectPage() {
+  const pathname = usePathname();
   const [expanded, setExpanded] = useState(false);
   // section ID 배열: 초기값 [0, 1, 2] (3개 section) - 홈 페이지와 동일한 방식
   const [sectionIds, setSectionIds] = useState<number[]>([0, 1, 2]);
@@ -60,6 +85,14 @@ export default function ProjectPage() {
   const triggeredRef = useRef(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<SelectedImage | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [zoomStyle, setZoomStyle] = useState({ x: 0, y: 0, scale: 1, originX: 0, originY: 0 });
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const isInitialZoomRef = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scrollPositionRef = useRef<number>(0);
 
   // 프로젝트 목록 가져오기
   useEffect(() => {
@@ -67,7 +100,7 @@ export default function ProjectPage() {
       try {
         const { data, error } = await supabase
           .from('project')
-          .select('id, slug, title, contents')
+          .select('id, slug, title, description, contents')
           .eq('status', 'published')
           .order('display_order', { ascending: true });
 
@@ -85,6 +118,50 @@ export default function ProjectPage() {
 
     fetchProjects();
   }, []);
+
+  // 선택된 이미지에 해당하는 프로젝트 상세 정보 가져오기
+  useEffect(() => {
+    if (!selected) {
+      setSelectedProject(null);
+      return;
+    }
+
+    // projectId를 사용해서 정확한 프로젝트 찾기
+    const fetchProjectDetail = async () => {
+      try {
+        console.log('Fetching project detail for:', { projectId: selected.projectId, slug: selected.slug });
+        const { data, error } = await supabase
+          .from('project')
+          .select('id, slug, title, description, contents')
+          .eq('id', parseInt(selected.projectId))
+          .single();
+
+        if (!error && data) {
+          console.log('Project found by ID:', data);
+          setSelectedProject(data as Project);
+        } else {
+          console.error('Error fetching project detail by ID:', error);
+          // projectId로 찾지 못하면 slug로 시도
+          const { data: slugData, error: slugError } = await supabase
+            .from('project')
+            .select('id, slug, title, description, contents')
+            .eq('slug', selected.slug)
+            .single();
+
+          if (!slugError && slugData) {
+            console.log('Project found by slug:', slugData);
+            setSelectedProject(slugData as Project);
+          } else {
+            console.error('Error fetching project by slug:', slugError);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching project detail:', error);
+      }
+    };
+
+    fetchProjectDetail();
+  }, [selected]);
 
   useEffect(() => {
     const t = setTimeout(() => setExpanded(true), 80);
@@ -212,10 +289,44 @@ export default function ProjectPage() {
 
         const src = frame.orientation === 'vertical' ? image.verticalSrc : image.horizontalSrc;
 
+        const handleImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
+          e.preventDefault();
+          e.stopPropagation();
+
+          const rect = e.currentTarget.getBoundingClientRect();
+          const rectData: DOMRect = {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+            bottom: rect.bottom,
+            right: rect.right,
+            x: rect.x,
+            y: rect.y,
+            toJSON: rect.toJSON,
+          } as DOMRect;
+
+          // 이미지 선택 (클릭한 이미지의 src 저장)
+          console.log('Image clicked:', { projectId: image.projectId, slug: image.slug, src });
+          isInitialZoomRef.current = true;
+          setSelected({
+            projectId: image.projectId,
+            slug: image.slug,
+            rect: rectData,
+            imageSrc: src,
+          });
+        };
+
+        const isSelected = selected?.projectId === image.projectId;
+        const isOtherSelected = selected != null && !isSelected;
+
         return (
           <div
+            id={`project-${image.projectId}`}
             key={`frame-${index}-${frame.marginTop}-${frame.marginLeft ?? frame.marginRight ?? index}`}
-            style={baseStyle}>
+            style={baseStyle}
+            onClick={handleImageClick}
+            className={`cursor-pointer ${isSelected ? 'z-50' : ''} ${isOtherSelected ? 'pointer-events-none' : ''}`}>
             <HoverDistortImage
               src={src}
               alt={`Project ${image.slug || globalIndex + 1}`}
@@ -223,7 +334,7 @@ export default function ProjectPage() {
               aspectRatio={frame.orientation === 'vertical' ? '3 / 4' : '4 / 3'}
               distortionScale={200}
               radiusPx={400}
-              distortionEnabled={true}
+              distortionEnabled={!isSelected && !isOtherSelected}
             />
           </div>
         );
@@ -251,7 +362,7 @@ export default function ProjectPage() {
         </div>
       );
     });
-  }, [expanded, sectionIds, projectImages, loading, triggerElement]);
+  }, [expanded, sectionIds, projectImages, loading, triggerElement, selected]);
 
   const containerStyle = useMemo<CSSProperties>(() => {
     return expanded
@@ -266,14 +377,228 @@ export default function ProjectPage() {
         };
   }, [expanded]);
 
+  // 확대 계산 (홈 페이지와 동일한 로직)
+  useEffect(() => {
+    const calculateZoom = () => {
+      if (!selected) {
+        setZoomStyle((prev) => ({ ...prev, x: 0, y: 0, scale: 1 }));
+        setShowDetailModal(false);
+        setIsAnimating(false);
+        // URL만 복원 (페이지 이동 없음)
+        if (pathname.startsWith('/project/') && pathname !== '/project') {
+          window.history.pushState({}, '', '/project');
+        }
+        // 스크롤 및 상호작용 복원
+        document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        document.body.style.pointerEvents = '';
+        document.body.style.userSelect = '';
+        if (scrollPositionRef.current !== undefined) {
+          window.scrollTo(0, scrollPositionRef.current);
+        }
+        return;
+      }
+
+      let rect = selected.rect;
+
+      // 최초 줌(클릭 직후)이 아니고, 리사이즈 등으로 인해 다시 계산해야 할 때만 역산 로직 수행
+      if (!isInitialZoomRef.current) {
+        const element = document.getElementById(`project-${selected.projectId}`);
+        if (element) {
+          // 현재(변환된) rect 가져오기
+          const currentRect = element.getBoundingClientRect();
+          const currentScale = zoomStyle.scale;
+          const currentX = zoomStyle.x;
+          const currentY = zoomStyle.y;
+          const currentOriginX = zoomStyle.originX;
+          const currentOriginY = zoomStyle.originY;
+          const currentScrollX = window.scrollX;
+          const currentScrollY = window.scrollY;
+
+          // 역산 로직: 변환된 좌표에서 원본 페이지 좌표 유추
+          if (currentScale > 1.01) {
+            const cxView = currentRect.left + currentRect.width / 2;
+            const cyView = currentRect.top + currentRect.height / 2;
+
+            const cxPage = currentOriginX + (cxView - currentX + currentScrollX - currentOriginX) / currentScale;
+            const cyPage = currentOriginY + (cyView - currentY + currentScrollY - currentOriginY) / currentScale;
+
+            const wPage = currentRect.width / currentScale;
+            const hPage = currentRect.height / currentScale;
+
+            rect = {
+              left: cxPage - wPage / 2 - currentScrollX,
+              top: cyPage - hPage / 2 - currentScrollY,
+              width: wPage,
+              height: hPage,
+              bottom: cyPage + hPage / 2 - currentScrollY,
+              right: cxPage + wPage / 2 - currentScrollX,
+            } as DOMRect;
+          }
+        }
+      }
+
+      // 계산 후 초기 플래그 해제
+      isInitialZoomRef.current = false;
+
+      if (!rect) return;
+
+      // window를 cover로 꽉 채우도록 스케일 계산
+      // width와 height 중 더 큰 scale을 사용하여 화면을 완전히 덮도록 함
+      const scaleX = window.innerWidth / rect.width;
+      const scaleY = window.innerHeight / rect.height;
+      const scale = Math.max(scaleX, scaleY);
+
+      // Transform Origin 설정
+      let originX = 0;
+      let originY = 0;
+
+      if (containerRef.current) {
+        const containerRect = containerRef.current.getBoundingClientRect();
+        // 뷰포트 좌상단(0,0)은 motion.div의 좌상단으로부터 (-left, -top) 만큼 떨어져 있음
+        originX = -containerRect.left;
+        originY = -containerRect.top;
+      } else {
+        // fallback (초기 로드 등)
+        originX = window.scrollX;
+        originY = window.scrollY;
+      }
+
+      // 이미지의 중심 좌표 (뷰포트 기준)
+      const imageCenterX = rect.left + rect.width / 2;
+      const imageCenterY = rect.top + rect.height / 2;
+
+      // 화면의 중심 좌표 (뷰포트 기준)
+      const screenCenterX = window.innerWidth / 2;
+      const screenCenterY = window.innerHeight / 2;
+
+      // 목표: 이미지의 중심을 화면의 중심으로 이동
+      // Translate = ScreenCenter - ImageCenter * Scale
+      const tx = screenCenterX - imageCenterX * scale;
+      const ty = screenCenterY - imageCenterY * scale;
+
+      setZoomStyle({ x: tx, y: ty, scale, originX, originY });
+
+      // 확대 애니메이션 시작 - 모든 상호작용 차단
+      setIsAnimating(true);
+      scrollPositionRef.current = window.scrollY;
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollPositionRef.current}px`;
+      document.body.style.width = '100%';
+      document.body.style.pointerEvents = 'none';
+      document.body.style.userSelect = 'none';
+
+      // 확대 애니메이션 완료 후 모달 표시 및 스크롤 허용
+      setTimeout(() => {
+        setShowDetailModal(true);
+        setIsAnimating(false);
+        // URL만 업데이트 (페이지 이동 없음)
+        if (selected.slug) {
+          window.history.pushState({}, '', `/project/${selected.slug}`);
+        }
+        // 애니메이션 완료 후 스크롤 허용
+        document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        document.body.style.pointerEvents = '';
+        document.body.style.userSelect = '';
+        if (scrollPositionRef.current !== undefined) {
+          window.scrollTo(0, scrollPositionRef.current);
+        }
+      }, 800); // 확대 애니메이션 duration과 동일
+    };
+
+    calculateZoom();
+
+    // 윈도우 리사이즈 시 줌 아웃
+    const handleResize = () => {
+      setSelected(null);
+      isInitialZoomRef.current = false;
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected]);
+
+  // ESC 키로 모달 닫기
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showDetailModal) {
+        setSelected(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [showDetailModal]);
+
   return (
     <>
       <Header isFixed={true} />
-      <HomeContainer>
-        <div className="relative flex w-full flex-col" style={containerStyle}>
-          {sections}
+      <motion.div
+        ref={containerRef}
+        animate={{
+          x: zoomStyle.x,
+          y: zoomStyle.y,
+          scale: zoomStyle.scale,
+        }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        style={{
+          transformOrigin: `${zoomStyle.originX}px ${zoomStyle.originY}px`,
+          width: '100%',
+          pointerEvents: isAnimating ? 'none' : 'auto',
+        }}>
+        <HomeContainer isFixed={false}>
+          <div className="relative flex w-full flex-col" style={containerStyle}>
+            {sections}
+          </div>
+        </HomeContainer>
+      </motion.div>
+
+      {/* 확대 애니메이션 중 오버레이 (모든 상호작용 차단) */}
+      {isAnimating && (
+        <div
+          className="fixed inset-0 z-[300] bg-transparent"
+          style={{
+            pointerEvents: 'all',
+            userSelect: 'none',
+            touchAction: 'none',
+          }}
+          onMouseDown={(e) => e.preventDefault()}
+          onMouseMove={(e) => e.preventDefault()}
+          onClick={(e) => e.preventDefault()}
+        />
+      )}
+
+      {/* 상세 페이지 모달 (확대 애니메이션 완료 후 표시) */}
+      {selectedProject && selectedProject.contents && (
+        <div
+          className={`fixed inset-0 z-[200] overflow-y-auto bg-white ${
+            showDetailModal ? 'opacity-100' : 'pointer-events-none opacity-0'
+          }`}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && showDetailModal) {
+              setSelected(null);
+            }
+          }}>
+          <main className="w-ful relative h-full">
+            {selectedProject.contents && (
+              <ProjectDetailContent
+                contents={selectedProject.contents}
+                title={selectedProject.title}
+                heroImageSrc={selected?.imageSrc}
+              />
+            )}
+          </main>
         </div>
-      </HomeContainer>
+      )}
     </>
   );
 }

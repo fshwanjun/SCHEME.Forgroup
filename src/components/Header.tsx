@@ -21,7 +21,7 @@ export default function Header({ isFixed = true }: { isFixed?: boolean }) {
     <header
       className={cn(
         'w-full text-white mix-blend-difference',
-        isFixed ? 'pointer-events-none fixed top-0 z-50 px-5 pt-5' : 'relative',
+        isFixed ? 'pointer-events-none fixed top-0 z-[250] px-5 pt-5' : 'relative',
       )}>
       <div className="relative mx-auto flex items-start justify-between">
         <Link href="/" className="pointer-events-auto select-none">
