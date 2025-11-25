@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import useWindowSize from '@/hooks/useWindowSize';
 
@@ -15,12 +15,20 @@ const navItems = [
 export default function MobileMenu({ onProjectClick }: { onProjectClick?: () => void }) {
   const pathname = usePathname();
   const windowSize = useWindowSize();
-  const isMobile = windowSize.isSm;
+  const [isMobile, setIsMobile] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // 클라이언트 사이드에서만 모바일 여부 업데이트 (hydration 불일치 방지)
+  useEffect(() => {
+    setMounted(true);
+    setIsMobile(windowSize.isSm);
+  }, [windowSize.isSm]);
 
   const isVisible = pathname === '/' || pathname === '/studio' || pathname.startsWith('/project');
 
-  if (!isVisible || !isMobile) return null;
+  // Hydration 불일치 방지: 마운트 전에는 렌더링하지 않음
+  if (!mounted || !isVisible || !isMobile) return null;
 
   const handleProjectClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (onProjectClick) {

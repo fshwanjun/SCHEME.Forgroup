@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import LogoInline from './LogoInline';
 import { cn } from '@/lib/utils';
 import useWindowSize from '@/hooks/useWindowSize';
@@ -13,8 +14,15 @@ const navItems = [
 
 export default function Header({ isFixed = true, onProjectClick }: { isFixed?: boolean; onProjectClick?: () => void }) {
   const pathname = usePathname();
+  const [isMobile, setIsMobile] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const windowSize = useWindowSize();
-  const isMobile = windowSize.isSm;
+
+  // 클라이언트 사이드에서만 모바일 여부 업데이트 (hydration 불일치 방지)
+  useEffect(() => {
+    setMounted(true);
+    setIsMobile(windowSize.isSm);
+  }, [windowSize.isSm]);
 
   const isVisible = pathname === '/' || pathname === '/studio' || pathname.startsWith('/project');
 
@@ -32,9 +40,10 @@ export default function Header({ isFixed = true, onProjectClick }: { isFixed?: b
       className={cn(
         'w-full text-white mix-blend-difference',
         isFixed
-          ? `pointer-events-none fixed top-0 z-[350] pt-5 ${isMobile ? 'px-4' : 'px-5'}`
-          : `relative z-[350] ${isMobile ? 'px-4' : 'px-5'}`,
-      )}>
+          ? 'pointer-events-none fixed top-0 z-[350] pt-5 px-4 md:px-5'
+          : 'relative z-[350] px-4 md:px-5',
+      )}
+      suppressHydrationWarning>
       <div className="relative mx-auto flex items-start justify-between">
         <Link href="/" className="pointer-events-auto select-none">
           <LogoInline
@@ -46,8 +55,8 @@ export default function Header({ isFixed = true, onProjectClick }: { isFixed?: b
             key={pathname === '/' ? 'home-logo' : 'sub-logo'}
           />
         </Link>
-        {/* 데스크톱 네비게이션 */}
-        {!isMobile && (
+        {/* 데스크톱 네비게이션 - Hydration 불일치 방지를 위해 마운트 후에만 조건부 렌더링 */}
+        {mounted && !isMobile && (
           <nav className="flex gap-5">
             {navItems.map(({ href, label }) => {
               const active = pathname === href || (href !== '/' && pathname.startsWith(href));

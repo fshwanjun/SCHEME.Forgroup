@@ -214,16 +214,26 @@ type HomeGalleryProps = {
 export default function HomeGallery({ images = [], onSelectImage, selectedProjectId }: HomeGalleryProps) {
   // 화면 크기 감지
   const windowSize = useWindowSize();
-  const isMobile = windowSize.isSm; // 768px 미만이면 모바일
+  const [isMobile, setIsMobile] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  // 모바일 여부에 따라 사용할 프레임 클래스 선택
-  const currentFrameClasses = useMemo(() => (isMobile ? MOBILE_FRAME_CLASSES : FRAME_CLASSES), [isMobile]);
+  // 클라이언트 사이드에서만 모바일 여부 업데이트 (hydration 불일치 방지)
+  useEffect(() => {
+    setMounted(true);
+    setIsMobile(windowSize.isSm);
+  }, [windowSize.isSm]);
 
-  // 모바일 여부에 따라 gap 설정
-  const gap = useMemo(() => (isMobile ? 10 : 20), [isMobile]);
+  // 모바일 여부에 따라 사용할 프레임 클래스 선택 (마운트 전에는 데스크톱 기본값)
+  const currentFrameClasses = useMemo(
+    () => (mounted && isMobile ? MOBILE_FRAME_CLASSES : FRAME_CLASSES),
+    [mounted, isMobile],
+  );
 
-  // 모바일 여부에 따라 좌우 여백 설정
-  const horizontalPadding = useMemo(() => (isMobile ? 10 : 20), [isMobile]);
+  // 모바일 여부에 따라 gap 설정 (마운트 전에는 데스크톱 기본값)
+  const gap = useMemo(() => (mounted && isMobile ? 10 : 20), [mounted, isMobile]);
+
+  // 모바일 여부에 따라 좌우 여백 설정 (마운트 전에는 데스크톱 기본값)
+  const horizontalPadding = useMemo(() => (mounted && isMobile ? 10 : 20), [mounted, isMobile]);
 
   // 🌟 수정: 건너뛸 행의 개수를 저장하는 상태입니다.
   const [skipRows, setSkipRows] = useState(0);
