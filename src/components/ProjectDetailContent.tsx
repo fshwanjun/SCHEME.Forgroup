@@ -122,7 +122,6 @@ export default function ProjectDetailContent({
         <div className="flex w-full flex-col gap-16">
           {contents.detailImages.map((detailImage, index) => {
             const position = detailImage.position || 'center';
-            const orientation = detailImage.orientation || 'horizontal';
 
             // position에 따른 justify 클래스 결정
             const getPositionClasses = () => {
@@ -195,10 +194,13 @@ export default function ProjectDetailContent({
               <div
                 key={detailImage.id || index}
                 className={`flex max-h-[90vh] w-full ${getPositionClasses()} overflow-hidden ${getPaddingClasses()} md:shrink-0 ${getContainerHeightClass()}`}>
-                <img
+                <Image
                   className={`${getHeightClasses()} ${getWidthClasses()} ${getObjectFitClasses()}`}
                   src={detailImage.url}
-                  alt={`${contents.project} gallery image ${index + 1}`}
+                  alt={`${contents.project || 'Project'} gallery image ${index + 1}`}
+                  width={1920}
+                  height={1080}
+                  unoptimized
                   draggable={false}
                   style={{ maxHeight: '90vh' }}
                 />

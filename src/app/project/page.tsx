@@ -362,7 +362,7 @@ export default function ProjectPage() {
         </div>
       );
     });
-  }, [expanded, sectionIds, projectImages, loading, triggerElement, selected]);
+  }, [expanded, sectionIds, projectImages, loading, selected]);
 
   const containerStyle = useMemo<CSSProperties>(() => {
     return expanded

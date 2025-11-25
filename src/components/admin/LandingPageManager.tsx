@@ -101,12 +101,13 @@ function SortableLandingImageItem({
 
       {/* 썸네일 */}
       <div className="relative h-16 shrink-0 overflow-hidden rounded bg-stone-950" style={{ maxWidth: '96px' }}>
-        <img
+        <Image
           src={image.url}
           alt="Landing page image"
           className="h-full w-auto object-contain"
           width={96}
           height={64}
+          unoptimized
         />
       </div>
 

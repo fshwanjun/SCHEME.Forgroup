@@ -316,7 +316,7 @@ export default function Home() {
           </div>
         );
       }),
-    [sectionIds, handleSelectImage, selected?.projectId],
+    [sectionIds, handleSelectImage, selected?.projectId, landingImages],
   );
 
   return (

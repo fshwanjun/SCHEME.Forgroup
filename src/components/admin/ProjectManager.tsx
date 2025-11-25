@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import ImageUploader from './ImageUploader';
 import SortableImageList, { DetailImage } from './SortableImageList';
+import Image from 'next/image';
 import Link from 'next/link';
 import {
   DndContext,
@@ -799,10 +800,13 @@ export default function ProjectManager() {
                   {/* 가로형 썸네일 */}
                   {item.contents?.thumbnail43 && (
                     <div className="relative h-48 w-full overflow-hidden bg-stone-950">
-                      <img
+                      <Image
                         src={item.contents.thumbnail43}
                         alt={item.title}
+                        width={400}
+                        height={300}
                         className="h-full w-full object-cover"
+                        unoptimized
                         onClick={(e) => e.stopPropagation()}
                       />
                     </div>
