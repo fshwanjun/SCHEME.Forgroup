@@ -10,13 +10,7 @@ const navItems = [
   { href: '/studio', label: 'Studio' },
 ];
 
-export default function Header({
-  isFixed = true,
-  onProjectClick,
-}: {
-  isFixed?: boolean;
-  onProjectClick?: () => void;
-}) {
+export default function Header({ isFixed = true, onProjectClick }: { isFixed?: boolean; onProjectClick?: () => void }) {
   const pathname = usePathname();
 
   const isVisible = pathname === '/' || pathname === '/studio' || pathname.startsWith('/project');

@@ -69,13 +69,7 @@ const detectImageOrientation = async (urlOrFile: string | File): Promise<'horizo
 };
 
 // Sortable Image Item
-function SortableLandingImageItem({
-  image,
-  onRemove,
-}: {
-  image: LandingPageImage;
-  onRemove: (id: string) => void;
-}) {
+function SortableLandingImageItem({ image, onRemove }: { image: LandingPageImage; onRemove: (id: string) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: image.id });
 
   const style = {
@@ -119,9 +113,7 @@ function SortableLandingImageItem({
       </div>
 
       {/* 이미지 URL 표시 */}
-      <div className="flex-1 truncate text-sm text-stone-300">
-        {image.url.split('/').pop()}
-      </div>
+      <div className="flex-1 truncate text-sm text-stone-300">{image.url.split('/').pop()}</div>
 
       {/* 삭제 버튼 */}
       <Button
@@ -161,11 +153,7 @@ export default function LandingPageManager() {
     const fetchImages = async () => {
       setLoading(true);
       try {
-        const { data: configData } = await supabase
-          .from('config')
-          .select('content')
-          .eq('id', 'landing')
-          .single();
+        const { data: configData } = await supabase.from('config').select('content').eq('id', 'landing').single();
 
         if (configData?.content && typeof configData.content === 'object' && 'images' in configData.content) {
           const landingImages = (configData.content as { images: LandingPageImage[] }).images || [];
@@ -202,10 +190,12 @@ export default function LandingPageManager() {
   const handleRemoveImage = async (id: string) => {
     if (!confirm('Do you want to delete this image?')) return;
 
-    const updatedImages = images.filter((img) => img.id !== id).map((img, index) => ({
-      ...img,
-      order: index,
-    }));
+    const updatedImages = images
+      .filter((img) => img.id !== id)
+      .map((img, index) => ({
+        ...img,
+        order: index,
+      }));
     setImages(updatedImages);
   };
 
@@ -213,12 +203,10 @@ export default function LandingPageManager() {
   const saveImages = async (imagesToSave: LandingPageImage[]) => {
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('config')
-        .upsert({
-          id: 'landing',
-          content: { images: imagesToSave },
-        });
+      const { error } = await supabase.from('config').upsert({
+        id: 'landing',
+        content: { images: imagesToSave },
+      });
 
       if (error) {
         console.error('Save error:', error);
@@ -359,9 +347,7 @@ export default function LandingPageManager() {
           onDrop={handleDrop}
           className={cn(
             'relative rounded-lg border-2 border-dashed transition-colors',
-            isDragging
-              ? 'border-stone-500 bg-stone-800/50'
-              : 'border-stone-800 bg-stone-900/30',
+            isDragging ? 'border-stone-500 bg-stone-800/50' : 'border-stone-800 bg-stone-900/30',
             isUploading && 'pointer-events-none opacity-50',
           )}>
           {isDragging && (
@@ -428,4 +414,3 @@ export default function LandingPageManager() {
     </Card>
   );
 }
-
