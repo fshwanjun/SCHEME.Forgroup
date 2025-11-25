@@ -4,13 +4,13 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
-import { Loader2, FileText, FolderKanban, LogOut, Menu, X } from 'lucide-react';
+import { Loader2, FileText, FolderKanban, Home, LogOut, Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AdminShellProps {
   children: React.ReactNode;
-  activeTab: 'studio' | 'project';
-  onTabChange: (tab: 'studio' | 'project') => void;
+  activeTab: 'studio' | 'project' | 'landing';
+  onTabChange: (tab: 'studio' | 'project' | 'landing') => void;
 }
 
 export default function AdminShell({ children, activeTab, onTabChange }: AdminShellProps) {
@@ -145,6 +145,20 @@ export default function AdminShell({ children, activeTab, onTabChange }: AdminSh
                 <FolderKanban className="h-4 w-4" />
                 Projects
               </button>
+              <button
+                onClick={() => {
+                  onTabChange('landing');
+                  setIsMobileOpen(false);
+                }}
+                className={cn(
+                  'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                  activeTab === 'landing'
+                    ? 'bg-stone-800 text-white'
+                    : 'text-stone-400 hover:bg-stone-900 hover:text-stone-100',
+                )}>
+                <Home className="h-4 w-4" />
+                Landing Page
+              </button>
             </nav>
           </div>
         </div>
@@ -170,7 +184,11 @@ export default function AdminShell({ children, activeTab, onTabChange }: AdminSh
       <div className="flex min-h-screen flex-col bg-stone-950/50 transition-all duration-300 md:pl-64">
         <header className="sticky top-0 z-10 hidden h-16 items-center justify-between border-b border-stone-800 bg-stone-950/50 px-8 backdrop-blur-sm md:flex">
           <h2 className="text-lg font-semibold text-stone-100">
-            {activeTab === 'studio' ? 'Studio Management' : 'Project Management'}
+            {activeTab === 'studio'
+              ? 'Studio Management'
+              : activeTab === 'project'
+                ? 'Project Management'
+                : 'Landing Page Management'}
           </h2>
           {/* Optional: Add header actions here */}
         </header>

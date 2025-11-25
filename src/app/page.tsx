@@ -7,17 +7,58 @@ import { motion } from 'framer-motion';
 import { useIntersection } from '@/hooks/useIntersectionObserver';
 import Header from '@/components/Header';
 import IntroLogo from '@/components/IntroLogo';
+import { supabase } from '@/lib/supabase';
+
+// Landing Page 이미지 타입 정의
+interface LandingPageImage {
+  id: string;
+  url: string;
+  order: number;
+  orientation?: 'horizontal' | 'vertical';
+}
 
 export default function Home() {
   // section ID 배열: 초기값 [0, 1, 2] (3개 section)
   const [sectionIds, setSectionIds] = useState<number[]>([0, 1, 2]);
   const [selected, setSelected] = useState<GallerySelection | null>(null);
   const [zoomStyle, setZoomStyle] = useState({ x: 0, y: 0, scale: 1, originX: 0, originY: 0 });
+  const [landingImages, setLandingImages] = useState<
+    Array<{ projectId: string; verticalSrc: string; horizontalSrc: string }>
+  >([]);
 
   const [triggerElement, setTriggerElement] = useState<HTMLElement | null>(null);
   const triggeredRef = useRef(false);
   const isInitialZoomRef = useRef(false); // 최초 줌 계산 여부 추적
   const containerRef = useRef<HTMLDivElement>(null); // motion.div 참조 추가
+
+  // Landing Page 이미지 불러오기
+  useEffect(() => {
+    const fetchLandingImages = async () => {
+      try {
+        const { data: configData } = await supabase.from('config').select('content').eq('id', 'landing').single();
+
+        if (configData?.content && typeof configData.content === 'object' && 'images' in configData.content) {
+          const images = (configData.content as { images: LandingPageImage[] }).images || [];
+          // order 기준으로 정렬
+          const sortedImages = [...images].sort((a, b) => (a.order || 0) - (b.order || 0));
+
+          // ProjectImage 형식으로 변환
+          // 모든 이미지는 동일한 URL을 사용하되, 프레임의 orientation에 맞게 표시됨
+          const projectImages = sortedImages.map((img) => ({
+            projectId: img.id,
+            verticalSrc: img.url,
+            horizontalSrc: img.url,
+          }));
+
+          setLandingImages(projectImages);
+        }
+      } catch (error) {
+        console.error('Landing page images load error:', error);
+      }
+    };
+
+    fetchLandingImages();
+  }, []);
 
   // 페이지 로드 시 스크롤 최상단 이동 및 복원 방지
   useEffect(() => {
@@ -267,7 +308,11 @@ export default function Home() {
 
         return (
           <div key={id} ref={isTrigger ? setTriggerElement : null} data-section-id={id} data-is-trigger={isTrigger}>
-            <HomeGallery onSelectImage={handleSelectImage} selectedProjectId={selected?.projectId ?? null} />
+            <HomeGallery
+              images={landingImages}
+              onSelectImage={handleSelectImage}
+              selectedProjectId={selected?.projectId ?? null}
+            />
           </div>
         );
       }),

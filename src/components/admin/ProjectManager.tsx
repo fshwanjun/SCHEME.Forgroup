@@ -328,17 +328,43 @@ export default function ProjectManager() {
       } else {
         alert('Error during processing: ' + error.message);
       }
+      setLoading(false);
     } else {
-      setTitle('');
-      setDescription('');
-      setSlug('');
-      setStatus('ready');
-      setIsEditing(false);
-      setEditingId(null);
-      setIsDialogOpen(false);
+      // 저장 성공 시 새로고침하여 최신 데이터 가져오기
       setRefreshTrigger((prev) => prev + 1);
+
+      // 수정 모드인 경우 편집 화면 유지
+      if (isEditing && editingId) {
+        // 최신 데이터를 다시 로드하여 편집 폼에 반영
+        const { data: updatedProject } = await supabase.from('project').select('*').eq('id', editingId).single();
+
+        if (updatedProject) {
+          setTitle(updatedProject.title);
+          setDescription(updatedProject.description);
+          setSlug(updatedProject.slug);
+          setStatus(updatedProject.status || 'ready');
+
+          // 컨텐츠 데이터 업데이트
+          if (updatedProject.contents) {
+            setContentData({ ...defaultContent, ...updatedProject.contents });
+          }
+        }
+
+        alert('Project updated successfully.');
+      } else {
+        // 새 프로젝트 생성 시에는 폼 초기화하고 다이얼로그 닫기
+        setTitle('');
+        setDescription('');
+        setSlug('');
+        setStatus('ready');
+        setContentData(defaultContent);
+        setIsEditing(false);
+        setEditingId(null);
+        setIsDialogOpen(false);
+        alert('Project created successfully.');
+      }
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   // 4. 프로젝트 삭제 (Delete)
@@ -447,18 +473,33 @@ export default function ProjectManager() {
       {/* ===== 입력/수정 폼 (List를 대체하여 표시) ===== */}
       {isDialogOpen ? (
         <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-          <div className="mb-6 flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={handleCancel} className="text-stone-400 hover:text-stone-100">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h3 className="text-xl font-semibold text-stone-100">
-                {isEditing ? 'Edit Project' : 'Register New Project'}
-              </h3>
-              <p className="text-sm text-stone-400">
-                {isEditing ? 'Edit existing project content.' : 'Add a new project.'}
-              </p>
+          <div className="mb-6 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleCancel}
+                className="text-stone-400 hover:text-stone-100">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div>
+                <h3 className="text-xl font-semibold text-stone-100">
+                  {isEditing ? 'Edit Project' : 'Register New Project'}
+                </h3>
+                <p className="text-sm text-stone-400">
+                  {isEditing ? 'Edit existing project content.' : 'Add a new project.'}
+                </p>
+              </div>
             </div>
+            {isEditing && editingId && slug && (
+              <Link href={`/project/${slug}`} target="_blank">
+                <Button
+                  variant="outline"
+                  className="gap-2 border-stone-700 bg-stone-800 text-stone-200 hover:border-stone-600 hover:bg-stone-200 hover:text-stone-900">
+                  View Project <ExternalLink className="h-4 w-4" />
+                </Button>
+              </Link>
+            )}
           </div>
 
           <Card className="border-stone-800 bg-stone-900">
@@ -754,64 +795,77 @@ export default function ProjectManager() {
                 <Card
                   key={item.id}
                   onClick={() => handleEdit(item)}
-                  className={`flex h-full cursor-pointer flex-col border-stone-800 bg-stone-900 p-5 shadow-sm transition-all hover:border-stone-600 hover:shadow-md`}>
-                  <div className="mb-4 flex-1">
-                    <div className="mb-2 flex items-center justify-between">
-                      <CardTitle className="truncate text-lg text-stone-200">{item.title}</CardTitle>
-                      <span
-                        className={`rounded border px-1.5 py-0.5 text-[10px] tracking-wider uppercase ${
-                          statusColors[item.status] || statusColors.ready
-                        }`}>
-                        {item.status}
-                      </span>
-                    </div>
-
-                    <div className="mb-3 flex items-center gap-2">
-                      <span className="rounded border border-stone-700 bg-stone-800 px-2 py-0.5 font-mono text-xs text-stone-400">
-                        /{item.slug}
-                      </span>
-                      <Link
-                        href={`/project/${item.slug}`}
-                        target="_blank"
+                  className={`flex h-full cursor-pointer flex-col overflow-hidden border-stone-800 bg-stone-900 shadow-sm transition-all hover:border-stone-600 hover:shadow-md`}>
+                  {/* 가로형 썸네일 */}
+                  {item.contents?.thumbnail43 && (
+                    <div className="relative h-48 w-full overflow-hidden bg-stone-950">
+                      <img
+                        src={item.contents.thumbnail43}
+                        alt={item.title}
+                        className="h-full w-full object-cover"
                         onClick={(e) => e.stopPropagation()}
-                        className="text-stone-600 transition-colors hover:text-stone-300"
-                        title="새 탭에서 보기">
-                        <ExternalLink className="h-3 w-3" />
-                      </Link>
+                      />
                     </div>
-                    <CardDescription className="line-clamp-3 text-stone-400">{item.description}</CardDescription>
-                  </div>
+                  )}
+                  <div className="flex flex-1 flex-col p-5">
+                    <div className="mb-4 flex-1">
+                      <div className="mb-2 flex items-center justify-between">
+                        <CardTitle className="truncate text-lg text-stone-200">{item.title}</CardTitle>
+                        <span
+                          className={`rounded border px-1.5 py-0.5 text-[10px] tracking-wider uppercase ${
+                            statusColors[item.status] || statusColors.ready
+                          }`}>
+                          {item.status}
+                        </span>
+                      </div>
 
-                  <div className="flex items-center justify-between border-t border-stone-800 pt-4">
-                    <span className="text-xs text-stone-600">
-                      {item.updated_at
-                        ? `${new Date(item.updated_at).toLocaleDateString('en-US')} (Edited)`
-                        : new Date(item.created_at).toLocaleDateString('en-US')}
-                    </span>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(item);
-                        }}
-                        title="Edit"
-                        className="h-8 w-8 text-stone-500 hover:bg-stone-800 hover:text-stone-200">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(item.id);
-                        }}
-                        disabled={loading}
-                        title="Delete"
-                        className="h-8 w-8 text-stone-500 hover:bg-stone-800 hover:text-red-400">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="mb-3 flex items-center gap-2">
+                        <span className="rounded border border-stone-700 bg-stone-800 px-2 py-0.5 font-mono text-xs text-stone-400">
+                          /{item.slug}
+                        </span>
+                        <Link
+                          href={`/project/${item.slug}`}
+                          target="_blank"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-stone-600 transition-colors hover:text-stone-300"
+                          title="새 탭에서 보기">
+                          <ExternalLink className="h-3 w-3" />
+                        </Link>
+                      </div>
+                      <CardDescription className="line-clamp-3 text-stone-400">{item.description}</CardDescription>
+                    </div>
+
+                    <div className="flex items-center justify-between border-t border-stone-800 pt-4">
+                      <span className="text-xs text-stone-600">
+                        {item.updated_at
+                          ? `${new Date(item.updated_at).toLocaleDateString('en-US')} (Edited)`
+                          : new Date(item.created_at).toLocaleDateString('en-US')}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(item);
+                          }}
+                          title="Edit"
+                          className="h-8 w-8 text-stone-500 hover:bg-stone-800 hover:text-stone-200">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(item.id);
+                          }}
+                          disabled={loading}
+                          title="Delete"
+                          className="h-8 w-8 text-stone-500 hover:bg-stone-800 hover:text-red-400">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </Card>

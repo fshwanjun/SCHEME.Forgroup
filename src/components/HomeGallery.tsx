@@ -105,24 +105,7 @@ const FRAME_CLASSES: string[] = [
 ];
 
 // 갤러리에 표시될 실제 프로젝트 이미지 데이터 목록입니다.
-// 현재 4개의 이미지 데이터만 정의되어 있습니다.
-const PROJECT_IMAGES: ProjectImage[] = [
-  'main_0',
-  'main_1',
-  'main_2',
-  'main_3',
-  'main_4',
-  'main_5',
-  'main_6',
-  'main_7',
-  'main_8',
-  'main_9',
-  'main_10',
-].map((id) => ({
-  projectId: id,
-  verticalSrc: `/images/main/${id}.jpeg`, // 실제로는 horizontalSrc와 동일한 경로를 사용하고 있지만,
-  horizontalSrc: `/images/main/${id}.jpeg`, // 프레임 비율에 따라 적절한 이미지를 선택할 수 있도록 구분됩니다.
-}));
+// Landing Page Manager에서 관리하는 이미지 데이터를 사용합니다.
 
 // 시드 기반 의사 난수 생성기(Pseudo-Random Number Generator, PRNG)를 생성하는 함수입니다.
 // 동일한 'seed'를 사용하면 항상 같은 난수 시퀀스를 생성합니다.
@@ -179,19 +162,23 @@ function getRowGroups(frameClasses: string[]): { rowFrames: number[][]; totalRow
 }
 
 type HomeGalleryProps = {
+  images?: ProjectImage[]; // Landing Page Manager에서 가져온 이미지 목록
   onSelectImage?: (image: GallerySelection) => void;
   selectedProjectId?: string | null;
 };
 
-export default function HomeGallery({ onSelectImage, selectedProjectId }: HomeGalleryProps) {
+export default function HomeGallery({ images = [], onSelectImage, selectedProjectId }: HomeGalleryProps) {
   // 🌟 수정: 건너뛸 행의 개수를 저장하는 상태입니다.
   const [skipRows, setSkipRows] = useState(0);
 
+  // 🌟 추가: 행 그룹 정보 계산 (컴포넌트가 마운트될 때 한 번만)
+  // 모든 hooks는 항상 같은 순서로 호출되어야 함
+  const { rowFrames, totalRows } = useMemo(() => getRowGroups(FRAME_CLASSES), []);
+
+  // images를 메모이제이션하여 dependency 문제 해결
+  const PROJECT_IMAGES: ProjectImage[] = useMemo(() => images || [], [images]);
   const projectCount = PROJECT_IMAGES.length;
   const totalFrames = FRAME_CLASSES.length;
-
-  // 🌟 추가: 행 그룹 정보 계산 (컴포넌트가 마운트될 때 한 번만)
-  const { rowFrames, totalRows } = useMemo(() => getRowGroups(FRAME_CLASSES), []);
 
   // 🌟 수정: 컴포넌트가 처음 마운트될 때 건너뛸 '행'의 개수를 계산합니다.
   useEffect(() => {
@@ -230,16 +217,36 @@ export default function HomeGallery({ onSelectImage, selectedProjectId }: HomeGa
       const withinCycle = index % projectCount;
 
       if (cycle === 0) {
-        assignments.push(PROJECT_IMAGES[withinCycle]);
+        const img = PROJECT_IMAGES[withinCycle];
+        if (img && img.verticalSrc && img.horizontalSrc) {
+          assignments.push(img);
+        } else {
+          // 이미지가 없으면 빈 객체를 push하지 않고 null을 push하여 나중에 필터링
+          assignments.push(null as unknown as ProjectImage);
+        }
       } else {
         if (!shuffleCache[cycle]) {
           shuffleCache[cycle] = shuffleWithSeed(PROJECT_IMAGES, cycle);
         }
-        assignments.push(shuffleCache[cycle][withinCycle]);
+        const img = shuffleCache[cycle][withinCycle];
+        if (img && img.verticalSrc && img.horizontalSrc) {
+          assignments.push(img);
+        } else {
+          assignments.push(null as unknown as ProjectImage);
+        }
       }
     }
     return assignments;
-  }, [projectCount, totalFrames]); // skipRows에 의존하지 않음
+  }, [projectCount, totalFrames, PROJECT_IMAGES]); // PROJECT_IMAGES를 dependency로 사용
+
+  // 이미지가 없으면 빈 갤러리 렌더링
+  if (projectCount === 0) {
+    return (
+      <section className="HomeGallery relative mb-[20px] w-full px-[20px]">
+        <div className="grid w-full grid-cols-16 gap-[20px]"></div>
+      </section>
+    );
+  }
 
   return (
     <section className="HomeGallery relative mb-[20px] w-full px-[20px]">
@@ -255,7 +262,13 @@ export default function HomeGallery({ onSelectImage, selectedProjectId }: HomeGa
             return null; // 프레임을 건너뜁니다.
           } // 건너뛰지 않는 프레임에 대한 이미지 할당
 
-          const assignment = projectAssignments[index] ?? PROJECT_IMAGES[index % projectCount];
+          const assignment = projectAssignments[index];
+
+          // assignment가 없거나 이미지가 없으면 렌더링하지 않음
+          if (!assignment || !assignment.verticalSrc || !assignment.horizontalSrc) {
+            return null;
+          }
+
           const orientation = frameClass.includes('aspect-[3/4]') ? 'vertical' : 'horizontal';
           const aspectRatio = orientation === 'vertical' ? '3 / 4' : '4 / 3';
           const src = orientation === 'vertical' ? assignment.verticalSrc : assignment.horizontalSrc;
