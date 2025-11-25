@@ -2,6 +2,7 @@
 import { supabase } from '@/lib/supabase';
 import { notFound } from 'next/navigation';
 import Header from '@/components/Header';
+import MobileMenu from '@/components/MobileMenu';
 import ProjectDetailContent from '@/components/ProjectDetailContent';
 
 // 타입 정의
@@ -95,6 +96,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   return (
     <>
       <Header />
+      <MobileMenu />
       <main className="w-ful relative h-full">
         {contents && <ProjectDetailContent contents={contents} title={project.title} />}
       </main>

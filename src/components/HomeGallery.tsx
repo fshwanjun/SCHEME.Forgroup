@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import ImageCard from '@/components/ImageCard'; // 이미지 카드 렌더링을 위한 컴포넌트입니다.
+import useWindowSize from '@/hooks/useWindowSize';
 
 // 프로젝트 이미지의 타입 정의
 type ProjectImage = {
@@ -104,6 +105,49 @@ const FRAME_CLASSES: string[] = [
   'frame-card aspect-[4/3] row-start-32 col-span-8 col-start-4',
 ];
 
+// 모바일 화면용 프레임 클래스 배열 (폰 화면에서 사용)
+// 11열 그리드 시스템 사용
+// 나중에 반응형으로 사용할 수 있도록 export
+export const MOBILE_FRAME_CLASSES: string[] = [
+  'frame-card aspect-[3/4] row-start-1 col-span-7 col-start-5',
+  'frame-card aspect-[3/4] row-start-2 col-span-4 col-start-1',
+  'frame-card aspect-[4/3] row-start-3 col-span-7 col-start-1',
+  'frame-card aspect-[3/4] row-start-4 col-span-4 col-start-8',
+  'frame-card aspect-[3/4] row-start-5 col-span-4 col-start-1',
+  'frame-card aspect-[3/4] row-start-5 col-span-3 col-start-5',
+  'frame-card aspect-[4/3] row-start-6 col-span-7 col-start-5',
+  'frame-card aspect-[3/4] row-start-7 col-span-4 col-start-1',
+  'frame-card aspect-[3/4] row-start-8 col-span-4 col-start-5',
+  'frame-card aspect-[4/3] row-start-9 col-span-8 col-start-1',
+  'frame-card aspect-[3/4] row-start-10 col-span-3 col-start-9',
+  'frame-card aspect-[3/4] row-start-11 col-span-5 col-start-4',
+  'frame-card aspect-[4/3] row-start-12 col-span-3 col-start-1',
+  'frame-card aspect-[4/3] row-start-13 col-span-7 col-start-1',
+  'frame-card aspect-[4/3] row-start-14 col-span-4 col-start-8',
+
+  'frame-card aspect-[3/4] row-start-15 col-span-4 col-start-4',
+  'frame-card aspect-[3/4] row-start-16 col-span-3 col-start-1',
+  'frame-card aspect-[4/3] row-start-17 col-span-3 col-start-1',
+
+  'frame-card aspect-[3/4] row-start-17 col-span-5 col-start-4',
+  'frame-card aspect-[3/4] row-start-18 col-span-3 col-start-9',
+  'frame-card aspect-[4/3] row-start-19 col-span-8 col-start-1',
+  'frame-card aspect-[4/3] row-start-20 col-span-4 col-start-1',
+  'frame-card aspect-[3/4] row-start-21 col-span-4 col-start-6',
+  'frame-card aspect-[4/3] row-start-22 col-span-6 col-start-6',
+  'frame-card aspect-[3/4] row-start-23 col-span-5 col-start-1',
+  'frame-card aspect-[3/4] row-start-24 col-span-3 col-start-6',
+  'frame-card aspect-[4/3] row-start-25 col-span-6 col-start-6',
+  'frame-card aspect-[3/4] row-start-26 col-span-5 col-start-1',
+  'frame-card aspect-[3/4] row-start-27 col-span-3 col-start-6',
+  'frame-card aspect-[4/3] row-start-28 col-span-6 col-start-6',
+  'frame-card aspect-[4/3] row-start-29 col-span-5 col-start-1',
+  'frame-card aspect-[3/4] row-start-30 col-span-5 col-start-1',
+  'frame-card aspect-[4/3] row-start-31 col-span-6 col-start-6',
+  'frame-card aspect-[3/4] row-start-32 col-span-5 col-start-1',
+  'frame-card aspect-[4/3] row-start-33 col-span-6 col-start-6',
+];
+
 // 갤러리에 표시될 실제 프로젝트 이미지 데이터 목록입니다.
 // Landing Page Manager에서 관리하는 이미지 데이터를 사용합니다.
 
@@ -168,17 +212,30 @@ type HomeGalleryProps = {
 };
 
 export default function HomeGallery({ images = [], onSelectImage, selectedProjectId }: HomeGalleryProps) {
+  // 화면 크기 감지
+  const windowSize = useWindowSize();
+  const isMobile = windowSize.isSm; // 768px 미만이면 모바일
+
+  // 모바일 여부에 따라 사용할 프레임 클래스 선택
+  const currentFrameClasses = useMemo(() => (isMobile ? MOBILE_FRAME_CLASSES : FRAME_CLASSES), [isMobile]);
+
+  // 모바일 여부에 따라 gap 설정
+  const gap = useMemo(() => (isMobile ? 10 : 20), [isMobile]);
+
+  // 모바일 여부에 따라 좌우 여백 설정
+  const horizontalPadding = useMemo(() => (isMobile ? 10 : 20), [isMobile]);
+
   // 🌟 수정: 건너뛸 행의 개수를 저장하는 상태입니다.
   const [skipRows, setSkipRows] = useState(0);
 
-  // 🌟 추가: 행 그룹 정보 계산 (컴포넌트가 마운트될 때 한 번만)
+  // 🌟 추가: 행 그룹 정보 계산 (현재 사용 중인 프레임 클래스 기준)
   // 모든 hooks는 항상 같은 순서로 호출되어야 함
-  const { rowFrames, totalRows } = useMemo(() => getRowGroups(FRAME_CLASSES), []);
+  const { rowFrames, totalRows } = useMemo(() => getRowGroups(currentFrameClasses), [currentFrameClasses]);
 
   // images를 메모이제이션하여 dependency 문제 해결
   const PROJECT_IMAGES: ProjectImage[] = useMemo(() => images || [], [images]);
   const projectCount = PROJECT_IMAGES.length;
-  const totalFrames = FRAME_CLASSES.length;
+  const totalFrames = currentFrameClasses.length;
 
   // 🌟 수정: 컴포넌트가 처음 마운트될 때 건너뛸 '행'의 개수를 계산합니다.
   useEffect(() => {
@@ -242,21 +299,27 @@ export default function HomeGallery({ images = [], onSelectImage, selectedProjec
   // 이미지가 없으면 빈 갤러리 렌더링
   if (projectCount === 0) {
     return (
-      <section className="HomeGallery relative mb-[20px] w-full px-[20px]">
-        <div className="grid w-full grid-cols-16 gap-[20px]"></div>
+      <section
+        className="HomeGallery relative mb-[20px] w-full"
+        style={{ paddingLeft: horizontalPadding, paddingRight: horizontalPadding }}>
+        <div
+          className={`grid w-full ${isMobile ? 'grid-cols-[repeat(11,minmax(0,1fr))]' : 'grid-cols-16'}`}
+          style={{ gap }}></div>
       </section>
     );
   }
 
   return (
-    <section className="HomeGallery relative mb-[20px] w-full px-[20px]">
+    <section
+      className="HomeGallery relative mb-[20px] w-full"
+      style={{ paddingLeft: horizontalPadding, paddingRight: horizontalPadding }}>
       <div
-        className="grid w-full grid-cols-16 gap-[20px]"
+        className={`grid w-full ${isMobile ? 'grid-cols-[repeat(11,minmax(0,1fr))]' : 'grid-cols-16'}`}
         style={{
-          columnGap: 20,
-          rowGap: 20,
+          columnGap: gap,
+          rowGap: gap,
         }}>
-        {FRAME_CLASSES.map((frameClass, index) => {
+        {currentFrameClasses.map((frameClass, index) => {
           // 🌟 핵심 수정: 건너뛸 행에 속하는 프레임은 렌더링하지 않습니다.
           if (framesToSkip.has(index)) {
             return null; // 프레임을 건너뜁니다.

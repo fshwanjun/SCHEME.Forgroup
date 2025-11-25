@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useIntersection } from '@/hooks/useIntersectionObserver';
 import Header from '@/components/Header';
+import MobileMenu from '@/components/MobileMenu';
 import IntroLogo from '@/components/IntroLogo';
 import { supabase } from '@/lib/supabase';
 
@@ -298,8 +299,9 @@ export default function Home() {
 
   return (
     <>
-      <IntroLogo />
+      {/* <IntroLogo /> */}
       <Header />
+      <MobileMenu />
       <motion.div
         ref={containerRef}
         animate={{

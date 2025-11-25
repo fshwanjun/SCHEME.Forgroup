@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import HoverDistortImage from '@/components/HoverDistortImage';
 import HomeContainer from '@/components/HomeContainer';
 import Header from '@/components/Header';
+import MobileMenu from '@/components/MobileMenu';
 import ProjectDetailContent from '@/components/ProjectDetailContent';
 import { useIntersection } from '@/hooks/useIntersectionObserver';
 import { supabase } from '@/lib/supabase';
@@ -48,25 +49,25 @@ const COVER_FRAMES: Array<{
   { marginTop: '0vh', marginLeft: '2%', width: '35vw', orientation: 'vertical', zIndex: 1 },
   { marginTop: '0vh', marginLeft: '55%', width: '40vw', orientation: 'horizontal', zIndex: 2 },
 
-  // Row 2: Upper Middle
-  { marginTop: '25vh', marginLeft: '5%', width: '32vw', orientation: 'vertical', zIndex: 3 },
-  { marginTop: '25vh', marginLeft: '52%', width: '38vw', orientation: 'horizontal', zIndex: 2 },
+  // Row 2: Upper Middle (이전 행의 이미지 높이 + 여유 공간 고려)
+  { marginTop: '50vh', marginLeft: '5%', width: '32vw', orientation: 'vertical', zIndex: 3 },
+  { marginTop: '50vh', marginLeft: '52%', width: '38vw', orientation: 'horizontal', zIndex: 2 },
 
   // Row 3: Middle
-  { marginTop: '48vh', marginLeft: '3%', width: '34vw', orientation: 'vertical', zIndex: 3 },
-  { marginTop: '50vh', marginLeft: '50%', width: '42vw', orientation: 'horizontal', zIndex: 2 },
+  { marginTop: '100vh', marginLeft: '3%', width: '34vw', orientation: 'vertical', zIndex: 3 },
+  { marginTop: '100vh', marginLeft: '50%', width: '42vw', orientation: 'horizontal', zIndex: 2 },
 
   // Row 4: Lower Middle
-  { marginTop: '70vh', marginLeft: '6%', width: '30vw', orientation: 'vertical', zIndex: 3 },
-  { marginTop: '72vh', marginLeft: '52%', width: '38vw', orientation: 'horizontal', zIndex: 2 },
+  { marginTop: '150vh', marginLeft: '6%', width: '30vw', orientation: 'vertical', zIndex: 3 },
+  { marginTop: '150vh', marginLeft: '52%', width: '38vw', orientation: 'horizontal', zIndex: 2 },
 
   // Row 5: Bottom
-  { marginTop: '92vh', marginLeft: '4%', width: '32vw', orientation: 'vertical', zIndex: 3 },
-  { marginTop: '95vh', marginLeft: '50%', width: '40vw', orientation: 'horizontal', zIndex: 2 },
+  { marginTop: '200vh', marginLeft: '4%', width: '32vw', orientation: 'vertical', zIndex: 3 },
+  { marginTop: '200vh', marginLeft: '50%', width: '40vw', orientation: 'horizontal', zIndex: 2 },
 
   // Row 6: Bottom
-  { marginTop: '118vh', marginLeft: '8%', width: '35vw', orientation: 'horizontal', zIndex: 2 },
-  { marginTop: '118vh', marginLeft: '52%', width: '38vw', orientation: 'horizontal', zIndex: 2 },
+  { marginTop: '250vh', marginLeft: '8%', width: '35vw', orientation: 'horizontal', zIndex: 2 },
+  { marginTop: '250vh', marginLeft: '52%', width: '38vw', orientation: 'horizontal', zIndex: 2 },
 ];
 
 interface SelectedImage {
@@ -79,6 +80,7 @@ interface SelectedImage {
 export default function ProjectPage() {
   const pathname = usePathname();
   const [expanded, setExpanded] = useState(false);
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
   // section ID 배열: 초기값 [0, 1, 2] (3개 section) - 홈 페이지와 동일한 방식
   const [sectionIds, setSectionIds] = useState<number[]>([0, 1, 2]);
   const [triggerElement, setTriggerElement] = useState<HTMLElement | null>(null);
@@ -119,6 +121,28 @@ export default function ProjectPage() {
     fetchProjects();
   }, []);
 
+  // 윈도우 크기 추적
+  useEffect(() => {
+    const updateWindowSize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+
+    updateWindowSize();
+    window.addEventListener('resize', updateWindowSize);
+    return () => window.removeEventListener('resize', updateWindowSize);
+  }, []);
+
+  // 이미지 로드 완료 후 애니메이션 시작
+  useEffect(() => {
+    if (!loading && projects.length > 0 && windowSize.width > 0 && windowSize.height > 0) {
+      // 이미지들이 먼저 초기 상태(중앙)로 렌더링되도록 약간의 지연 후 확장
+      const t = setTimeout(() => {
+        setExpanded(true);
+      }, 100);
+      return () => clearTimeout(t);
+    }
+  }, [loading, projects.length, windowSize.width, windowSize.height]);
+
   // 선택된 이미지에 해당하는 프로젝트 상세 정보 가져오기
   useEffect(() => {
     if (!selected) {
@@ -157,11 +181,6 @@ export default function ProjectPage() {
     fetchProjectDetail();
   }, [selected]);
 
-  useEffect(() => {
-    const t = setTimeout(() => setExpanded(true), 80);
-    return () => clearTimeout(t);
-  }, []);
-
   // sectionIds가 변경되면 트리거 리셋 (홈 페이지와 동일)
   useEffect(() => {
     triggeredRef.current = false;
@@ -171,11 +190,14 @@ export default function ProjectPage() {
   useIntersection(
     triggerElement,
     (entry: IntersectionObserverEntry) => {
+      if (selected) return;
+
       // 두 번째 섹션의 바닥이 화면 중간쯤 왔을 때 미리 로딩
       if (entry.isIntersecting) {
         const rect = entry.boundingClientRect;
-        // 두 번째 섹션의 바닥이 뷰포트 높이 + 1000px (여유분) 보다 위에 있을 때
-        const isTriggerPoint = rect.bottom <= window.innerHeight + 1000;
+        // 두 번째 섹션의 바닥이 뷰포트 높이 + 2500px (충분한 여유분) 보다 위에 있을 때
+        // 더 일찍 트리거하여 스크롤이 끊기지 않도록 함
+        const isTriggerPoint = rect.bottom <= window.innerHeight + 2500;
 
         if (isTriggerPoint && !triggeredRef.current) {
           triggeredRef.current = true;
@@ -189,11 +211,13 @@ export default function ProjectPage() {
         }
       }
     },
-    { rootMargin: '0px 0px 500px 0px', threshold: [0, 0.1, 0.5, 1] },
+    { rootMargin: '0px 0px 2000px 0px', threshold: [0, 0.1, 0.5, 1] },
   );
 
   // 스크롤 이벤트로도 감지 (백업) - 두 번째 섹션 기준 (홈 페이지와 동일)
   useEffect(() => {
+    if (selected) return;
+
     const handleScroll = () => {
       if (!triggerElement || triggeredRef.current) return;
 
@@ -201,17 +225,16 @@ export default function ProjectPage() {
       const windowHeight = window.innerHeight;
 
       // 두 번째 섹션의 바닥이 화면 하단 근처에 도달했는지 확인
-      const isTriggerPoint = rect.bottom <= windowHeight + 1000;
+      // 더 일찍 트리거하여 스크롤이 끊기지 않도록 함
+      const isTriggerPoint = rect.bottom <= windowHeight + 2500;
 
       if (isTriggerPoint) {
         triggeredRef.current = true;
-        console.log('📜 Scroll Trigger! Adding new section...');
 
         setSectionIds((prev) => {
           const lastId = prev[prev.length - 1];
           const newId = lastId + 1;
           const newIds = [...prev.slice(1), newId];
-          console.log(`Scroll Update: [${prev.join(', ')}] -> [${newIds.join(', ')}]`);
           return newIds;
         });
       }
@@ -221,7 +244,7 @@ export default function ProjectPage() {
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, [triggerElement]);
+  }, [selected, triggerElement]);
 
   // 프로젝트 이미지 배열 생성
   const projectImages = useMemo(() => {
@@ -253,29 +276,69 @@ export default function ProjectPage() {
           return null;
         }
 
+        // 목표 위치 계산 (픽셀 단위)
+        const parseVh = (vh: string) => {
+          const value = parseFloat(vh.replace('vh', ''));
+          return (value / 100) * windowSize.height;
+        };
+
+        const parseVw = (vw: string) => {
+          const value = parseFloat(vw.replace('vw', ''));
+          return (value / 100) * windowSize.width;
+        };
+
+        const parsePercent = (percent: string) => {
+          const value = parseFloat(percent.replace('%', ''));
+          return (value / 100) * windowSize.width;
+        };
+
+        // 목표 위치 계산
+        const imageWidth = parseVw(frame.width);
+        const aspectRatio = frame.orientation === 'vertical' ? 3 / 4 : 4 / 3;
+        const imageHeight = imageWidth / aspectRatio;
+        const imageHeightVh = (imageHeight / windowSize.height) * 100;
+
+        // 기본 marginTop + 이전 이미지들의 높이를 고려한 추가 간격
+        const baseMarginTop = parseVh(frame.marginTop);
+        // 각 이미지의 높이 + 여유 공간(이미지 높이의 50%)을 추가
+        const spacingOffset = imageHeightVh * 0.5;
+        const targetMarginTop = baseMarginTop + spacingOffset;
+
+        const targetMarginLeft = frame.marginLeft
+          ? parsePercent(frame.marginLeft)
+          : frame.marginRight
+            ? windowSize.width - parsePercent(frame.marginRight) - imageWidth
+            : (windowSize.width - imageWidth) / 2;
+
+        // 뷰포트 중앙 위치 (모든 이미지가 동일한 중앙에서 시작)
+        const centerX = windowSize.width / 2;
+        const centerY = windowSize.height / 2;
+        // 이미지의 중심이 뷰포트 중앙에 오도록 계산
+        const initialMarginLeft = centerX - imageWidth / 2;
+        const initialMarginTop = centerY - imageHeight / 2;
+
         const baseStyle: CSSProperties = {
           width: frame.width,
           zIndex: frame.zIndex,
-          position: 'relative',
+          position: 'absolute',
           transition:
-            'margin-top 900ms cubic-bezier(0.19, 1, 0.22, 1), margin-left 900ms cubic-bezier(0.19, 1, 0.22, 1), margin-right 900ms cubic-bezier(0.19, 1, 0.22, 1), transform 950ms cubic-bezier(0.19,1,0.22,1), opacity 700ms ease',
+            'top 900ms cubic-bezier(0.19, 1, 0.22, 1), left 900ms cubic-bezier(0.19, 1, 0.22, 1), transform 950ms cubic-bezier(0.19,1,0.22,1), opacity 700ms ease',
           transitionDelay: `${index * 10}ms`,
         };
 
         if (expanded) {
           // 확장된 상태: 각 이미지의 목표 위치
-          baseStyle.marginTop = frame.marginTop;
-          baseStyle.marginLeft = frame.marginLeft ?? 'auto';
-          baseStyle.marginRight = frame.marginRight ?? 'auto';
+          baseStyle.top = `${targetMarginTop}px`;
+          baseStyle.left = `${targetMarginLeft}px`;
           baseStyle.transform = 'translate(0, 0) scale(1)';
           baseStyle.opacity = 1;
         } else {
-          // 초기 상태: 모든 이미지가 화면 중앙에 모여 있음
-          baseStyle.marginTop = '50vh';
-          baseStyle.marginLeft = '50%';
-          baseStyle.marginRight = 'auto';
-          baseStyle.transform = 'translate(-50%, -50%) scale(0.9)';
-          baseStyle.opacity = 0;
+          // 초기 상태: 모든 이미지가 뷰포트 중앙에 모여 있음
+          // 각 이미지의 중심이 뷰포트 중앙(50vw, 50vh)에 오도록 설정
+          baseStyle.top = `${initialMarginTop}px`;
+          baseStyle.left = `${initialMarginLeft}px`;
+          baseStyle.transform = 'translate(0, 0) scale(0.9)';
+          baseStyle.opacity = 1;
         }
 
         const src = frame.orientation === 'vertical' ? image.verticalSrc : image.horizontalSrc;
@@ -341,18 +404,18 @@ export default function ProjectPage() {
           data-is-trigger={isTrigger}
           className="relative w-full"
           style={{
-            minHeight: '160vh', // 마지막 이미지(118vh) + 여유 공간을 위해 충분한 높이
-            marginBottom: sectionIndex < sectionIds.length - 1 ? '60vh' : '0', // 섹션 간 충분한 간격
-            paddingBottom: sectionIndex === sectionIds.length - 1 ? '100vh' : '0',
+            minHeight: '300vh',
             position: 'relative',
+            // 마지막 섹션이 아닌 경우 하단에 여유 공간 추가하여 스크롤이 끊기지 않도록 함
+            paddingBottom: sectionIndex < sectionIds.length - 1 ? '100vh' : '0',
           }}>
-          <div className="relative w-full" style={{ minHeight: '160vh' }}>
+          <div className="relative w-full" style={{ minHeight: '300vh', position: 'relative' }}>
             {validCards}
           </div>
         </div>
       );
     });
-  }, [expanded, sectionIds, projectImages, loading, selected]);
+  }, [expanded, sectionIds, projectImages, loading, selected, windowSize.width, windowSize.height]);
 
   const containerStyle = useMemo<CSSProperties>(() => {
     return expanded
@@ -539,6 +602,7 @@ export default function ProjectPage() {
   return (
     <>
       <Header isFixed={true} onProjectClick={handleProjectHeaderClick} />
+      <MobileMenu onProjectClick={handleProjectHeaderClick} />
       <motion.div
         ref={containerRef}
         animate={{
@@ -586,13 +650,11 @@ export default function ProjectPage() {
             }
           }}>
           <main className="w-ful relative h-full">
-            {selectedProject.contents && (
-              <ProjectDetailContent
-                contents={selectedProject.contents}
-                title={selectedProject.title}
-                heroImageSrc={selected?.imageSrc}
-              />
-            )}
+            <ProjectDetailContent
+              contents={selectedProject.contents}
+              title={selectedProject.title}
+              heroImageSrc={selected?.imageSrc}
+            />
           </main>
         </div>
       )}

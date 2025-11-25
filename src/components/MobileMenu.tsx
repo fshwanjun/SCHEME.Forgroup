@@ -1,0 +1,88 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
+import useWindowSize from '@/hooks/useWindowSize';
+
+const navItems = [
+  { href: '/', label: 'Home' },
+  { href: '/project', label: 'Project' },
+  { href: '/studio', label: 'Studio' },
+];
+
+export default function MobileMenu({ onProjectClick }: { onProjectClick?: () => void }) {
+  const pathname = usePathname();
+  const windowSize = useWindowSize();
+  const isMobile = windowSize.isSm;
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const isVisible = pathname === '/' || pathname === '/studio' || pathname.startsWith('/project');
+
+  if (!isVisible || !isMobile) return null;
+
+  const handleProjectClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (onProjectClick) {
+      e.preventDefault();
+      onProjectClick();
+    }
+    setIsMenuOpen(false);
+  };
+
+  const handleNavClick = () => {
+    setIsMenuOpen(false);
+  };
+
+  return (
+    <>
+      {/* 햄버거 메뉴 버튼 - 헤더 우측 네비게이션 위치와 동일하게 정렬 */}
+      <button
+        onClick={() => setIsMenuOpen(!isMenuOpen)}
+        className="pointer-events-auto fixed top-6 right-4 z-[350] flex h-8 w-8 items-center justify-center select-none"
+        style={{ mixBlendMode: 'normal' }}
+        aria-label={isMenuOpen ? '메뉴 닫기' : '메뉴 열기'}>
+        <div className="relative flex h-3 w-6 items-center justify-center">
+          <span
+            className={cn(
+              'absolute block h-[2px] w-6 bg-black transition-all duration-300',
+              isMenuOpen ? 'top-0 rotate-45' : '-top-1 rotate-0',
+            )}></span>
+          <span
+            className={cn(
+              'absolute block h-[2px] w-6 bg-black transition-all duration-300',
+              isMenuOpen ? 'top-0 -rotate-45' : 'top-1 rotate-0',
+            )}></span>
+        </div>
+      </button>
+
+      {/* 모바일 메뉴 - 화면 전체를 덮는 흰색 메뉴 (헤더 아래) */}
+      {isMenuOpen && (
+        <nav className="pointer-events-auto fixed inset-0 z-[300] bg-white text-black">
+          <div className="flex h-full flex-col p-6 pt-30">
+            {navItems.map(({ href, label }) => {
+              const active = pathname === href || (href !== '/' && pathname.startsWith(href));
+              const isProjectLink = href === '/project';
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  aria-current={active ? 'page' : undefined}
+                  className={cn(
+                    'w-fit p-1 text-lg font-medium transition-colors',
+                    active ? 'text-black' : 'text-black',
+                  )}
+                  onClick={isProjectLink ? handleProjectClick : handleNavClick}>
+                  {label}
+                </Link>
+              );
+            })}
+          </div>
+          <a href="https://instagram.com/forforfor" className="absolute right-4 bottom-4 text-right">
+            @forforfor
+          </a>
+        </nav>
+      )}
+    </>
+  );
+}
