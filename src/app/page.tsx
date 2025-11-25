@@ -195,14 +195,6 @@ export default function Home() {
       const tx = screenCenterX - imageCenterX * scale;
       const ty = screenCenterY - imageCenterY * scale;
 
-      console.log('Zoom Calc (New):', {
-        scale,
-        scroll: { x: scrollX, y: scrollY },
-        imageCenter: { x: imageCenterX, y: imageCenterY },
-        translate: { x: tx, y: ty },
-        origin: { x: originX, y: originY },
-      });
-
       setZoomStyle({ x: tx, y: ty, scale, originX, originY });
       document.body.style.overflow = 'hidden';
     };
@@ -239,26 +231,13 @@ export default function Home() {
         // 두 번째 섹션의 바닥이 뷰포트 높이 + 1000px (여유분) 보다 위에 있을 때
         const isTriggerPoint = rect.bottom <= window.innerHeight + 1000;
 
-        // 현재 트리거 요소의 ID 확인 (디버깅용)
-        const triggerId = triggerElement?.getAttribute('data-section-id');
-
-        console.log(`Intersection check (Trigger ID: ${triggerId}):`, {
-          bottom: rect.bottom,
-          windowHeight: window.innerHeight,
-          isTriggerPoint,
-          triggered: triggeredRef.current,
-        });
-
         if (isTriggerPoint && !triggeredRef.current) {
           triggeredRef.current = true;
-          console.log(`🚀 Triggered on ID ${triggerId}! Adding new section...`);
 
           setSectionIds((prev) => {
             const lastId = prev[prev.length - 1];
             const newId = lastId + 1;
             const newIds = [...prev.slice(1), newId];
-
-            console.log(`Update: [${prev.join(', ')}] -> [${newIds.join(', ')}]`);
             return newIds;
           });
         }
@@ -282,13 +261,11 @@ export default function Home() {
 
       if (isTriggerPoint) {
         triggeredRef.current = true;
-        console.log('📜 Scroll Trigger! Adding new section...');
 
         setSectionIds((prev) => {
           const lastId = prev[prev.length - 1];
           const newId = lastId + 1;
           const newIds = [...prev.slice(1), newId];
-          console.log(`Scroll Update: [${prev.join(', ')}] -> [${newIds.join(', ')}]`);
           return newIds;
         });
       }

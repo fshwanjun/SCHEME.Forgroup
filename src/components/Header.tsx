@@ -10,12 +10,25 @@ const navItems = [
   { href: '/studio', label: 'Studio' },
 ];
 
-export default function Header({ isFixed = true }: { isFixed?: boolean }) {
+export default function Header({
+  isFixed = true,
+  onProjectClick,
+}: {
+  isFixed?: boolean;
+  onProjectClick?: () => void;
+}) {
   const pathname = usePathname();
 
   const isVisible = pathname === '/' || pathname === '/studio' || pathname.startsWith('/project');
 
   if (!isVisible) return null;
+
+  const handleProjectClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (onProjectClick) {
+      e.preventDefault();
+      onProjectClick();
+    }
+  };
 
   return (
     <header
@@ -37,12 +50,14 @@ export default function Header({ isFixed = true }: { isFixed?: boolean }) {
         <nav className="flex gap-5">
           {navItems.map(({ href, label }) => {
             const active = pathname === href || (href !== '/' && pathname.startsWith(href));
+            const isProjectLink = href === '/project';
             return (
               <Link
                 key={href}
                 href={href}
                 aria-current={active ? 'page' : undefined}
-                className="pointer-events-auto select-none">
+                className="pointer-events-auto select-none"
+                onClick={isProjectLink ? handleProjectClick : undefined}>
                 <h4>{label}</h4>
               </Link>
             );

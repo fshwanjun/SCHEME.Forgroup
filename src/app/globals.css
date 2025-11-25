@@ -281,7 +281,7 @@ html {
 }
 
 .intro-logo-overlay {
-  @apply fixed inset-0 z-150 flex items-center justify-center bg-white transition-opacity;
+  @apply fixed inset-0 z-[300] flex items-center justify-center bg-white transition-opacity;
   transition-duration: 1600ms;
   transition-timing-function: ease;
 }

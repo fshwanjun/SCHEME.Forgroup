@@ -129,7 +129,6 @@ export default function ProjectPage() {
     // projectId를 사용해서 정확한 프로젝트 찾기
     const fetchProjectDetail = async () => {
       try {
-        console.log('Fetching project detail for:', { projectId: selected.projectId, slug: selected.slug });
         const { data, error } = await supabase
           .from('project')
           .select('id, slug, title, description, contents')
@@ -137,10 +136,8 @@ export default function ProjectPage() {
           .single();
 
         if (!error && data) {
-          console.log('Project found by ID:', data);
           setSelectedProject(data as Project);
         } else {
-          console.error('Error fetching project detail by ID:', error);
           // projectId로 찾지 못하면 slug로 시도
           const { data: slugData, error: slugError } = await supabase
             .from('project')
@@ -149,14 +146,11 @@ export default function ProjectPage() {
             .single();
 
           if (!slugError && slugData) {
-            console.log('Project found by slug:', slugData);
             setSelectedProject(slugData as Project);
-          } else {
-            console.error('Error fetching project by slug:', slugError);
           }
         }
-      } catch (error) {
-        console.error('Error fetching project detail:', error);
+      } catch {
+        // Error handling
       }
     };
 
@@ -185,14 +179,11 @@ export default function ProjectPage() {
 
         if (isTriggerPoint && !triggeredRef.current) {
           triggeredRef.current = true;
-          console.log('🚀 Triggered! Adding new section...');
 
           setSectionIds((prev) => {
             const lastId = prev[prev.length - 1];
             const newId = lastId + 1;
             const newIds = [...prev.slice(1), newId]; // 첫 번째 제거, 마지막에 새 섹션 추가
-
-            console.log(`Update: [${prev.join(', ')}] -> [${newIds.join(', ')}]`);
             return newIds;
           });
         }
@@ -307,7 +298,6 @@ export default function ProjectPage() {
           } as DOMRect;
 
           // 이미지 선택 (클릭한 이미지의 src 저장)
-          console.log('Image clicked:', { projectId: image.projectId, slug: image.slug, src });
           isInitialZoomRef.current = true;
           setSelected({
             projectId: image.projectId,
@@ -539,9 +529,16 @@ export default function ProjectPage() {
     return () => window.removeEventListener('keydown', handleEscape);
   }, [showDetailModal]);
 
+  const handleProjectHeaderClick = () => {
+    if (showDetailModal || selected) {
+      // 모달이 열려있으면 새로고침
+      window.location.href = '/project';
+    }
+  };
+
   return (
     <>
-      <Header isFixed={true} />
+      <Header isFixed={true} onProjectClick={handleProjectHeaderClick} />
       <motion.div
         ref={containerRef}
         animate={{

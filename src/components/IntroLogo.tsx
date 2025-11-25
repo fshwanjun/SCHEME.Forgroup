@@ -33,8 +33,6 @@ export default function IntroLogo({ duration = 8000 }: { duration?: number }) {
   }, [duration]);
 
   useEffect(() => {
-    console.log('IntroLogo Phase:', phase); // 디버깅용 로그
-
     if (phase !== 'hidden') {
       document.body.style.setProperty('overflow', 'hidden', 'important');
       document.documentElement.style.setProperty('overflow', 'hidden', 'important');

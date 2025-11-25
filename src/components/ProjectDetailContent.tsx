@@ -1,5 +1,6 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import Image from 'next/image';
 
 interface DetailImage {
@@ -28,17 +29,17 @@ interface ProjectDetailContentProps {
   heroImageSrc?: string; // 클릭한 이미지를 hero로 사용할 경우
 }
 
-export default function ProjectDetailContent({
-  contents,
-  title,
-  heroImageSrc,
-}: ProjectDetailContentProps) {
+export default function ProjectDetailContent({ contents, title, heroImageSrc }: ProjectDetailContentProps) {
   // Hero 이미지 소스 결정: heroImageSrc가 있으면 우선 사용, 없으면 thumbnail43
   const heroImage = heroImageSrc || contents.thumbnail43;
 
   return (
     <>
-      <div className="fixed bottom-0 left-0 z-10 flex w-full justify-between gap-4 px-[var(--x-padding)] pb-8 text-white mix-blend-difference">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="fixed bottom-0 left-0 z-10 flex w-full justify-between gap-4 px-[var(--x-padding)] pb-8 text-white mix-blend-difference">
         <div className="flex flex-col gap-1">
           <h6>Project</h6>
           <h5>{contents.project || ''}</h5>
@@ -61,7 +62,7 @@ export default function ProjectDetailContent({
             <h6>{contents.services}</h6>
           </div>
         )}
-      </div>
+      </motion.div>
       {heroImage && (
         <div className="relative h-full w-full overflow-hidden">
           <Image
@@ -212,4 +213,3 @@ export default function ProjectDetailContent({
     </>
   );
 }
-

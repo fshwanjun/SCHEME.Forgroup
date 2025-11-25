@@ -64,7 +64,6 @@ async function getProjectBySlug(slug: string): Promise<ProjectDetail | null> {
 
   // 2. 프로젝트를 찾지 못한 경우 명시적 null 반환
   if (!projectData) {
-    console.log(`Project with slug: ${slug} not found.`);
     return null;
   }
 
