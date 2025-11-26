@@ -39,9 +39,7 @@ export default function Header({ isFixed = true, onProjectClick }: { isFixed?: b
     <header
       className={cn(
         'w-full text-white mix-blend-difference',
-        isFixed
-          ? 'pointer-events-none fixed top-0 z-[350] pt-5 px-4 md:px-5'
-          : 'relative z-[350] px-4 md:px-5',
+        isFixed ? 'pointer-events-none fixed top-0 z-[350] px-4 pt-5 md:px-5' : 'relative z-[350] px-4 md:px-5',
       )}
       suppressHydrationWarning>
       <div className="relative mx-auto flex items-start justify-between">
