@@ -299,7 +299,7 @@ export default function Home() {
 
   return (
     <>
-      {/* <IntroLogo /> */}
+      <IntroLogo />
       <Header />
       <MobileMenu />
       <motion.div
