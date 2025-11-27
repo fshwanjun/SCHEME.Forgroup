@@ -63,6 +63,56 @@ export default function HoverDistortImage({
   // 💡 마우스 이동 감지 타이머 Ref 추가
   const mouseMoveTimerRef = useRef<number | null>(null); // Create offscreen canvas once
 
+  // distortionEnabled가 false에서 true로 변경될 때 모든 상태 리셋
+  useEffect(() => {
+    if (!distortionEnabled) {
+      // distortion이 비활성화될 때 타이머 정리
+      if (mouseMoveTimerRef.current) {
+        clearTimeout(mouseMoveTimerRef.current);
+        mouseMoveTimerRef.current = null;
+      }
+      if (animRafRef.current) {
+        cancelAnimationFrame(animRafRef.current);
+        animRafRef.current = null;
+      }
+      animatingRef.current = false;
+      return;
+    }
+
+    // distortion이 활성화될 때 모든 상태를 초기값으로 리셋
+    currentScaleRef.current = 0;
+    targetScaleRef.current = 0;
+    currentPctRef.current = { x: 50, y: 50 };
+    targetPctRef.current = { x: 50, y: 50 };
+    prevMousePosRef.current = null;
+    animatingRef.current = false;
+
+    // SVG displacement map scale을 0으로 리셋
+    if (feDispRef.current) {
+      feDispRef.current.setAttribute('scale', '0');
+    }
+
+    // displacement map을 중립 상태로 리셋
+    if (canvasRef.current && feImageRef.current) {
+      const c = canvasRef.current;
+      const ctx = c.getContext('2d');
+      if (ctx) {
+        const img = ctx.createImageData(c.width, c.height);
+        const data = img.data;
+        // 중립 상태: 모든 픽셀을 128, 128로 설정
+        for (let i = 0; i < data.length; i += 4) {
+          data[i] = 128; // R
+          data[i + 1] = 128; // G
+          data[i + 2] = 0; // B
+          data[i + 3] = 255; // A
+        }
+        ctx.putImageData(img, 0, 0);
+        const url = c.toDataURL('image/png');
+        feImageRef.current.setAttribute('href', url);
+      }
+    }
+  }, [distortionEnabled]);
+
   useEffect(() => {
     if (!distortionEnabled) return;
     if (!canvasRef.current) {
