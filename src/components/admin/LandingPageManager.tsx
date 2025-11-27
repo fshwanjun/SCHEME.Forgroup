@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card';
@@ -138,8 +138,10 @@ export default function LandingPageManager() {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<Set<string>>(new Set());
 
-  // 변경 사항 여부 확인
-  const isChanged = JSON.stringify(images) !== JSON.stringify(originalImages);
+  // 변경 사항 여부 확인 (JSON 문자열 비교 - 메모이제이션으로 최적화)
+  const isChanged = useMemo(() => {
+    return JSON.stringify(images) !== JSON.stringify(originalImages);
+  }, [images, originalImages]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),

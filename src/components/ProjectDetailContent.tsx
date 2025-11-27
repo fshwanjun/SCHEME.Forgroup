@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { PROJECT_DETAIL_CONFIG } from '@/config/appConfig';
 
 interface DetailImage {
   id: string;
@@ -38,7 +39,11 @@ export default function ProjectDetailContent({ contents, title, heroImageSrc }: 
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        transition={{
+          duration: PROJECT_DETAIL_CONFIG.animation.duration,
+          delay: PROJECT_DETAIL_CONFIG.animation.delay,
+          ease: PROJECT_DETAIL_CONFIG.animation.ease,
+        }}
         className="fixed bottom-0 left-0 z-10 flex w-full justify-between gap-4 px-[10px] pb-8 text-white mix-blend-difference md:px-5">
         <div className="flex flex-col gap-1">
           <h6>Project</h6>
@@ -143,9 +148,9 @@ export default function ProjectDetailContent({ contents, title, heroImageSrc }: 
             const getPaddingClasses = () => {
               switch (position) {
                 case 'full-cover':
-                  return 'px-[10px] md:px-5'; // padding 있음 (div를 꽉 채우지만 좌우 padding 유지)
+                  return 'px-0'; // padding 없음 (100vw, 전체 화면을 덮음)
                 case 'full-padding':
-                  return 'px-0'; // padding 없음 (100vw)
+                  return 'px-[10px] md:px-5'; // padding 있음 (div를 꽉 채우지만 좌우 padding 유지)
                 case 'left':
                 case 'right':
                 case 'center':
@@ -158,9 +163,9 @@ export default function ProjectDetailContent({ contents, title, heroImageSrc }: 
             const getWidthClasses = () => {
               switch (position) {
                 case 'full-cover':
-                  return 'w-full'; // padding이 있는 전체 너비
+                  return 'w-screen'; // 100vw (padding 없음, 전체 화면을 덮음)
                 case 'full-padding':
-                  return 'w-screen'; // 100vw (padding 없음)
+                  return 'w-full'; // padding이 있는 전체 너비
                 default:
                   // width를 제한하지 않음 - 이미지가 원본 비율에 맞게 자동 조정
                   return 'max-w-full';
@@ -184,6 +189,7 @@ export default function ProjectDetailContent({ contents, title, heroImageSrc }: 
             };
 
             // 컨테이너 높이 설정 (full-cover와 full-padding 모두 고정 높이)
+            // 참고: PROJECT_DETAIL_CONFIG.image.maxHeight = '90vh'
             const getContainerHeightClass = () => {
               if (position === 'full-cover' || position === 'full-padding') {
                 return 'h-[90vh]';
@@ -194,17 +200,46 @@ export default function ProjectDetailContent({ contents, title, heroImageSrc }: 
             return (
               <div
                 key={detailImage.id || index}
-                className={`flex max-h-[90vh] w-full ${getPositionClasses()} overflow-hidden ${getPaddingClasses()} md:shrink-0 ${getContainerHeightClass()}`}>
-                <Image
-                  className={`${getHeightClasses()} ${getWidthClasses()} ${getObjectFitClasses()}`}
-                  src={detailImage.url}
-                  alt={`${contents.project || 'Project'} gallery image ${index + 1}`}
-                  width={1920}
-                  height={1080}
-                  unoptimized
-                  draggable={false}
-                  style={{ maxHeight: '90vh' }}
-                />
+                // 참고: max-h-[90vh] = PROJECT_DETAIL_CONFIG.image.maxHeight
+                className={`flex max-h-[90vh] w-full ${getPositionClasses()} ${getPaddingClasses()} md:shrink-0 ${getContainerHeightClass()} ${
+                  position === 'full-cover'
+                    ? 'relative overflow-hidden'
+                    : position === 'full-padding'
+                      ? 'overflow-hidden'
+                      : ''
+                }`}>
+                {position === 'full-cover' ? (
+                  <Image
+                    className={`${getHeightClasses()} ${getWidthClasses()} ${getObjectFitClasses()}`}
+                    src={detailImage.url}
+                    alt={`${contents.project || 'Project'} gallery image ${index + 1}`}
+                    fill
+                    unoptimized
+                    draggable={false}
+                  />
+                ) : position === 'full-padding' ? (
+                  <div className="relative h-full w-full overflow-hidden">
+                    <Image
+                      className={`${getHeightClasses()} ${getWidthClasses()} ${getObjectFitClasses()}`}
+                      src={detailImage.url}
+                      alt={`${contents.project || 'Project'} gallery image ${index + 1}`}
+                      fill
+                      unoptimized
+                      draggable={false}
+                    />
+                  </div>
+                ) : (
+                  <Image
+                    className={`${getHeightClasses()} ${getWidthClasses()} ${getObjectFitClasses()}`}
+                    src={detailImage.url}
+                    alt={`${contents.project || 'Project'} gallery image ${index + 1}`}
+                    width={0}
+                    height={0}
+                    sizes="100vw"
+                    draggable={false}
+                    style={{ width: 'auto', height: 'auto', maxHeight: PROJECT_DETAIL_CONFIG.image.maxHeight }}
+                  />
+                )}
               </div>
             );
           })}

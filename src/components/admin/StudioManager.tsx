@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -179,8 +179,10 @@ export default function StudioManager() {
   const [originalData, setOriginalData] = useState<StudioData>(initialData); // 👈 초기 데이터 저장
   const [loading, setLoading] = useState(false);
 
-  // 변경 사항 여부 확인 (JSON 문자열 비교)
-  const isChanged = JSON.stringify(data) !== JSON.stringify(originalData);
+  // 변경 사항 여부 확인 (JSON 문자열 비교 - 메모이제이션으로 최적화)
+  const isChanged = useMemo(() => {
+    return JSON.stringify(data) !== JSON.stringify(originalData);
+  }, [data, originalData]);
 
   // 1. Studio 내용 불러오기
   useEffect(() => {

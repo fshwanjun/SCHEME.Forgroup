@@ -1,18 +1,19 @@
 'use client';
 
 import React, { useCallback, useEffect, useId, useRef } from 'react';
+import { HOVER_DISTORT_CONFIG } from '@/config/appConfig';
 
 export default function HoverDistortImage({
   src,
   alt = '',
   className,
   aspectRatio,
-  distortionScale = 200, // strength of distortion
-  radiusPx = 400, // lens radius in element pixels
-  blurStd = 4, // blur on displacement map to avoid banding
+  distortionScale = HOVER_DISTORT_CONFIG.defaultDistortionScale,
+  radiusPx = HOVER_DISTORT_CONFIG.defaultRadiusPx,
+  blurStd = HOVER_DISTORT_CONFIG.defaultBlurStd,
   preserveAspect = 'xMaxYMax',
   distortionEnabled = true,
-  easingFactor = 0.1, // lerp smoothing factor
+  easingFactor = HOVER_DISTORT_CONFIG.defaultEasingFactor,
 }: {
   src: string;
   alt?: string;
@@ -79,6 +80,18 @@ export default function HoverDistortImage({
       return;
     }
 
+    // 컴포넌트 언마운트 시 cleanup
+    return () => {
+      if (mouseMoveTimerRef.current) {
+        clearTimeout(mouseMoveTimerRef.current);
+        mouseMoveTimerRef.current = null;
+      }
+      if (animRafRef.current) {
+        cancelAnimationFrame(animRafRef.current);
+        animRafRef.current = null;
+      }
+    };
+
     // distortion이 활성화될 때 모든 상태를 초기값으로 리셋
     currentScaleRef.current = 0;
     targetScaleRef.current = 0;
@@ -117,8 +130,8 @@ export default function HoverDistortImage({
     if (!distortionEnabled) return;
     if (!canvasRef.current) {
       const c = document.createElement('canvas');
-      c.width = 64;
-      c.height = 64;
+      c.width = HOVER_DISTORT_CONFIG.canvas.minSize;
+      c.height = HOVER_DISTORT_CONFIG.canvas.minSize;
       canvasRef.current = c;
     }
   }, [distortionEnabled]); // Track element size and adjust canvas resolution
@@ -131,8 +144,14 @@ export default function HoverDistortImage({
       const r = el.getBoundingClientRect();
       elemSizeRef.current = { w: r.width, h: r.height };
       if (canvasRef.current) {
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
-        const target = Math.min(128, Math.max(64, Math.max(r.width, r.height) * dpr));
+        const dpr = Math.min(
+          window.devicePixelRatio || 1,
+          HOVER_DISTORT_CONFIG.canvas.devicePixelRatioLimit,
+        );
+        const target = Math.min(
+          HOVER_DISTORT_CONFIG.canvas.maxSize,
+          Math.max(HOVER_DISTORT_CONFIG.canvas.minSize, Math.max(r.width, r.height) * dpr),
+        );
         const dim = Math.round(target);
         if (canvasRef.current.width !== dim || canvasRef.current.height !== dim) {
           canvasRef.current.width = dim;
@@ -158,8 +177,8 @@ export default function HoverDistortImage({
       if (!ctx) return;
 
       const { w: ew, h: eh } = elemSizeRef.current;
-      const rx = Math.max(6, (radiusPx * cw) / Math.max(ew, 1));
-      const ry = Math.max(6, (radiusPx * ch) / Math.max(eh, 1));
+      const rx = Math.max(HOVER_DISTORT_CONFIG.canvas.minRadius, (radiusPx * cw) / Math.max(ew, 1));
+      const ry = Math.max(HOVER_DISTORT_CONFIG.canvas.minRadius, (radiusPx * ch) / Math.max(eh, 1));
       const cx = (xPct / 100) * cw;
       const cy = (yPct / 100) * ch;
 
@@ -197,8 +216,10 @@ export default function HoverDistortImage({
     if (animatingRef.current) return;
     animatingRef.current = true;
 
-    // 💡 LERP 가중치 상수를 정의합니다. (현재 0.1)
-    const lerpFactor = Math.min(Math.max(easingFactor, 0.01), 1);
+    const lerpFactor = Math.min(
+      Math.max(easingFactor, HOVER_DISTORT_CONFIG.animation.minEasingFactor),
+      HOVER_DISTORT_CONFIG.animation.maxEasingFactor,
+    );
 
     const step = () => {
       const cp = currentPctRef.current;
@@ -220,12 +241,17 @@ export default function HoverDistortImage({
         feDispRef.current.setAttribute('scale', ns.toFixed(2));
       }
 
-      const nearPos = Math.hypot(tp.x - nx, tp.y - ny) < 0.2;
-      const nearScale = Math.abs(ts - ns) < 0.5;
+      const nearPos =
+        Math.hypot(tp.x - nx, tp.y - ny) < HOVER_DISTORT_CONFIG.animation.nearPosThreshold;
+      const nearScale = Math.abs(ts - ns) < HOVER_DISTORT_CONFIG.animation.nearScaleThreshold;
 
+      // 목표에 도달하면 애니메이션 즉시 정지
       if (nearPos && nearScale) {
         animatingRef.current = false;
-        animRafRef.current = null;
+        if (animRafRef.current !== null) {
+          cancelAnimationFrame(animRafRef.current);
+          animRafRef.current = null;
+        }
         return;
       }
       animRafRef.current = requestAnimationFrame(step);
@@ -260,6 +286,7 @@ export default function HoverDistortImage({
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;
 
+      // 이전 위치와의 차이 계산 (속도 기반 scale 계산용)
       let dx = 0;
       let dy = 0;
       if (prevMousePosRef.current) {
@@ -268,23 +295,31 @@ export default function HoverDistortImage({
       }
       prevMousePosRef.current = { x: px, y: py };
 
+      // 마우스 이동 속도 기반 scale 계산
       const speed = Math.hypot(dx, dy);
-      const scaleMultiplier = 500; // 🔑 마우스 이동 속도를 기반으로 targetScale 설정 (물결 효과)
+      targetScaleRef.current = Math.min(
+        distortionScale,
+        speed * HOVER_DISTORT_CONFIG.scaleMultiplier,
+      );
 
-      targetScaleRef.current = Math.min(distortionScale, speed * scaleMultiplier);
-
+      // scale이 0으로 돌아가는 타이머 리셋
       if (mouseMoveTimerRef.current) {
         clearTimeout(mouseMoveTimerRef.current);
       }
       mouseMoveTimerRef.current = window.setTimeout(() => {
         targetScaleRef.current = 0;
-      }, 100);
+        mouseMoveTimerRef.current = null;
+      }, HOVER_DISTORT_CONFIG.mouseMoveTimer);
 
+      // 위치 업데이트
       const pctX = (px / rect.width) * 100;
       const pctY = (py / rect.height) * 100;
       targetPctRef.current = { x: pctX, y: pctY };
 
-      startAnimIfNeeded();
+      // 애니메이션이 실행 중이 아니면 시작
+      if (!animatingRef.current) {
+        startAnimIfNeeded();
+      }
     },
     [distortionScale, startAnimIfNeeded, distortionEnabled],
   );

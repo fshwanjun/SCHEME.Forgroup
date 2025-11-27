@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import useWindowSize from '@/hooks/useWindowSize';
+import LogoInline from './LogoInline';
 
 const navItems = [
   { href: '/', label: 'Home' },
@@ -12,7 +13,7 @@ const navItems = [
   { href: '/studio', label: 'Studio' },
 ];
 
-export default function MobileMenu({ onProjectClick }: { onProjectClick?: () => void }) {
+export default function MobileMenu({ onProjectClick, headerLogoTrigger }: { onProjectClick?: () => void; headerLogoTrigger?: number }) {
   const pathname = usePathname();
   const windowSize = useWindowSize();
   const [isMobile, setIsMobile] = useState(false);
@@ -45,9 +46,10 @@ export default function MobileMenu({ onProjectClick }: { onProjectClick?: () => 
   return (
     <>
       {/* 햄버거 메뉴 버튼 - 헤더 우측 네비게이션 위치와 동일하게 정렬 */}
+      {/* 참고: MOBILE_MENU_CONFIG.zIndex.button = 400 */}
       <button
         onClick={() => setIsMenuOpen(!isMenuOpen)}
-        className="pointer-events-auto fixed top-6 right-4 z-[350] flex h-8 w-8 items-center justify-center select-none"
+        className="pointer-events-auto fixed top-6 right-4 z-[400] flex h-8 w-8 items-center justify-center select-none"
         style={{ mixBlendMode: 'normal' }}
         aria-label={isMenuOpen ? '메뉴 닫기' : '메뉴 열기'}>
         <div className="relative flex h-3 w-6 items-center justify-center">
@@ -65,9 +67,17 @@ export default function MobileMenu({ onProjectClick }: { onProjectClick?: () => 
       </button>
 
       {/* 모바일 메뉴 - 화면 전체를 덮는 흰색 메뉴 (헤더 아래) */}
+      {/* 참고: MOBILE_MENU_CONFIG.zIndex.menu = 300, logo = { height: 80, width: 200 } */}
       {isMenuOpen && (
         <nav className="pointer-events-auto fixed inset-0 z-[300] bg-white text-black">
           <div className="flex h-full flex-col p-6 pt-30">
+            {/* 모바일 메뉴 로고 */}
+            <div className="mb-8 h-[80px] w-[200px]">
+              <LogoInline
+                playTrigger={headerLogoTrigger}
+                invert={true}
+              />
+            </div>
             {navItems.map(({ href, label }) => {
               const active = pathname === href || (href !== '/' && pathname.startsWith(href));
               const isProjectLink = href === '/project';

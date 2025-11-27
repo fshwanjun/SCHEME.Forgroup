@@ -66,12 +66,12 @@ export default function ProjectPage() {
           .order('display_order', { ascending: true });
 
         if (error) {
-          console.error('Error fetching projects:', error);
+          // 에러 무시
         } else {
           setProjects(data || []);
         }
       } catch (error) {
-        console.error('Error fetching projects:', error);
+        // 에러 무시
       }
     };
 
@@ -223,7 +223,7 @@ export default function ProjectPage() {
           setLayoutItems(sortedItems);
         }
       } catch (error) {
-        console.error('프로젝트 레이아웃 로드 에러:', error);
+        // 에러 무시
       }
     };
 
@@ -472,7 +472,7 @@ export default function ProjectPage() {
   return (
     <>
       <Header isFixed={true} onProjectClick={handleProjectHeaderClick} headerLogoTrigger={headerLogoTrigger} />
-      <MobileMenu onProjectClick={handleProjectHeaderClick} />
+      <MobileMenu onProjectClick={handleProjectHeaderClick} headerLogoTrigger={headerLogoTrigger} />
       <motion.div
         ref={containerRef}
         animate={{

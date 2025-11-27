@@ -3,6 +3,7 @@
 import React from 'react';
 import HoverDistortImage from './HoverDistortImage';
 import Image from 'next/image';
+import { IMAGE_CARD_CONFIG, APP_CONFIG } from '@/config/appConfig';
 
 export default function ImageCard({
   projectId,
@@ -27,7 +28,11 @@ export default function ImageCard({
   const hasHorizontal = Boolean(horizontalSrc);
   const resolvedOrientation = orientation ?? (hasVertical ? 'vertical' : hasHorizontal ? 'horizontal' : 'vertical');
   const src = resolvedOrientation === 'vertical' ? (verticalSrc ?? horizontalSrc) : (horizontalSrc ?? verticalSrc);
-  const computedAspect = aspectRatio ?? (resolvedOrientation === 'vertical' ? '3 / 4' : '4 / 3');
+  const computedAspect =
+    aspectRatio ??
+    (resolvedOrientation === 'vertical'
+      ? APP_CONFIG.defaultAspectRatios.vertical
+      : APP_CONFIG.defaultAspectRatios.horizontal);
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation(); // 이벤트 전파 중단 (window 클릭 리스너 실행 방지)
@@ -45,7 +50,10 @@ export default function ImageCard({
   if (!src) return null;
 
   const altText = projectId ? `Project ${projectId} preview` : 'Project preview';
-  const [width, height] = resolvedOrientation === 'vertical' ? [900, 1200] : [1200, 900];
+  const [width, height] =
+    resolvedOrientation === 'vertical'
+      ? [IMAGE_CARD_CONFIG.vertical.width, IMAGE_CARD_CONFIG.vertical.height]
+      : [IMAGE_CARD_CONFIG.horizontal.width, IMAGE_CARD_CONFIG.horizontal.height];
 
   const imageContent = enableHoverEffect ? (
     <HoverDistortImage
@@ -64,7 +72,6 @@ export default function ImageCard({
       style={{ aspectRatio: computedAspect }}
       width={width}
       height={height}
-      unoptimized
     />
   );
 

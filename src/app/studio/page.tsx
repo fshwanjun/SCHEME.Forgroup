@@ -69,7 +69,6 @@ export default function StudioPage() {
       const { data: configData, error } = await supabase.from('config').select('content').eq('id', 'about').single();
 
       if (error) {
-        console.error('About 페이지 로드 에러:', error.message);
         return;
       }
 
@@ -102,7 +101,7 @@ export default function StudioPage() {
       isFixed={false}
       addClassName="studio-typography p-5 min-h-screen h-full flex flex-col gap-5 overflow-y-auto md:max-h-screen md:overflow-y-hidden">
       <Header isFixed={false} headerLogoTrigger={headerLogoTrigger} />
-      <MobileMenu />
+      <MobileMenu headerLogoTrigger={headerLogoTrigger} />
       <div className="page-studio">
         {/* [좌측] 데스크탑 이미지 영역 (40%) */}
         <div className="relative hidden h-full min-h-0 overflow-hidden md:flex md:max-w-[40%] md:min-w-0 md:flex-[0_0_50%]">
@@ -114,7 +113,6 @@ export default function StudioPage() {
               width={1200}
               height={1600}
               draggable={false}
-              unoptimized
             />
           ) : (
             // 이미지가 없을 때도 같은 영역 차지, 빈 공간 유지
@@ -138,7 +136,6 @@ export default function StudioPage() {
               width={1200}
               height={1600}
               draggable={false}
-              unoptimized
             />
           )}
 

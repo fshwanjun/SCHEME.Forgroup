@@ -3,14 +3,12 @@
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import LogoInline from './LogoInline';
+import { INTRO_LOGO_CONFIG } from '@/config/appConfig';
 
 type IntroLogoPhase = 'enter' | 'logo-exit' | 'overlay-exit' | 'hidden';
 
-const LOGO_EXIT_DURATION = 600; // ms
-const OVERLAY_FADE_DURATION = 1500; // ms
-
 export default function IntroLogo({
-  duration = 8000,
+  duration = INTRO_LOGO_CONFIG.defaultDuration,
   onComplete,
   onHeaderAnimationStart,
 }: {
@@ -21,8 +19,8 @@ export default function IntroLogo({
   const [phase, setPhase] = useState<IntroLogoPhase>('enter');
 
   useEffect(() => {
-    const overlayStart = Math.max(0, duration - OVERLAY_FADE_DURATION);
-    const logoStart = Math.max(0, overlayStart - LOGO_EXIT_DURATION);
+    const overlayStart = Math.max(0, duration - INTRO_LOGO_CONFIG.overlayFadeDuration);
+    const logoStart = Math.max(0, overlayStart - INTRO_LOGO_CONFIG.logoExitDuration);
 
     const logoTimer = window.setTimeout(() => {
       setPhase('logo-exit');
@@ -35,7 +33,7 @@ export default function IntroLogo({
     const hideTimer = window.setTimeout(() => {
       setPhase('hidden');
       onComplete?.();
-    }, overlayStart + OVERLAY_FADE_DURATION);
+    }, overlayStart + INTRO_LOGO_CONFIG.overlayFadeDuration);
 
     return () => {
       window.clearTimeout(logoTimer);

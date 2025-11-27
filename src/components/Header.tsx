@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import LogoInline from './LogoInline';
 import { cn } from '@/lib/utils';
 import useWindowSize from '@/hooks/useWindowSize';
+import { HEADER_CONFIG } from '@/config/appConfig';
 
 const navItems = [
   { href: '/project', label: 'Project' },
@@ -26,13 +27,6 @@ export default function Header({
   const [mounted, setMounted] = useState(false);
   const windowSize = useWindowSize();
 
-  // headerLogoTrigger 변경 추적
-  useEffect(() => {
-    if (headerLogoTrigger !== undefined) {
-      console.log('[Header] headerLogoTrigger 변경:', headerLogoTrigger, 'pathname:', pathname);
-    }
-  }, [headerLogoTrigger, pathname]);
-
   // 클라이언트 사이드에서만 모바일 여부 업데이트 (hydration 불일치 방지)
   useEffect(() => {
     setMounted(true);
@@ -51,8 +45,15 @@ export default function Header({
   };
 
   // 프로젝트와 studio 페이지에서 z-index 조정
+  // 참고: HEADER_CONFIG.zIndex = { detailPage: 400, projectOrStudio: 50, default: 350 }
   const isProjectOrStudio = pathname.startsWith('/project') || pathname === '/studio';
-  const zIndexClass = isProjectOrStudio ? 'z-50' : 'z-[350]';
+  // 상세 페이지는 z-index를 더 높게 설정하여 모달 위에 표시
+  const isDetailPage = pathname.startsWith('/project/') && pathname !== '/project';
+  const zIndexClass = isDetailPage
+    ? 'z-[400]' // HEADER_CONFIG.zIndex.detailPage
+    : isProjectOrStudio
+      ? 'z-50' // HEADER_CONFIG.zIndex.projectOrStudio
+      : 'z-[350]'; // HEADER_CONFIG.zIndex.default
 
   return (
     <header
@@ -64,9 +65,11 @@ export default function Header({
       )}
       suppressHydrationWarning>
       <div className="relative mx-auto flex items-start justify-between">
+        {/* 참고: HEADER_CONFIG.logo = { mobileWidth: 160, desktopWidth: 300 } */}
         <Link href="/" className="pointer-events-auto h-full w-[160px] select-none md:w-[300px]">
           <LogoInline
             playTrigger={pathname === '/' || isProjectOrStudio ? headerLogoTrigger : undefined}
+            invert={true} // 헤더에서는 항상 인버트 적용
             // key prop 제거: 재마운트 방지 (playTrigger로 애니메이션 제어)
           />
         </Link>
