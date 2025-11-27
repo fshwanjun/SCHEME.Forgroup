@@ -9,8 +9,8 @@ import { cn } from '@/lib/utils';
 
 interface AdminShellProps {
   children: React.ReactNode;
-  activeTab: 'studio' | 'project' | 'landing';
-  onTabChange: (tab: 'studio' | 'project' | 'landing') => void;
+  activeTab: 'studio' | 'project' | 'landing' | 'projectLayout';
+  onTabChange: (tab: 'studio' | 'project' | 'landing' | 'projectLayout') => void;
 }
 
 export default function AdminShell({ children, activeTab, onTabChange }: AdminShellProps) {
@@ -119,17 +119,31 @@ export default function AdminShell({ children, activeTab, onTabChange }: AdminSh
             <nav className="space-y-1">
               <button
                 onClick={() => {
-                  onTabChange('studio');
+                  onTabChange('landing');
                   setIsMobileOpen(false);
                 }}
                 className={cn(
                   'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                  activeTab === 'studio'
+                  activeTab === 'landing'
                     ? 'bg-stone-800 text-white'
                     : 'text-stone-400 hover:bg-stone-900 hover:text-stone-100',
                 )}>
-                <FileText className="h-4 w-4" />
-                Studio Page
+                <Home className="h-4 w-4" />
+                Landing Page
+              </button>
+              <button
+                onClick={() => {
+                  onTabChange('projectLayout');
+                  setIsMobileOpen(false);
+                }}
+                className={cn(
+                  'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                  activeTab === 'projectLayout'
+                    ? 'bg-stone-800 text-white'
+                    : 'text-stone-400 hover:bg-stone-900 hover:text-stone-100',
+                )}>
+                <FolderKanban className="h-4 w-4" />
+                Project Layout
               </button>
               <button
                 onClick={() => {
@@ -147,17 +161,17 @@ export default function AdminShell({ children, activeTab, onTabChange }: AdminSh
               </button>
               <button
                 onClick={() => {
-                  onTabChange('landing');
+                  onTabChange('studio');
                   setIsMobileOpen(false);
                 }}
                 className={cn(
                   'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                  activeTab === 'landing'
+                  activeTab === 'studio'
                     ? 'bg-stone-800 text-white'
                     : 'text-stone-400 hover:bg-stone-900 hover:text-stone-100',
                 )}>
-                <Home className="h-4 w-4" />
-                Landing Page
+                <FileText className="h-4 w-4" />
+                Studio Page
               </button>
             </nav>
           </div>
@@ -188,7 +202,9 @@ export default function AdminShell({ children, activeTab, onTabChange }: AdminSh
               ? 'Studio Management'
               : activeTab === 'project'
                 ? 'Project Management'
-                : 'Landing Page Management'}
+                : activeTab === 'landing'
+                  ? 'Landing Page Management'
+                  : 'Project Layout Management'}
           </h2>
           {/* Optional: Add header actions here */}
         </header>

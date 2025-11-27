@@ -39,7 +39,7 @@ export default function ProjectDetailContent({ contents, title, heroImageSrc }: 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="fixed bottom-0 left-0 z-10 flex w-full justify-between gap-4 px-[10px] md:px-5 pb-8 text-white mix-blend-difference">
+        className="fixed bottom-0 left-0 z-10 flex w-full justify-between gap-4 px-[10px] pb-8 text-white mix-blend-difference md:px-5">
         <div className="flex flex-col gap-1">
           <h6>Project</h6>
           <h5>{contents.project || ''}</h5>
@@ -77,7 +77,7 @@ export default function ProjectDetailContent({ contents, title, heroImageSrc }: 
         </div>
       )}
 
-      <div className="mx-auto grid min-h-2/3 w-full grid-cols-2 gap-4 overflow-hidden px-[10px] md:px-5 py-16">
+      <div className="mx-auto grid min-h-2/3 w-full grid-cols-2 gap-4 overflow-hidden px-[10px] py-16 md:px-5">
         <h1 className="leading-[124%]">
           {title || contents.project || 'Design Project'}
           <br />

@@ -19,134 +19,7 @@ export type GallerySelection = {
   rect?: DOMRect;
 };
 
-// 갤러리 레이아웃을 정의하는 Tailwind CSS 클래스 배열입니다.
-// 각 문자열은 하나의 이미지 "프레임"을 나타내며,
-// 그리드 상의 위치 (row-start, col-start)와 크기 (col-span, row-span),
-// 그리고 가로/세로 비율 (aspect-[3/4] 또는 aspect-[4/3])을 정의합니다.
-const FRAME_CLASSES: string[] = [
-  'frame-card aspect-[3/4] row-start-1 col-span-4 col-start-8 self-end',
-
-  'frame-card aspect-[3/4] row-start-1 col-span-5 col-start-12',
-
-  'frame-card aspect-[3/4] row-start-2 col-span-4 col-start-1',
-
-  'frame-card aspect-[4/3] row-start-2 col-span-3 col-start-5',
-
-  'frame-card aspect-[4/3] row-start-3 col-span-5 col-start-5',
-
-  'frame-card aspect-[4/3] row-start-4 col-span-7 col-start-10',
-
-  'frame-card aspect-[3/4] row-start-5 col-span-3 col-start-7',
-
-  'frame-card aspect-[4/3] row-start-6 col-span-6 col-start-1',
-
-  'frame-card aspect-[3/4] row-start-7 col-span-6 col-start-1',
-
-  'frame-card aspect-[4/3] row-start-8 col-span-10 col-start-7',
-
-  'frame-card aspect-[4/3] row-start-9 col-span-6 col-start-1',
-
-  'frame-card aspect-[3/4] row-start-10 col-span-2 col-start-7',
-
-  'frame-card aspect-[4/3] row-start-11 col-span-4 col-start-5',
-
-  'frame-card aspect-[3/4] row-start-12 col-span-4 col-start-1',
-
-  'frame-card aspect-[4/3] row-start-12 col-span-4 col-start-9',
-
-  'frame-card aspect-[4/3] row-start-12 col-span-4 col-start-13 self-end',
-
-  'frame-card aspect-[3/4] row-start-13 col-span-3 col-start-10',
-
-  'frame-card aspect-[4/3] row-start-14 col-span-3 col-start-7',
-
-  'frame-card aspect-[3/4] row-start-15 col-span-6 col-start-1',
-
-  'frame-card aspect-[4/3] row-start-15 col-span-4 col-start-13 self-end',
-
-  'frame-card aspect-[4/3] row-start-16 col-span-6 col-start-7',
-
-  'frame-card aspect-[3/4] row-start-17 col-span-4 col-start-13 self-end',
-
-  'frame-card aspect-[3/4] row-start-18 col-span-5 col-start-12',
-
-  'frame-card aspect-[3/4] row-start-19 col-span-3 col-start-9',
-
-  'frame-card aspect-[4/3] row-start-20 col-span-4 col-start-5',
-
-  'frame-card aspect-[3/4] row-start-21 col-span-4 col-start-1',
-
-  'frame-card aspect-[4/3] row-start-22 col-span-6 col-start-5',
-
-  'frame-card aspect-[4/3] row-start-23 col-span-6 col-start-11',
-
-  'frame-card aspect-[4/3] row-start-24 col-span-6 col-start-1',
-
-  'frame-card aspect-[3/4] row-start-24 col-span-4 col-start-7',
-
-  'frame-card aspect-[4/3] row-start-25 col-span-6 col-start-11',
-
-  'frame-card aspect-[4/3] row-start-26 col-span-5 col-start-6',
-
-  'frame-card aspect-[3/4] row-start-27 col-span-5 col-start-1',
-
-  'frame-card aspect-[3/4] row-start-27 col-span-3 col-start-14',
-
-  'frame-card aspect-[4/3] row-start-27 col-span-4 col-start-10 self-end',
-
-  'frame-card aspect-[4/3] row-start-28 col-span-4 col-start-6',
-
-  'frame-card aspect-[4/3] row-start-29 col-span-7 col-start-10',
-
-  'frame-card aspect-[4/3] row-start-30 col-span-6 col-start-4',
-
-  'frame-card aspect-[3/4] row-start-31 col-span-3 col-start-1',
-
-  'frame-card aspect-[4/3] row-start-32 col-span-8 col-start-4',
-];
-
-// 모바일 화면용 프레임 클래스 배열 (폰 화면에서 사용)
-// 11열 그리드 시스템 사용
-// 나중에 반응형으로 사용할 수 있도록 export
-export const MOBILE_FRAME_CLASSES: string[] = [
-  'frame-card aspect-[3/4] row-start-1 col-span-7 col-start-5',
-  'frame-card aspect-[3/4] row-start-2 col-span-4 col-start-1',
-  'frame-card aspect-[4/3] row-start-3 col-span-7 col-start-1',
-  'frame-card aspect-[3/4] row-start-4 col-span-4 col-start-8',
-  'frame-card aspect-[3/4] row-start-5 col-span-4 col-start-1',
-  'frame-card aspect-[3/4] row-start-5 col-span-3 col-start-5',
-  'frame-card aspect-[4/3] row-start-6 col-span-7 col-start-5',
-  'frame-card aspect-[3/4] row-start-7 col-span-4 col-start-1',
-  'frame-card aspect-[3/4] row-start-8 col-span-4 col-start-5',
-  'frame-card aspect-[4/3] row-start-9 col-span-8 col-start-1',
-  'frame-card aspect-[3/4] row-start-10 col-span-3 col-start-9',
-  'frame-card aspect-[3/4] row-start-11 col-span-5 col-start-4',
-  'frame-card aspect-[4/3] row-start-12 col-span-3 col-start-1',
-  'frame-card aspect-[4/3] row-start-13 col-span-7 col-start-1',
-  'frame-card aspect-[4/3] row-start-14 col-span-4 col-start-8',
-
-  'frame-card aspect-[3/4] row-start-15 col-span-4 col-start-4',
-  'frame-card aspect-[3/4] row-start-16 col-span-3 col-start-1',
-  'frame-card aspect-[4/3] row-start-17 col-span-3 col-start-1',
-
-  'frame-card aspect-[3/4] row-start-17 col-span-5 col-start-4',
-  'frame-card aspect-[3/4] row-start-18 col-span-3 col-start-9',
-  'frame-card aspect-[4/3] row-start-19 col-span-8 col-start-1',
-  'frame-card aspect-[4/3] row-start-20 col-span-4 col-start-1',
-  'frame-card aspect-[3/4] row-start-21 col-span-4 col-start-6',
-  'frame-card aspect-[4/3] row-start-22 col-span-6 col-start-6',
-  'frame-card aspect-[3/4] row-start-23 col-span-5 col-start-1',
-  'frame-card aspect-[3/4] row-start-24 col-span-3 col-start-6',
-  'frame-card aspect-[4/3] row-start-25 col-span-6 col-start-6',
-  'frame-card aspect-[3/4] row-start-26 col-span-5 col-start-1',
-  'frame-card aspect-[3/4] row-start-27 col-span-3 col-start-6',
-  'frame-card aspect-[4/3] row-start-28 col-span-6 col-start-6',
-  'frame-card aspect-[4/3] row-start-29 col-span-5 col-start-1',
-  'frame-card aspect-[3/4] row-start-30 col-span-5 col-start-1',
-  'frame-card aspect-[4/3] row-start-31 col-span-6 col-start-6',
-  'frame-card aspect-[3/4] row-start-32 col-span-5 col-start-1',
-  'frame-card aspect-[4/3] row-start-33 col-span-6 col-start-6',
-];
+import { HOME_LAYOUT_CONFIG } from '@/config/homeLayout';
 
 // 갤러리에 표시될 실제 프로젝트 이미지 데이터 목록입니다.
 // Landing Page Manager에서 관리하는 이미지 데이터를 사용합니다.
@@ -209,9 +82,15 @@ type HomeGalleryProps = {
   images?: ProjectImage[]; // Landing Page Manager에서 가져온 이미지 목록
   onSelectImage?: (image: GallerySelection) => void;
   selectedProjectId?: string | null;
+  layoutConfig?: typeof HOME_LAYOUT_CONFIG; // 레이아웃 설정 (기본값: HOME_LAYOUT_CONFIG)
 };
 
-export default function HomeGallery({ images = [], onSelectImage, selectedProjectId }: HomeGalleryProps) {
+export default function HomeGallery({
+  images = [],
+  onSelectImage,
+  selectedProjectId,
+  layoutConfig = HOME_LAYOUT_CONFIG,
+}: HomeGalleryProps) {
   // 화면 크기 감지
   const windowSize = useWindowSize();
   const [isMobile, setIsMobile] = useState(false);
@@ -225,15 +104,27 @@ export default function HomeGallery({ images = [], onSelectImage, selectedProjec
 
   // 모바일 여부에 따라 사용할 프레임 클래스 선택 (마운트 전에는 데스크톱 기본값)
   const currentFrameClasses = useMemo(
-    () => (mounted && isMobile ? MOBILE_FRAME_CLASSES : FRAME_CLASSES),
-    [mounted, isMobile],
+    () => (mounted && isMobile ? layoutConfig.mobile.frameClasses : layoutConfig.desktop.frameClasses),
+    [mounted, isMobile, layoutConfig],
   );
 
   // 모바일 여부에 따라 gap 설정 (마운트 전에는 데스크톱 기본값)
-  const gap = useMemo(() => (mounted && isMobile ? 10 : 20), [mounted, isMobile]);
+  const gap = useMemo(
+    () => (mounted && isMobile ? layoutConfig.mobile.gap : layoutConfig.desktop.gap),
+    [mounted, isMobile, layoutConfig],
+  );
 
   // 모바일 여부에 따라 좌우 여백 설정 (마운트 전에는 데스크톱 기본값)
-  const horizontalPadding = useMemo(() => (mounted && isMobile ? 10 : 20), [mounted, isMobile]);
+  const horizontalPadding = useMemo(
+    () => (mounted && isMobile ? layoutConfig.mobile.horizontalPadding : layoutConfig.desktop.horizontalPadding),
+    [mounted, isMobile, layoutConfig],
+  );
+
+  // 그리드 컬럼 수 설정
+  const gridCols = useMemo(
+    () => (mounted && isMobile ? layoutConfig.mobile.gridCols : layoutConfig.desktop.gridCols),
+    [mounted, isMobile, layoutConfig],
+  );
 
   // 🌟 수정: 건너뛸 행의 개수를 저장하는 상태입니다.
   const [skipRows, setSkipRows] = useState(0);
@@ -324,8 +215,9 @@ export default function HomeGallery({ images = [], onSelectImage, selectedProjec
       className="HomeGallery relative mb-[20px] w-full"
       style={{ paddingLeft: horizontalPadding, paddingRight: horizontalPadding }}>
       <div
-        className={`grid w-full ${isMobile ? 'grid-cols-[repeat(11,minmax(0,1fr))]' : 'grid-cols-16'}`}
+        className="grid w-full"
         style={{
+          gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
           columnGap: gap,
           rowGap: gap,
         }}>

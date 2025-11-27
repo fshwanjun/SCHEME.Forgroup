@@ -7,8 +7,9 @@ import AdminShell from '@/components/admin/AdminShell';
 import StudioManager from '@/components/admin/StudioManager';
 import ProjectManager from '@/components/admin/ProjectManager';
 import LandingPageManager from '@/components/admin/LandingPageManager';
+import ProjectLayoutManager from '@/components/admin/ProjectLayoutManager';
 
-type Tab = 'studio' | 'project' | 'landing';
+type Tab = 'studio' | 'project' | 'landing' | 'projectLayout';
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<Tab>('studio');
@@ -20,8 +21,10 @@ export default function AdminPage() {
           <StudioManager />
         ) : activeTab === 'project' ? (
           <ProjectManager />
-        ) : (
+        ) : activeTab === 'landing' ? (
           <LandingPageManager />
+        ) : (
+          <ProjectLayoutManager />
         )}
       </div>
     </AdminShell>
