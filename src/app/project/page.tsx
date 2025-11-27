@@ -53,6 +53,7 @@ export default function ProjectPage() {
   const isInitialZoomRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollPositionRef = useRef<number>(0);
+  const [headerLogoTrigger, setHeaderLogoTrigger] = useState<number | undefined>(undefined);
 
   // 프로젝트 목록 가져오기
   useEffect(() => {
@@ -77,12 +78,15 @@ export default function ProjectPage() {
     fetchProjects();
   }, []);
 
-  // 페이지 로드 시 스크롤 최상단 이동 및 복원 방지
+  // 페이지 로드 시 스크롤 최상단 이동 및 복원 방지, 헤더 로고 애니메이션 트리거
   useEffect(() => {
     if ('scrollRestoration' in history) {
       history.scrollRestoration = 'manual';
     }
     window.scrollTo(0, 0);
+
+    // 헤더 로고 애니메이션 트리거
+    setHeaderLogoTrigger(Date.now());
 
     return () => {
       if ('scrollRestoration' in history) {
@@ -467,7 +471,7 @@ export default function ProjectPage() {
 
   return (
     <>
-      <Header isFixed={true} onProjectClick={handleProjectHeaderClick} />
+      <Header isFixed={true} onProjectClick={handleProjectHeaderClick} headerLogoTrigger={headerLogoTrigger} />
       <MobileMenu onProjectClick={handleProjectHeaderClick} />
       <motion.div
         ref={containerRef}

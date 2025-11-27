@@ -9,20 +9,32 @@ type IntroLogoPhase = 'enter' | 'logo-exit' | 'overlay-exit' | 'hidden';
 const LOGO_EXIT_DURATION = 600; // ms
 const OVERLAY_FADE_DURATION = 1500; // ms
 
-export default function IntroLogo({ duration = 8000 }: { duration?: number }) {
+export default function IntroLogo({
+  duration = 8000,
+  onComplete,
+  onHeaderAnimationStart,
+}: {
+  duration?: number;
+  onComplete?: () => void;
+  onHeaderAnimationStart?: () => void;
+}) {
   const [phase, setPhase] = useState<IntroLogoPhase>('enter');
 
   useEffect(() => {
     const overlayStart = Math.max(0, duration - OVERLAY_FADE_DURATION);
     const logoStart = Math.max(0, overlayStart - LOGO_EXIT_DURATION);
+
     const logoTimer = window.setTimeout(() => {
       setPhase('logo-exit');
+      // 헤더 애니메이션을 logo-exit 단계에서 시작
+      onHeaderAnimationStart?.();
     }, logoStart);
     const overlayTimer = window.setTimeout(() => {
       setPhase('overlay-exit');
     }, overlayStart);
     const hideTimer = window.setTimeout(() => {
       setPhase('hidden');
+      onComplete?.();
     }, overlayStart + OVERLAY_FADE_DURATION);
 
     return () => {
@@ -30,7 +42,7 @@ export default function IntroLogo({ duration = 8000 }: { duration?: number }) {
       window.clearTimeout(overlayTimer);
       window.clearTimeout(hideTimer);
     };
-  }, [duration]);
+  }, [duration, onComplete, onHeaderAnimationStart]);
 
   useEffect(() => {
     if (phase !== 'hidden') {
@@ -58,14 +70,14 @@ export default function IntroLogo({ duration = 8000 }: { duration?: number }) {
 
   const overlayClass = cn('intro-logo-overlay', phase === 'overlay-exit' && 'intro-logo-overlay--exit');
   const logoClass = cn(
-    'intro-logo-logo',
+    'intro-logo-logo p-4 max-w-2xl',
     (phase === 'logo-exit' || phase === 'overlay-exit') && 'intro-logo-logo--exit',
   );
 
   return (
     <div className={overlayClass}>
       <div className={logoClass}>
-        <LogoInline src="/data.svg" width={200} height={85} />
+        <LogoInline />
       </div>
     </div>
   );

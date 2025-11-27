@@ -26,6 +26,22 @@ export default function Home() {
   const [landingImages, setLandingImages] = useState<
     Array<{ projectId: string; verticalSrc: string; horizontalSrc: string }>
   >([]);
+  const [introComplete, setIntroComplete] = useState(false);
+  const [headerLogoTrigger, setHeaderLogoTrigger] = useState<number | undefined>(undefined);
+
+  // introComplete 상태 변경 추적
+  useEffect(() => {
+    if (introComplete) {
+      console.log('[Home] introComplete가 true로 변경됨');
+    }
+  }, [introComplete]);
+
+  // headerLogoTrigger 변경 추적
+  useEffect(() => {
+    if (headerLogoTrigger !== undefined) {
+      console.log('[Home] headerLogoTrigger 변경:', headerLogoTrigger);
+    }
+  }, [headerLogoTrigger]);
 
   const [triggerElement, setTriggerElement] = useState<HTMLElement | null>(null);
   const triggeredRef = useRef(false);
@@ -297,10 +313,21 @@ export default function Home() {
     [sectionIds, handleSelectImage, selected?.projectId, landingImages],
   );
 
+  const handleIntroComplete = useCallback(() => {
+    console.log('[Home] handleIntroComplete 호출됨');
+    setIntroComplete(true);
+  }, []);
+
+  const handleHeaderAnimationStart = useCallback(() => {
+    console.log('[Home] handleHeaderAnimationStart 호출됨 - 헤더 애니메이션 시작');
+    const trigger = Date.now();
+    setHeaderLogoTrigger(trigger);
+  }, []);
+
   return (
     <>
-      <IntroLogo />
-      <Header />
+      <IntroLogo onComplete={handleIntroComplete} onHeaderAnimationStart={handleHeaderAnimationStart} />
+      <Header headerLogoTrigger={headerLogoTrigger} />
       <MobileMenu />
       <motion.div
         ref={containerRef}

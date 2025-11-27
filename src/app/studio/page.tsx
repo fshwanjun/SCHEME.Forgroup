@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
 import Header from '@/components/Header';
@@ -57,34 +60,48 @@ function RenderList({ items }: { items: ListItem[] | string }) {
   );
 }
 
-export default async function StudioPage() {
-  const { data: configData, error } = await supabase.from('config').select('content').eq('id', 'about').single();
+export default function StudioPage() {
+  const [data, setData] = useState<AboutData>(defaultData);
+  const [headerLogoTrigger, setHeaderLogoTrigger] = useState<number | undefined>(undefined);
 
-  if (error) {
-    console.error('About 페이지 로드 에러:', error.message);
-    return <div>About 페이지를 불러오는 데 실패했습니다.</div>;
-  }
+  useEffect(() => {
+    const fetchData = async () => {
+      const { data: configData, error } = await supabase.from('config').select('content').eq('id', 'about').single();
 
-  let data: AboutData = defaultData;
-
-  if (configData?.content) {
-    try {
-      // jsonb 타입이므로 이미 객체로 반환됨 (또는 string일 수도 있음)
-      const content = configData.content;
-      const parsed = typeof content === 'string' ? JSON.parse(content) : content;
-      data = { ...defaultData, ...parsed };
-    } catch {
-      // 파싱 실패 시 description으로 간주 (구버전 호환)
-      if (typeof configData.content === 'string') {
-        data.description = configData.content;
+      if (error) {
+        console.error('About 페이지 로드 에러:', error.message);
+        return;
       }
-    }
-  }
+
+      let parsedData: AboutData = defaultData;
+
+      if (configData?.content) {
+        try {
+          // jsonb 타입이므로 이미 객체로 반환됨 (또는 string일 수도 있음)
+          const content = configData.content;
+          const parsed = typeof content === 'string' ? JSON.parse(content) : content;
+          parsedData = { ...defaultData, ...parsed };
+        } catch {
+          // 파싱 실패 시 description으로 간주 (구버전 호환)
+          if (typeof configData.content === 'string') {
+            parsedData.description = configData.content;
+          }
+        }
+      }
+
+      setData(parsedData);
+      // 헤더 로고 애니메이션 트리거
+      setHeaderLogoTrigger(Date.now());
+    };
+
+    fetchData();
+  }, []);
+
   return (
     <HomeContainer
       isFixed={false}
       addClassName="studio-typography p-5 min-h-screen h-full flex flex-col gap-5 overflow-y-auto md:max-h-screen md:overflow-y-hidden">
-      <Header isFixed={false} />
+      <Header isFixed={false} headerLogoTrigger={headerLogoTrigger} />
       <MobileMenu />
       <div className="page-studio">
         {/* [좌측] 데스크탑 이미지 영역 (40%) */}

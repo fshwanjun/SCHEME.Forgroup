@@ -293,7 +293,6 @@ html {
 
 .intro-logo-logo {
   @apply flex items-center justify-center;
-  transform: scale(2);
   transition: transform 1s ease;
 }
 
