@@ -151,7 +151,7 @@ function SortableProjectLayoutItem({
                   const {
                     data: { publicUrl },
                   } = supabase.storage.from('images').getPublicUrl(filePath);
-                  
+
                   // 이미지 비율 감지 후 업로드
                   const orientation = await detectImageOrientation(publicUrl);
                   onImageUpload(item.frameIndex, publicUrl, orientation);
@@ -338,6 +338,7 @@ export default function ProjectLayoutManager() {
             id: `frame-${index}`,
             frameIndex: index,
             imageUrl: null,
+            orientation: null,
             projectId: null,
             order: index,
           }));
@@ -355,6 +356,7 @@ export default function ProjectLayoutManager() {
           id: `frame-${index}`,
           frameIndex: index,
           imageUrl: null,
+          orientation: null,
           projectId: null,
           order: index,
         }));
@@ -428,7 +430,7 @@ export default function ProjectLayoutManager() {
     const totalFrames = PROJECT_LAYOUT_CONFIG.desktop.frameClasses.length;
     // 사용된 frameIndex 찾기
     const usedFrameIndices = new Set(layoutItems.map((item) => item.frameIndex));
-    
+
     // 사용되지 않은 첫 번째 frameIndex 찾기, 없으면 순환 사용
     let newFrameIndex = 0;
     for (let i = 0; i < totalFrames; i++) {
@@ -502,7 +504,7 @@ export default function ProjectLayoutManager() {
         const orientation = await detectImageOrientation(publicUrl);
         const frameClass = PROJECT_LAYOUT_CONFIG.desktop.frameClasses[nextFrameIndex];
         const frameOrientation = frameClass.includes('aspect-[3/4]') ? 'vertical' : 'horizontal';
-        
+
         // 비율이 맞지 않으면 다음 적절한 프레임 찾기
         if (orientation !== frameOrientation) {
           for (let j = 0; j < totalFrames; j++) {
@@ -646,9 +648,7 @@ export default function ProjectLayoutManager() {
           onDrop={handleDrop}
           className={cn(
             'rounded-lg border-2 border-dashed p-8 text-center transition-colors',
-            isDragging
-              ? 'border-stone-500 bg-stone-800/50'
-              : 'border-stone-700 bg-stone-900/30 hover:border-stone-600',
+            isDragging ? 'border-stone-500 bg-stone-800/50' : 'border-stone-700 bg-stone-900/30 hover:border-stone-600',
             uploadingFiles.size > 0 && 'pointer-events-none opacity-50',
           )}>
           {uploadingFiles.size > 0 ? (

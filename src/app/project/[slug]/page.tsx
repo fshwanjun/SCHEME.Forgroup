@@ -49,20 +49,13 @@ async function getProjectBySlug(slug: string): Promise<ProjectDetail | null> {
     .from('project')
     .select('id, title, slug, description, contents')
     .eq('slug', slug)
-    .limit(1)
     .single();
 
-  if (error) {
+  if (error || !project) {
     return null;
   }
 
-  const projectData = project?.[0] || null;
-
-  if (!projectData) {
-    return null;
-  }
-
-  return projectData as ProjectDetail;
+  return project as ProjectDetail;
 }
 
 type PageProps = {

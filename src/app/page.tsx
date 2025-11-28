@@ -28,7 +28,6 @@ export default function Home() {
   >([]);
   const [headerLogoTrigger, setHeaderLogoTrigger] = useState<number | undefined>(undefined);
 
-
   const [triggerElement, setTriggerElement] = useState<HTMLElement | null>(null);
   const triggeredRef = useRef(false);
   const isInitialZoomRef = useRef(false); // 최초 줌 계산 여부 추적
@@ -296,10 +295,6 @@ export default function Home() {
     [sectionIds, handleSelectImage, selected?.projectId, landingImages],
   );
 
-  const handleIntroComplete = useCallback(() => {
-    setIntroComplete(true);
-  }, []);
-
   const handleHeaderAnimationStart = useCallback(() => {
     const trigger = Date.now();
     setHeaderLogoTrigger(trigger);
@@ -307,7 +302,7 @@ export default function Home() {
 
   return (
     <>
-      <IntroLogo onComplete={handleIntroComplete} onHeaderAnimationStart={handleHeaderAnimationStart} />
+      <IntroLogo onHeaderAnimationStart={handleHeaderAnimationStart} />
       <Header headerLogoTrigger={headerLogoTrigger} />
       <MobileMenu headerLogoTrigger={headerLogoTrigger} />
       <motion.div

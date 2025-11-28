@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PROJECT_DETAIL_CONFIG } from '@/config/appConfig';
 
 interface DetailImage {
@@ -29,12 +29,28 @@ interface ProjectDetailContentProps {
   contents: ProjectContent;
   title?: string;
   heroImageSrc?: string; // 클릭한 이미지를 hero로 사용할 경우
+  onHeroImageLoad?: () => void; // Hero 이미지 로드 완료 콜백
 }
 
-export default function ProjectDetailContent({ contents, title, heroImageSrc }: ProjectDetailContentProps) {
+export default function ProjectDetailContent({
+  contents,
+  title,
+  heroImageSrc,
+  onHeroImageLoad,
+}: ProjectDetailContentProps) {
   // Hero 이미지 소스 결정: heroImageSrc가 있으면 우선 사용, 없으면 thumbnail43
   const heroImage = heroImageSrc || contents.thumbnail43;
   const [heroImageLoaded, setHeroImageLoaded] = useState(false);
+
+  // heroImage가 변경되면 로드 상태 리셋
+  useEffect(() => {
+    setHeroImageLoaded(false);
+  }, [heroImage]);
+
+  const handleHeroImageLoad = () => {
+    setHeroImageLoaded(true);
+    onHeroImageLoad?.();
+  };
 
   return (
     <>
@@ -72,24 +88,9 @@ export default function ProjectDetailContent({ contents, title, heroImageSrc }: 
       </motion.div>
       {heroImage && (
         <div className="relative h-full w-full overflow-hidden">
-          {/* Placeholder: 확대된 썸네일 이미지 (heroImageSrc가 있고 heroImage와 다를 때만 사용) */}
-          {heroImageSrc && heroImageSrc !== heroImage && !heroImageLoaded && (
-            <div className="absolute inset-0">
-              <Image
-                className="h-full w-full object-cover"
-                src={heroImageSrc}
-                alt={`${contents.project} studio hero image placeholder`}
-                width={1920}
-                height={1080}
-                priority
-                draggable={false}
-                unoptimized
-              />
-            </div>
-          )}
-          {/* 실제 Hero 이미지 */}
+          {/* 실제 Hero 이미지 - 배경 이미지로 확대된 썸네일이 이미 표시되고 있음 */}
           <Image
-            className={`h-full w-full object-cover transition-opacity duration-300 ${
+            className={`h-full w-full object-cover transition-opacity duration-700 ease-out ${
               heroImageLoaded || heroImageSrc === heroImage ? 'opacity-100' : 'opacity-0'
             }`}
             src={heroImage}
@@ -98,7 +99,11 @@ export default function ProjectDetailContent({ contents, title, heroImageSrc }: 
             height={1080}
             priority
             draggable={false}
-            onLoad={() => setHeroImageLoaded(true)}
+            onLoad={handleHeroImageLoad}
+            onError={() => {
+              // 이미지 로드 실패 시에도 콜백 호출
+              handleHeroImageLoad();
+            }}
           />
         </div>
       )}
