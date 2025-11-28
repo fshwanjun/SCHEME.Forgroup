@@ -4,8 +4,11 @@ import { useEffect, useState, useRef } from 'react';
 import Lottie, { type LottieRefCurrentProps } from 'lottie-react';
 import { LOGO_CONFIG } from '@/config/appConfig';
 
+// Lottie 애니메이션 데이터 타입
+type LottieAnimationData = Record<string, unknown>;
+
 // Lottie 애니메이션 데이터를 전역적으로 캐싱하여 재로드 방지
-const lottieCache = new Map<string, any>();
+const lottieCache = new Map<string, LottieAnimationData>();
 
 export default function LogoInline({
   src = LOGO_CONFIG.defaultSrc,
@@ -18,7 +21,7 @@ export default function LogoInline({
   playTrigger?: number | string;
   invert?: boolean;
 }) {
-  const [animationData, setAnimationData] = useState<any>(() => lottieCache.get(src) || null);
+  const [animationData, setAnimationData] = useState<LottieAnimationData | null>(() => lottieCache.get(src) || null);
   const lottieRef = useRef<LottieRefCurrentProps>(null);
   const prevPlayTriggerRef = useRef<number | string | undefined>(undefined);
   const hasTriggeredRef = useRef(false);
@@ -126,9 +129,14 @@ export default function LogoInline({
         }
 
         // 0 프레임으로 이동하고 재생
-        if ('goToAndStop' in lottieRef.current && typeof (lottieRef.current as any).goToAndStop === 'function') {
+        const lottieInstance = lottieRef.current as LottieRefCurrentProps & {
+          goToAndStop?: (frame: number, isFrame?: boolean) => void;
+          goToAndPlay?: (frame: number, isFrame?: boolean) => void;
+        };
+
+        if (typeof lottieInstance.goToAndStop === 'function') {
           // goToAndStop으로 0 프레임으로 이동
-          (lottieRef.current as any).goToAndStop(0, true);
+          lottieInstance.goToAndStop(0, true);
 
           // 다음 프레임에서 재생
           requestAnimationFrame(() => {
@@ -136,9 +144,9 @@ export default function LogoInline({
               lottieRef.current.play();
             }
           });
-        } else if ('goToAndPlay' in lottieRef.current && typeof (lottieRef.current as any).goToAndPlay === 'function') {
+        } else if (typeof lottieInstance.goToAndPlay === 'function') {
           // goToAndPlay가 있으면 직접 사용
-          (lottieRef.current as any).goToAndPlay(0, true);
+          lottieInstance.goToAndPlay(0, true);
         } else {
           // 기본 방법: stop 후 play
           if (lottieRef.current.stop) {
@@ -153,7 +161,7 @@ export default function LogoInline({
             animationTimeoutRef.current = null;
           }, LOGO_CONFIG.animation.fallbackDelay);
         }
-      } catch (e) {
+      } catch {
         // fallback: stop 후 play
         try {
           if (lottieRef.current?.stop) {
@@ -165,7 +173,7 @@ export default function LogoInline({
             }
             fallbackTimeoutRef.current = null;
           }, LOGO_CONFIG.animation.fallbackDelay);
-        } catch (fallbackError) {
+        } catch {
           // 에러 무시
         }
       }

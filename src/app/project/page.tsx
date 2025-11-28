@@ -50,6 +50,7 @@ export default function ProjectPage() {
   const [zoomStyle, setZoomStyle] = useState({ x: 0, y: 0, scale: 1, originX: 0, originY: 0 });
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [imagesLoaded, setImagesLoaded] = useState(false);
   const isInitialZoomRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollPositionRef = useRef<number>(0);
@@ -70,7 +71,7 @@ export default function ProjectPage() {
         } else {
           setProjects(data || []);
         }
-      } catch (error) {
+      } catch {
         // 에러 무시
       }
     };
@@ -95,10 +96,21 @@ export default function ProjectPage() {
     };
   }, []);
 
-  // 선택된 이미지에 해당하는 프로젝트 상세 정보 가져오기
+  // 이미지 프리로드 함수
+  const preloadImage = (src: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const img = new window.Image();
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+      img.src = src;
+    });
+  };
+
+  // 선택된 이미지에 해당하는 프로젝트 상세 정보 가져오기 및 이미지 프리로드
   useEffect(() => {
     if (!selected) {
       setSelectedProject(null);
+      setImagesLoaded(false);
       return;
     }
 
@@ -111,17 +123,54 @@ export default function ProjectPage() {
           .eq('id', parseInt(selected.projectId))
           .single();
 
+        let project: Project | null = null;
         if (!error && data) {
-          setSelectedProject(data as Project);
+          project = data as Project;
+          setSelectedProject(project);
         } else {
           // projectId로 찾지 못하면 slug로 시도
-          const project = projects.find((p) => p.id.toString() === selected.projectId);
-          if (project) {
+          const foundProject = projects.find((p) => p.id.toString() === selected.projectId);
+          if (foundProject) {
+            project = foundProject;
             setSelectedProject(project);
           }
         }
+
+        // 프로젝트를 찾았으면 이미지 프리로드
+        if (project?.contents) {
+          const imagesToPreload: string[] = [];
+          
+          // Hero 이미지 (클릭한 이미지 또는 썸네일)
+          const heroImageSrc = selected.src || project.contents.thumbnail43 || project.contents.thumbnail34;
+          if (heroImageSrc) {
+            imagesToPreload.push(heroImageSrc);
+          }
+
+          // 상세 이미지들
+          if (project.contents.detailImages && project.contents.detailImages.length > 0) {
+            project.contents.detailImages.forEach((detailImage) => {
+              if (detailImage.url) {
+                imagesToPreload.push(detailImage.url);
+              }
+            });
+          }
+
+          // 모든 이미지 프리로드
+          try {
+            await Promise.all(imagesToPreload.map((src) => preloadImage(src)));
+            setImagesLoaded(true);
+          } catch (error) {
+            // 일부 이미지 로드 실패해도 계속 진행
+            console.warn('Some images failed to preload:', error);
+            setImagesLoaded(true);
+          }
+        } else {
+          // 프로젝트를 찾지 못한 경우에도 계속 진행
+          setImagesLoaded(true);
+        }
       } catch {
         // Error handling
+        setImagesLoaded(true);
       }
     };
 
@@ -230,7 +279,7 @@ export default function ProjectPage() {
             }));
           setLayoutItems(sortedItems);
         }
-      } catch (error) {
+      } catch {
         // 에러 무시
       }
     };
@@ -304,6 +353,7 @@ export default function ProjectPage() {
         setZoomStyle((prev) => ({ ...prev, x: 0, y: 0, scale: 1 }));
         setShowDetailModal(false);
         setIsAnimating(false);
+        setImagesLoaded(false);
         // URL만 복원 (페이지 이동 없음)
         if (pathname.startsWith('/project/') && pathname !== '/project') {
           window.history.pushState({}, '', '/project');
@@ -412,25 +462,9 @@ export default function ProjectPage() {
       document.body.style.pointerEvents = 'none';
       document.body.style.userSelect = 'none';
 
-      // 확대 애니메이션 완료 후 모달 표시 및 스크롤 허용
+      // 확대 애니메이션 완료 후 모달 표시 (이미지 로드 완료는 별도 useEffect에서 처리)
       setTimeout(() => {
-        setShowDetailModal(true);
         setIsAnimating(false);
-        // URL만 업데이트 (페이지 이동 없음)
-        const project = projects.find((p) => p.id.toString() === selected.projectId);
-        if (project?.slug) {
-          window.history.pushState({}, '', `/project/${project.slug}`);
-        }
-        // 애니메이션 완료 후 스크롤 허용
-        document.body.style.overflow = '';
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.width = '';
-        document.body.style.pointerEvents = '';
-        document.body.style.userSelect = '';
-        if (scrollPositionRef.current !== undefined) {
-          window.scrollTo(0, scrollPositionRef.current);
-        }
       }, 800); // 확대 애니메이션 duration과 동일
     };
 
@@ -448,6 +482,33 @@ export default function ProjectPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected]);
+
+  // 이미지 로드 완료 및 확대 애니메이션 완료 후 모달 표시
+  useEffect(() => {
+    if (!selected || !selectedProject || !imagesLoaded || isAnimating) {
+      return;
+    }
+
+    // 애니메이션이 완료되고 이미지도 로드되었으면 모달 표시
+    setShowDetailModal(true);
+    
+    // URL만 업데이트 (페이지 이동 없음)
+    const project = projects.find((p) => p.id.toString() === selected.projectId);
+    if (project?.slug) {
+      window.history.pushState({}, '', `/project/${project.slug}`);
+    }
+    
+    // 애니메이션 완료 후 스크롤 허용
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.width = '';
+    document.body.style.pointerEvents = '';
+    document.body.style.userSelect = '';
+    if (scrollPositionRef.current !== undefined) {
+      window.scrollTo(0, scrollPositionRef.current);
+    }
+  }, [selected, selectedProject, imagesLoaded, isAnimating, projects]);
 
   // ESC 키로 모달 닫기
   useEffect(() => {
@@ -508,8 +569,8 @@ export default function ProjectPage() {
       {/* 상세 페이지 모달 (확대 애니메이션 완료 후 표시) */}
       {selectedProject && selectedProject.contents && (
         <div
-          className={`fixed inset-0 z-[200] overflow-y-auto bg-white ${
-            showDetailModal ? 'opacity-100' : 'pointer-events-none opacity-0'
+          className={`fixed inset-0 z-[200] overflow-y-auto transition-colors duration-300 ${
+            showDetailModal ? 'bg-white opacity-100' : 'pointer-events-none bg-transparent opacity-0'
           }`}
           onClick={(e) => {
             if (e.target === e.currentTarget && showDetailModal) {

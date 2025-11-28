@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { useState } from 'react';
 import { PROJECT_DETAIL_CONFIG } from '@/config/appConfig';
 
 interface DetailImage {
@@ -33,6 +34,7 @@ interface ProjectDetailContentProps {
 export default function ProjectDetailContent({ contents, title, heroImageSrc }: ProjectDetailContentProps) {
   // Hero 이미지 소스 결정: heroImageSrc가 있으면 우선 사용, 없으면 thumbnail43
   const heroImage = heroImageSrc || contents.thumbnail43;
+  const [heroImageLoaded, setHeroImageLoaded] = useState(false);
 
   return (
     <>
@@ -70,14 +72,33 @@ export default function ProjectDetailContent({ contents, title, heroImageSrc }: 
       </motion.div>
       {heroImage && (
         <div className="relative h-full w-full overflow-hidden">
+          {/* Placeholder: 확대된 썸네일 이미지 (heroImageSrc가 있고 heroImage와 다를 때만 사용) */}
+          {heroImageSrc && heroImageSrc !== heroImage && !heroImageLoaded && (
+            <div className="absolute inset-0">
+              <Image
+                className="h-full w-full object-cover"
+                src={heroImageSrc}
+                alt={`${contents.project} studio hero image placeholder`}
+                width={1920}
+                height={1080}
+                priority
+                draggable={false}
+                unoptimized
+              />
+            </div>
+          )}
+          {/* 실제 Hero 이미지 */}
           <Image
-            className="h-full w-full object-cover"
+            className={`h-full w-full object-cover transition-opacity duration-300 ${
+              heroImageLoaded || heroImageSrc === heroImage ? 'opacity-100' : 'opacity-0'
+            }`}
             src={heroImage}
             alt={`${contents.project} studio hero image`}
             width={1920}
             height={1080}
             priority
             draggable={false}
+            onLoad={() => setHeroImageLoaded(true)}
           />
         </div>
       )}

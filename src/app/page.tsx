@@ -26,7 +26,6 @@ export default function Home() {
   const [landingImages, setLandingImages] = useState<
     Array<{ projectId: string; verticalSrc: string; horizontalSrc: string }>
   >([]);
-  const [introComplete, setIntroComplete] = useState(false);
   const [headerLogoTrigger, setHeaderLogoTrigger] = useState<number | undefined>(undefined);
 
 
@@ -150,9 +149,6 @@ export default function Home() {
       if (!rect) return;
 
       if (!rect) return;
-
-      const scrollX = window.scrollX;
-      const scrollY = window.scrollY;
 
       // 상하 여백 100px씩 => 합쳐서 200px
       const verticalPadding = 200;

@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react';
 import LogoInline from './LogoInline';
 import { cn } from '@/lib/utils';
 import useWindowSize from '@/hooks/useWindowSize';
-import { HEADER_CONFIG } from '@/config/appConfig';
 
 const navItems = [
   { href: '/project', label: 'Project' },

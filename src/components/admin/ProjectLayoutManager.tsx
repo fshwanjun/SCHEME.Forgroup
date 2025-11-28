@@ -660,7 +660,7 @@ export default function ProjectLayoutManager() {
             <div className="flex flex-col items-center gap-2">
               <Upload className="h-8 w-8 text-stone-500" />
               <p className="text-sm text-stone-400">
-                Drag and drop images here to add new cards, or click "Add Card" to add an empty card
+                Drag and drop images here to add new cards, or click &quot;Add Card&quot; to add an empty card
               </p>
             </div>
           )}
