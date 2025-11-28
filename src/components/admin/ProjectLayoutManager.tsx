@@ -21,7 +21,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Loader2, ExternalLink, Upload, X, Trash2 } from 'lucide-react';
+import { GripVertical, Loader2, ExternalLink, Upload, X, Trash2, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -32,6 +32,7 @@ interface ProjectLayoutItem {
   id: string; // 프레임 인덱스 기반 고유 ID
   frameIndex: number; // PROJECT_FRAME_CLASSES 배열의 인덱스
   imageUrl: string | null; // 업로드한 이미지 URL (null이면 미업로드)
+  orientation: 'horizontal' | 'vertical' | null; // 업로드한 이미지의 비율 (null이면 미업로드)
   projectId: string | null; // 선택된 프로젝트 ID (null이면 미선택, 이미지에 링크)
   order: number; // 표시 순서
 }
@@ -59,7 +60,7 @@ function SortableProjectLayoutItem({
   item: ProjectLayoutItem;
   projects: Project[];
   onSelectProject: (frameIndex: number, projectId: string | null) => void;
-  onImageUpload: (frameIndex: number, imageUrl: string) => void;
+  onImageUpload: (frameIndex: number, imageUrl: string, orientation: 'horizontal' | 'vertical') => void;
   onImageRemove: (frameIndex: number) => void;
   onRemove: (frameIndex: number) => void;
 }) {
@@ -70,16 +71,10 @@ function SortableProjectLayoutItem({
     transition,
   };
 
-  const frameClass = PROJECT_LAYOUT_CONFIG.desktop.frameClasses[item.frameIndex];
-  const orientation = frameClass.includes('aspect-[3/4]') ? 'vertical' : 'horizontal';
   const selectedProject = item.projectId ? projects.find((p) => p.id.toString() === item.projectId) : null;
 
-  // 이미지 URL 우선, 없으면 프로젝트 썸네일, 둘 다 없으면 placeholder
-  const thumbnailSrc =
-    item.imageUrl ||
-    selectedProject?.contents?.thumbnail43 ||
-    selectedProject?.contents?.thumbnail34 ||
-    '/placeholder.png';
+  // 업로드한 이미지의 orientation 사용, 없으면 null
+  const orientation = item.orientation;
 
   return (
     <div
@@ -107,7 +102,7 @@ function SortableProjectLayoutItem({
       {/* Orientation 배지 */}
       <div className="shrink-0">
         <span className="rounded bg-stone-800 px-2 py-1 text-[10px] font-medium text-stone-300">
-          {orientation === 'vertical' ? 'Vertical' : 'Horizontal'}
+          {orientation === 'vertical' ? 'Vertical' : orientation === 'horizontal' ? 'Horizontal' : 'No Image'}
         </span>
       </div>
 
@@ -156,7 +151,10 @@ function SortableProjectLayoutItem({
                   const {
                     data: { publicUrl },
                   } = supabase.storage.from('images').getPublicUrl(filePath);
-                  onImageUpload(item.frameIndex, publicUrl);
+                  
+                  // 이미지 비율 감지 후 업로드
+                  const orientation = await detectImageOrientation(publicUrl);
+                  onImageUpload(item.frameIndex, publicUrl, orientation);
                 } catch (error) {
                   console.error('Upload error:', error);
                   alert('Failed to upload image');
@@ -171,17 +169,23 @@ function SortableProjectLayoutItem({
         )}
       </div>
 
-      {/* 썸네일 */}
-      <div className="relative h-16 shrink-0 overflow-hidden rounded bg-stone-950" style={{ maxWidth: '96px' }}>
-        <Image
-          src={thumbnailSrc}
-          alt={selectedProject?.title || 'Uploaded image' || 'No image'}
-          className="h-full w-auto object-contain"
-          width={96}
-          height={64}
-          unoptimized
-        />
-      </div>
+      {/* 썸네일 - 업로드한 이미지만 표시 */}
+      {item.imageUrl ? (
+        <div className="relative h-16 shrink-0 overflow-hidden rounded bg-stone-950" style={{ maxWidth: '96px' }}>
+          <Image
+            src={item.imageUrl}
+            alt="Uploaded image"
+            className="h-full w-auto object-contain"
+            width={96}
+            height={64}
+            unoptimized
+          />
+        </div>
+      ) : (
+        <div className="relative h-16 shrink-0 overflow-hidden rounded bg-stone-950" style={{ maxWidth: '96px' }}>
+          <div className="flex h-full w-full items-center justify-center text-xs text-stone-600">No Image</div>
+        </div>
+      )}
 
       {/* 프로젝트 선택 드롭다운 (링크용) */}
       <div className="flex-1">
@@ -192,7 +196,7 @@ function SortableProjectLayoutItem({
             onSelectProject(item.frameIndex, projectId);
           }}
           className="w-full rounded border border-stone-700 bg-stone-800 px-3 py-1.5 text-sm text-stone-200 focus:border-stone-600 focus:ring-1 focus:ring-stone-600 focus:outline-none"
-          disabled={!item.imageUrl && !selectedProject}>
+          disabled={!item.imageUrl}>
           <option value="">-- Select Project (Link) --</option>
           {projects.map((project) => (
             <option key={project.id} value={project.id.toString()}>
@@ -231,11 +235,43 @@ function SortableProjectLayoutItem({
   );
 }
 
+// 이미지 비율을 자동으로 감지하는 함수
+const detectImageOrientation = async (urlOrFile: string | File): Promise<'horizontal' | 'vertical'> => {
+  return new Promise<'horizontal' | 'vertical'>((resolve) => {
+    const img = document.createElement('img');
+    let objectUrl: string | null = null;
+
+    img.onload = () => {
+      const orientation = img.naturalWidth >= img.naturalHeight ? 'horizontal' : 'vertical';
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+      resolve(orientation);
+    };
+
+    img.onerror = () => {
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+      resolve('horizontal');
+    };
+
+    if (typeof urlOrFile === 'string') {
+      img.src = urlOrFile;
+    } else {
+      objectUrl = URL.createObjectURL(urlOrFile);
+      img.src = objectUrl;
+    }
+  });
+};
+
 export default function ProjectLayoutManager() {
   const [layoutItems, setLayoutItems] = useState<ProjectLayoutItem[]>([]);
   const [originalLayoutItems, setOriginalLayoutItems] = useState<ProjectLayoutItem[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadingFiles, setUploadingFiles] = useState<Set<string>>(new Set());
 
   // 변경 사항 여부 확인
   const isChanged = JSON.stringify(layoutItems) !== JSON.stringify(originalLayoutItems);
@@ -291,6 +327,7 @@ export default function ProjectLayoutManager() {
               id: `frame-${index}`,
               frameIndex: index,
               imageUrl: null,
+              orientation: null,
               projectId: null,
               order: index,
             }));
@@ -344,12 +381,13 @@ export default function ProjectLayoutManager() {
   };
 
   // 이미지 업로드 핸들러
-  const handleImageUpload = (frameIndex: number, imageUrl: string) => {
+  const handleImageUpload = (frameIndex: number, imageUrl: string, orientation: 'horizontal' | 'vertical') => {
     const updatedItems = layoutItems.map((item) =>
       item.frameIndex === frameIndex
         ? {
             ...item,
             imageUrl,
+            orientation,
           }
         : item,
     );
@@ -365,6 +403,7 @@ export default function ProjectLayoutManager() {
         ? {
             ...item,
             imageUrl: null,
+            orientation: null,
           }
         : item,
     );
@@ -382,6 +421,155 @@ export default function ProjectLayoutManager() {
         order: index,
       }));
     setLayoutItems(updatedItems);
+  };
+
+  // 새 카드 추가 핸들러
+  const handleAddNewCard = () => {
+    const totalFrames = PROJECT_LAYOUT_CONFIG.desktop.frameClasses.length;
+    // 사용된 frameIndex 찾기
+    const usedFrameIndices = new Set(layoutItems.map((item) => item.frameIndex));
+    
+    // 사용되지 않은 첫 번째 frameIndex 찾기, 없으면 순환 사용
+    let newFrameIndex = 0;
+    for (let i = 0; i < totalFrames; i++) {
+      if (!usedFrameIndices.has(i)) {
+        newFrameIndex = i;
+        break;
+      }
+    }
+    // 모두 사용 중이면 마지막 인덱스 다음 사용 (순환)
+    if (usedFrameIndices.has(newFrameIndex)) {
+      newFrameIndex = Math.max(...Array.from(usedFrameIndices)) + 1;
+    }
+
+    const maxOrder = layoutItems.length > 0 ? Math.max(...layoutItems.map((item) => item.order || 0)) : -1;
+    const newItem: ProjectLayoutItem = {
+      id: `frame-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      frameIndex: newFrameIndex,
+      imageUrl: null,
+      orientation: null,
+      projectId: null,
+      order: maxOrder + 1,
+    };
+
+    setLayoutItems([...layoutItems, newItem]);
+  };
+
+  // 여러 이미지 업로드 핸들러
+  const handleMultipleImageUpload = async (files: File[]) => {
+    const imageFiles = files.filter((file) => file.type.startsWith('image/'));
+
+    if (imageFiles.length === 0) {
+      alert('No valid image files found.');
+      return;
+    }
+
+    const totalFrames = PROJECT_LAYOUT_CONFIG.desktop.frameClasses.length;
+    const usedFrameIndices = new Set(layoutItems.map((item) => item.frameIndex));
+    let nextFrameIndex = 0;
+
+    const newItems: ProjectLayoutItem[] = [];
+    const maxOrder = layoutItems.length > 0 ? Math.max(...layoutItems.map((item) => item.order || 0)) : -1;
+
+    for (let i = 0; i < imageFiles.length; i++) {
+      const file = imageFiles[i];
+      const fileId = `${Date.now()}-${i}-${Math.random().toString(36).substr(2, 9)}`;
+      setUploadingFiles((prev) => new Set(prev).add(fileId));
+
+      try {
+        // 사용되지 않은 frameIndex 찾기
+        while (usedFrameIndices.has(nextFrameIndex) && nextFrameIndex < totalFrames) {
+          nextFrameIndex++;
+        }
+        // 모두 사용 중이면 순환
+        if (nextFrameIndex >= totalFrames) {
+          nextFrameIndex = Math.max(...Array.from(usedFrameIndices), -1) + 1;
+        }
+
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}_${i}.${fileExt}`;
+        const filePath = `project-layout/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage.from('images').upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from('images').getPublicUrl(filePath);
+
+        // 이미지 비율 감지하여 적절한 프레임 선택
+        const orientation = await detectImageOrientation(publicUrl);
+        const frameClass = PROJECT_LAYOUT_CONFIG.desktop.frameClasses[nextFrameIndex];
+        const frameOrientation = frameClass.includes('aspect-[3/4]') ? 'vertical' : 'horizontal';
+        
+        // 비율이 맞지 않으면 다음 적절한 프레임 찾기
+        if (orientation !== frameOrientation) {
+          for (let j = 0; j < totalFrames; j++) {
+            const testFrameClass = PROJECT_LAYOUT_CONFIG.desktop.frameClasses[j];
+            const testOrientation = testFrameClass.includes('aspect-[3/4]') ? 'vertical' : 'horizontal';
+            if (orientation === testOrientation && !usedFrameIndices.has(j)) {
+              nextFrameIndex = j;
+              break;
+            }
+          }
+        }
+
+        usedFrameIndices.add(nextFrameIndex);
+
+        const newItem: ProjectLayoutItem = {
+          id: `frame-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 9)}`,
+          frameIndex: nextFrameIndex,
+          imageUrl: publicUrl,
+          orientation,
+          projectId: null,
+          order: maxOrder + 1 + i,
+        };
+
+        newItems.push(newItem);
+        nextFrameIndex++;
+      } catch (error) {
+        console.error('Upload error:', file.name, error);
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        alert(`Failed to upload ${file.name}: ${message}`);
+      } finally {
+        setUploadingFiles((prev) => {
+          const next = new Set(prev);
+          next.delete(fileId);
+          return next;
+        });
+      }
+    }
+
+    if (newItems.length > 0) {
+      setLayoutItems([...layoutItems, ...newItems]);
+    }
+  };
+
+  // 드래그 오버 핸들러
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDragging(true);
+    }
+  };
+
+  // 드래그 리브 핸들러
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  // 드롭 핸들러
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    await handleMultipleImageUpload(files);
   };
 
   // 레이아웃 저장
@@ -430,16 +618,52 @@ export default function ProjectLayoutManager() {
             <CardTitle className="mb-2 text-stone-200">Project Layout</CardTitle>
             <CardDescription className="text-stone-400">
               Manage which projects appear in the project page gallery. Select a project for each frame and reorder by
-              dragging.
+              dragging. Drag and drop multiple images to add new cards.
             </CardDescription>
           </div>
-          <Link href="/project" target="_blank">
+          <div className="flex gap-2">
             <Button
+              onClick={handleAddNewCard}
               variant="outline"
               className="gap-2 border-stone-700 bg-stone-800 text-stone-200 hover:border-stone-600 hover:bg-stone-200 hover:text-stone-900">
-              View Project Page <ExternalLink className="h-4 w-4" />
+              <Plus className="h-4 w-4" />
+              Add Card
             </Button>
-          </Link>
+            <Link href="/project" target="_blank">
+              <Button
+                variant="outline"
+                className="gap-2 border-stone-700 bg-stone-800 text-stone-200 hover:border-stone-600 hover:bg-stone-200 hover:text-stone-900">
+                View Project Page <ExternalLink className="h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* 드래그 앤 드롭 영역 */}
+        <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={cn(
+            'rounded-lg border-2 border-dashed p-8 text-center transition-colors',
+            isDragging
+              ? 'border-stone-500 bg-stone-800/50'
+              : 'border-stone-700 bg-stone-900/30 hover:border-stone-600',
+            uploadingFiles.size > 0 && 'pointer-events-none opacity-50',
+          )}>
+          {uploadingFiles.size > 0 ? (
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="h-6 w-6 animate-spin text-stone-400" />
+              <p className="text-sm text-stone-400">Uploading {uploadingFiles.size} file(s)...</p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2">
+              <Upload className="h-8 w-8 text-stone-500" />
+              <p className="text-sm text-stone-400">
+                Drag and drop images here to add new cards, or click "Add Card" to add an empty card
+              </p>
+            </div>
+          )}
         </div>
 
         {/* 레이아웃 아이템 리스트 */}

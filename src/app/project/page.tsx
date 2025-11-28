@@ -196,6 +196,7 @@ export default function ProjectPage() {
     Array<{
       frameIndex: number;
       imageUrl: string | null;
+      orientation: 'horizontal' | 'vertical' | null;
       projectId: string | null;
       order: number;
     }>
@@ -210,7 +211,13 @@ export default function ProjectPage() {
           const items =
             (
               configData.content as {
-                items: Array<{ frameIndex: number; imageUrl?: string | null; projectId: string | null; order: number }>;
+                items: Array<{
+                  frameIndex: number;
+                  imageUrl?: string | null;
+                  orientation?: 'horizontal' | 'vertical' | null;
+                  projectId: string | null;
+                  order: number;
+                }>;
               }
             ).items || [];
           // order 기준으로 정렬
@@ -219,6 +226,7 @@ export default function ProjectPage() {
             .map((item) => ({
               ...item,
               imageUrl: item.imageUrl || null,
+              orientation: item.orientation || null,
             }));
           setLayoutItems(sortedItems);
         }
@@ -237,31 +245,22 @@ export default function ProjectPage() {
     // 레이아웃 아이템을 순서대로 처리하여 프로젝트 이미지 생성
     return layoutItems
       .map((item) => {
-        // 이미지 URL이 있으면 그것을 사용
+        // 이미지 URL이 있으면 그것을 사용 (업로드한 이미지만 사용)
         if (item.imageUrl) {
+          // orientation에 따라 verticalSrc와 horizontalSrc 결정
+          const isVertical = item.orientation === 'vertical';
           return {
             projectId: item.projectId || `img-${item.frameIndex}`,
-            verticalSrc: item.imageUrl,
-            horizontalSrc: item.imageUrl,
+            verticalSrc: isVertical ? item.imageUrl : item.imageUrl,
+            horizontalSrc: !isVertical ? item.imageUrl : item.imageUrl,
           };
         }
 
-        // 프로젝트 ID가 있으면 프로젝트 썸네일 사용
-        if (item.projectId) {
-          const project = projects.find((p) => p.id.toString() === item.projectId);
-          if (project && (project.contents?.thumbnail43 || project.contents?.thumbnail34)) {
-            return {
-              projectId: project.id.toString(),
-              verticalSrc: project.contents?.thumbnail34 || project.contents?.thumbnail43 || '',
-              horizontalSrc: project.contents?.thumbnail43 || project.contents?.thumbnail34 || '',
-            };
-          }
-        }
-
+        // 이미지가 없으면 표시하지 않음
         return null;
       })
       .filter((img): img is { projectId: string; verticalSrc: string; horizontalSrc: string } => img !== null);
-  }, [projects, layoutItems]);
+  }, [layoutItems]);
 
   // 이미지 선택 핸들러
   const handleSelectImage = useCallback((image: GallerySelection) => {
