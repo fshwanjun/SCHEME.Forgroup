@@ -26,6 +26,13 @@ import ImageUploader from './ImageUploader';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import Link from 'next/link';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 // 랜딩 페이지 이미지 타입 정의
 interface LandingPageImage {
@@ -33,6 +40,7 @@ interface LandingPageImage {
   url: string;
   order: number;
   orientation?: 'horizontal' | 'vertical';
+  projectSlug?: string; // 프로젝트 상세 페이지 링크 (선택적)
 }
 
 // 이미지 비율을 자동으로 감지하는 함수
@@ -69,7 +77,17 @@ const detectImageOrientation = async (urlOrFile: string | File): Promise<'horizo
 };
 
 // Sortable Image Item
-function SortableLandingImageItem({ image, onRemove }: { image: LandingPageImage; onRemove: (id: string) => void }) {
+function SortableLandingImageItem({
+  image,
+  onRemove,
+  onProjectChange,
+  projects,
+}: {
+  image: LandingPageImage;
+  onRemove: (id: string) => void;
+  onProjectChange: (id: string, projectSlug: string | undefined) => void;
+  projects: Array<{ id: number; slug: string; title: string }>;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: image.id });
 
   const style = {
@@ -115,6 +133,25 @@ function SortableLandingImageItem({ image, onRemove }: { image: LandingPageImage
       {/* 이미지 URL 표시 */}
       <div className="flex-1 truncate text-sm text-stone-300">{image.url.split('/').pop()}</div>
 
+      {/* 프로젝트 링크 선택 */}
+      <div className="w-48 shrink-0">
+        <Select
+          value={image.projectSlug || undefined}
+          onValueChange={(value) => onProjectChange(image.id, value === '__none__' ? undefined : value)}>
+          <SelectTrigger className="h-8 border-stone-700 bg-stone-800 text-xs text-stone-200 hover:bg-stone-700">
+            <SelectValue placeholder="No project" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__none__">No project</SelectItem>
+            {projects.map((project) => (
+              <SelectItem key={project.id} value={project.slug}>
+                {project.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* 삭제 버튼 */}
       <Button
         variant="ghost"
@@ -131,12 +168,19 @@ function SortableLandingImageItem({ image, onRemove }: { image: LandingPageImage
   );
 }
 
+interface Project {
+  id: number;
+  slug: string;
+  title: string;
+}
+
 export default function LandingPageManager() {
   const [images, setImages] = useState<LandingPageImage[]>([]);
   const [originalImages, setOriginalImages] = useState<LandingPageImage[]>([]); // 원본 데이터 저장
   const [loading, setLoading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<Set<string>>(new Set());
+  const [projects, setProjects] = useState<Project[]>([]);
 
   // 변경 사항 여부 확인 (JSON 문자열 비교 - 메모이제이션으로 최적화)
   const isChanged = useMemo(() => {
@@ -149,6 +193,29 @@ export default function LandingPageManager() {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
+
+  // 프로젝트 목록 불러오기
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('project')
+          .select('id, slug, title')
+          .eq('status', 'published')
+          .order('display_order', { ascending: true });
+
+        if (error) {
+          console.error('프로젝트 로드 에러:', error);
+        } else {
+          setProjects((data as Project[]) || []);
+        }
+      } catch (error) {
+        console.error('프로젝트 로드 에러:', error);
+      }
+    };
+
+    fetchProjects();
+  }, []);
 
   // 랜딩 페이지 이미지 목록 불러오기
   useEffect(() => {
@@ -198,6 +265,19 @@ export default function LandingPageManager() {
         ...img,
         order: index,
       }));
+    setImages(updatedImages);
+  };
+
+  // 프로젝트 링크 변경 핸들러
+  const handleProjectChange = (imageId: string, projectSlug: string | undefined) => {
+    const updatedImages = images.map((img) =>
+      img.id === imageId
+        ? {
+            ...img,
+            projectSlug,
+          }
+        : img,
+    );
     setImages(updatedImages);
   };
 
@@ -380,7 +460,13 @@ export default function LandingPageManager() {
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <SortableContext items={images.map((img) => img.id)} strategy={verticalListSortingStrategy}>
                   {images.map((image) => (
-                    <SortableLandingImageItem key={image.id} image={image} onRemove={handleRemoveImage} />
+                    <SortableLandingImageItem
+                      key={image.id}
+                      image={image}
+                      onRemove={handleRemoveImage}
+                      onProjectChange={handleProjectChange}
+                      projects={projects}
+                    />
                   ))}
                 </SortableContext>
               </DndContext>

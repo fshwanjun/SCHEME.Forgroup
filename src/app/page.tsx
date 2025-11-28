@@ -9,6 +9,7 @@ import Header from '@/components/Header';
 import MobileMenu from '@/components/MobileMenu';
 import IntroLogo from '@/components/IntroLogo';
 import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
 // Landing Page 이미지 타입 정의
 interface LandingPageImage {
@@ -16,6 +17,7 @@ interface LandingPageImage {
   url: string;
   order: number;
   orientation?: 'horizontal' | 'vertical';
+  projectSlug?: string; // 프로젝트 상세 페이지 링크 (선택적)
 }
 
 export default function Home() {
@@ -24,7 +26,7 @@ export default function Home() {
   const [selected, setSelected] = useState<GallerySelection | null>(null);
   const [zoomStyle, setZoomStyle] = useState({ x: 0, y: 0, scale: 1, originX: 0, originY: 0 });
   const [landingImages, setLandingImages] = useState<
-    Array<{ projectId: string; verticalSrc: string; horizontalSrc: string }>
+    Array<{ projectId: string; projectSlug?: string; verticalSrc: string; horizontalSrc: string }>
   >([]);
   const [headerLogoTrigger, setHeaderLogoTrigger] = useState<number | undefined>(undefined);
 
@@ -32,6 +34,8 @@ export default function Home() {
   const triggeredRef = useRef(false);
   const isInitialZoomRef = useRef(false); // 최초 줌 계산 여부 추적
   const containerRef = useRef<HTMLDivElement>(null); // motion.div 참조 추가
+  const router = useRouter();
+  const [isNavigating, setIsNavigating] = useState(false); // 네비게이션 중 플래그
 
   // Landing Page 이미지 불러오기
   useEffect(() => {
@@ -46,8 +50,10 @@ export default function Home() {
 
           // ProjectImage 형식으로 변환
           // 모든 이미지는 동일한 URL을 사용하되, 프레임의 orientation에 맞게 표시됨
+          // projectSlug가 있으면 해당 프로젝트로 연결, 없으면 이미지 ID 사용
           const projectImages = sortedImages.map((img) => ({
-            projectId: img.id,
+            projectId: img.projectSlug || img.id, // 프로젝트 slug가 있으면 사용, 없으면 이미지 ID
+            projectSlug: img.projectSlug, // 프로젝트 slug 저장
             verticalSrc: img.url,
             horizontalSrc: img.url,
           }));
@@ -76,30 +82,141 @@ export default function Home() {
     };
   }, []);
 
-  // 이미지가 선택된 상태에서 외부 클릭 시 줌 아웃 처리는 제거됨 (이미지 클릭 시 줌 아웃으로 변경)
+  // 외부 클릭 시 줌 아웃 처리
+  useEffect(() => {
+    if (!selected) return;
 
-  const handleSelectImage = useCallback((image: GallerySelection) => {
-    // console.log('handleSelectImage:', image);
-    isInitialZoomRef.current = true; // 이미지 선택 시 초기 줌 플래그 설정
+    const handleClickOutside = (e: MouseEvent) => {
+      // 네비게이션 중이면 무시
+      if (isNavigating) return;
 
-    // 이미 선택된 이미지를 다시 클릭하면 줌 아웃
-    setSelected((current) => {
-      if (current?.projectId === image.projectId) {
-        isInitialZoomRef.current = false;
-        return null;
+      // 클릭한 요소가 확대된 이미지 영역인지 확인
+      const clickedElement = e.target as HTMLElement;
+      const imageElement = document.getElementById(`project-${selected.projectId}`);
+
+      if (!imageElement) return;
+
+      // 확대된 이미지의 현재 위치와 크기 가져오기
+      const imageRect = imageElement.getBoundingClientRect();
+
+      // 클릭 좌표가 확대된 이미지 영역 밖인지 확인
+      const clickX = e.clientX;
+      const clickY = e.clientY;
+
+      const isOutsideImage =
+        clickX < imageRect.left ||
+        clickX > imageRect.right ||
+        clickY < imageRect.top ||
+        clickY > imageRect.bottom;
+
+      // 확대된 이미지 영역 밖을 클릭했으면 줌 아웃
+      if (isOutsideImage) {
+        // 클릭한 요소가 버튼이나 링크 등 상호작용 요소가 아닌 경우에만 줌 아웃
+        const isInteractiveElement =
+          clickedElement.closest('button') ||
+          clickedElement.closest('a') ||
+          clickedElement.closest('[role="button"]') ||
+          clickedElement.closest('input') ||
+          clickedElement.closest('select') ||
+          clickedElement.closest('textarea');
+
+        if (!isInteractiveElement) {
+          isInitialZoomRef.current = false;
+          setSelected(null);
+        }
       }
-      return image;
-    });
-  }, []);
+    };
+
+    // 약간의 지연을 두어 이미지 클릭 이벤트가 먼저 처리되도록 함
+    const timeoutId = setTimeout(() => {
+      window.addEventListener('click', handleClickOutside);
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('click', handleClickOutside);
+    };
+  }, [selected, isNavigating]);
+
+  const handleSelectImage = useCallback(
+    async (image: GallerySelection) => {
+      console.log('[Home] handleSelectImage called', {
+        imageProjectId: image.projectId,
+        selectedProjectId: selected?.projectId,
+        isAlreadySelected: selected?.projectId === image.projectId,
+        timestamp: Date.now(),
+      });
+      
+      // 이미 선택된 이미지를 다시 클릭하면 프로젝트 상세 페이지로 이동
+      if (selected?.projectId === image.projectId) {
+        console.log('[Home] 이미지 재클릭 - 프로젝트 페이지로 이동');
+        if (isNavigating) return; // 이미 네비게이션 중이면 무시
+        
+        // 프로젝트 slug가 있는 경우에만 상세 페이지로 이동
+        const slug = image.projectSlug;
+
+        // 프로젝트 링크가 없으면 아무 동작도 하지 않음 (줌아웃 제거)
+        if (!slug) {
+          console.log('[Home] 프로젝트 링크 없음 - 아무 동작 안함');
+          return;
+        }
+
+        setIsNavigating(true);
+
+        // 줌 상태를 유지하면서 부드럽게 확대하는 애니메이션
+        // 현재 줌 스타일을 더 확대 (함수형 업데이트로 최신 상태 사용)
+        setZoomStyle((prev) => {
+          console.log('[Home] 줌 스타일 업데이트 (추가 확대)', {
+            prevScale: prev.scale,
+            newScale: prev.scale * 1.5,
+          });
+          return {
+            ...prev,
+            scale: prev.scale * 1.5, // 추가 확대
+          };
+        });
+
+        // 클릭한 이미지 src를 쿼리 파라미터로 전달
+        const imageSrc = encodeURIComponent(image.src);
+        const targetUrl = `/project/${slug}?hero=${imageSrc}`;
+
+        // 애니메이션 완료 후 페이지 이동 (duration: 0.8초)
+        setTimeout(() => {
+          router.push(targetUrl);
+        }, 800); // 애니메이션 duration과 맞춤
+        return;
+      }
+
+      // 새로운 이미지 선택
+      console.log('[Home] 새로운 이미지 선택', {
+        projectId: image.projectId,
+        timestamp: Date.now(),
+      });
+      isInitialZoomRef.current = true; // 이미지 선택 시 초기 줌 플래그 설정
+      setSelected(image);
+    },
+    [router, isNavigating, selected],
+  );
 
   useEffect(() => {
+    console.log('[Home] calculateZoom useEffect triggered', {
+      selected: selected?.projectId,
+      timestamp: Date.now(),
+    });
+    
     const calculateZoom = () => {
       if (!selected) {
+        console.log('[Home] calculateZoom - selected 없음, 줌 리셋');
         setZoomStyle((prev) => ({ ...prev, x: 0, y: 0, scale: 1 }));
         document.body.style.overflow = '';
         document.documentElement.style.setProperty('--gallery-gap', '20px');
         return;
       }
+      
+      console.log('[Home] calculateZoom - 줌 계산 시작', {
+        projectId: selected.projectId,
+        rect: selected.rect,
+      });
 
       let rect = selected.rect;
 
@@ -194,7 +311,12 @@ export default function Home() {
       const tx = screenCenterX - imageCenterX * scale;
       const ty = screenCenterY - imageCenterY * scale;
 
-      setZoomStyle({ x: tx, y: ty, scale, originX, originY });
+      const newZoomStyle = { x: tx, y: ty, scale, originX, originY };
+      console.log('[Home] calculateZoom - 줌 스타일 설정', {
+        newZoomStyle,
+        timestamp: Date.now(),
+      });
+      setZoomStyle(newZoomStyle);
       document.body.style.overflow = 'hidden';
     };
 
@@ -276,6 +398,9 @@ export default function Home() {
     };
   }, [selected, sectionIds, triggerElement]);
 
+  // selectedProjectId를 메모이제이션하여 불필요한 리렌더링 방지
+  const selectedProjectId = useMemo(() => selected?.projectId ?? null, [selected?.projectId]);
+
   const list = useMemo(
     () =>
       sectionIds.map((id, index) => {
@@ -287,12 +412,12 @@ export default function Home() {
             <HomeGallery
               images={landingImages}
               onSelectImage={handleSelectImage}
-              selectedProjectId={selected?.projectId ?? null}
+              selectedProjectId={selectedProjectId}
             />
           </div>
         );
       }),
-    [sectionIds, handleSelectImage, selected?.projectId, landingImages],
+    [sectionIds, handleSelectImage, selectedProjectId, landingImages],
   );
 
   const handleHeaderAnimationStart = useCallback(() => {

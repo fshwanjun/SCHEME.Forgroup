@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import MobileMenu from '@/components/MobileMenu';
 import ProjectDetailContent from '@/components/ProjectDetailContent';
@@ -33,6 +34,10 @@ interface ProjectDetail {
 
 export default function ProjectDetailClient({ project }: { project: ProjectDetail }) {
   const [headerLogoTrigger, setHeaderLogoTrigger] = useState<number | undefined>(undefined);
+  const searchParams = useSearchParams();
+  
+  // URL 쿼리 파라미터에서 hero 이미지 src 가져오기
+  const heroImageSrc = searchParams.get('hero') ? decodeURIComponent(searchParams.get('hero')!) : undefined;
 
   useEffect(() => {
     // 헤더 로고 애니메이션 트리거
@@ -46,7 +51,13 @@ export default function ProjectDetailClient({ project }: { project: ProjectDetai
       <Header headerLogoTrigger={headerLogoTrigger} />
       <MobileMenu headerLogoTrigger={headerLogoTrigger} />
       <main className="w-ful relative h-full">
-        {contents && <ProjectDetailContent contents={contents} title={project.title} />}
+        {contents && (
+          <ProjectDetailContent
+            contents={contents}
+            title={project.title}
+            heroImageSrc={heroImageSrc}
+          />
+        )}
       </main>
     </>
   );

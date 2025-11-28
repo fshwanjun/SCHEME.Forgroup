@@ -35,6 +35,12 @@ export default function ImageCard({
       : APP_CONFIG.defaultAspectRatios.horizontal);
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    console.log('[ImageCard] handleClick called', {
+      projectId,
+      enableHoverEffect,
+      src,
+      timestamp: Date.now(),
+    });
     e.stopPropagation(); // 이벤트 전파 중단 (window 클릭 리스너 실행 방지)
     if (onClickProject) {
       onClickProject(projectId, e.currentTarget.getBoundingClientRect());
@@ -55,23 +61,23 @@ export default function ImageCard({
       ? [IMAGE_CARD_CONFIG.vertical.width, IMAGE_CARD_CONFIG.vertical.height]
       : [IMAGE_CARD_CONFIG.horizontal.width, IMAGE_CARD_CONFIG.horizontal.height];
 
-  const imageContent = enableHoverEffect ? (
+  // 이미지 컴포넌트 렌더링 추적
+  console.log('[ImageCard] render', {
+    projectId,
+    enableHoverEffect,
+    src,
+    timestamp: Date.now(),
+  });
+
+  // 깜빡임 방지: enableHoverEffect가 변경되어도 HoverDistortImage를 유지하고 distortionEnabled만 제어
+  const imageContent = (
     <HoverDistortImage
       src={src}
       alt={altText}
       aspectRatio={computedAspect}
       className="h-full w-full object-cover"
       preserveAspect="xMidYMid slice"
-    />
-  ) : (
-    <Image
-      src={src}
-      alt={altText}
-      className="block h-auto w-full object-cover"
-      draggable={false}
-      style={{ aspectRatio: computedAspect }}
-      width={width}
-      height={height}
+      distortionEnabled={enableHoverEffect}
     />
   );
 

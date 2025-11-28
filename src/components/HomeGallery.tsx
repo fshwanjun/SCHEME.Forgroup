@@ -1,18 +1,20 @@
 'use client'; // 이 컴포넌트가 클라이언트 측에서 렌더링되어야 함을 나타냅니다. (React 18 이상)
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, memo, useCallback } from 'react';
 import ImageCard from '@/components/ImageCard'; // 이미지 카드 렌더링을 위한 컴포넌트입니다.
 import useWindowSize from '@/hooks/useWindowSize';
 
 // 프로젝트 이미지의 타입 정의
 type ProjectImage = {
   projectId: string; // 프로젝트/이미지 ID
+  projectSlug?: string; // 프로젝트 상세 페이지 링크 (선택적)
   verticalSrc: string; // 세로 방향 이미지 소스 경로 (aspect-[3/4] 프레임용)
   horizontalSrc: string; // 가로 방향 이미지 소스 경로 (aspect-[4/3] 프레임용)
 };
 
 export type GallerySelection = {
   projectId: string;
+  projectSlug?: string; // 프로젝트 상세 페이지 링크 (선택적)
   src: string;
   orientation: 'vertical' | 'horizontal';
   aspectRatio: string;
@@ -85,12 +87,18 @@ type HomeGalleryProps = {
   layoutConfig?: typeof HOME_LAYOUT_CONFIG; // 레이아웃 설정 (기본값: HOME_LAYOUT_CONFIG)
 };
 
-export default function HomeGallery({
+function HomeGallery({
   images = [],
   onSelectImage,
   selectedProjectId,
   layoutConfig = HOME_LAYOUT_CONFIG,
 }: HomeGalleryProps) {
+  console.log('[HomeGallery] render', {
+    imagesCount: images.length,
+    selectedProjectId,
+    timestamp: Date.now(),
+  });
+  
   // 화면 크기 감지
   const windowSize = useWindowSize();
   const [isMobile, setIsMobile] = useState(false);
@@ -259,15 +267,23 @@ export default function HomeGallery({
                 aspectRatio={aspectRatio}
                 className="h-full w-full"
                 enableHoverEffect={!isSelected && !isOtherSelected}
-                onClickProject={(_pid, rect) =>
+                onClickProject={(_pid, rect) => {
+                  console.log('[HomeGallery] onClickProject called', {
+                    projectId: assignment.projectId,
+                    isSelected,
+                    isOtherSelected,
+                    enableHoverEffect: !isSelected && !isOtherSelected,
+                    timestamp: Date.now(),
+                  });
                   onSelectImage?.({
                     projectId: assignment.projectId,
+                    projectSlug: assignment.projectSlug,
                     src,
                     orientation,
                     aspectRatio,
                     rect,
-                  })
-                }
+                  });
+                }}
               />
             </div>
           );
@@ -276,3 +292,6 @@ export default function HomeGallery({
     </section>
   );
 }
+
+// 메모이제이션으로 불필요한 리렌더링 방지
+export default memo(HomeGallery);
