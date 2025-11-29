@@ -35,7 +35,7 @@ interface ProjectDetail {
 export default function ProjectDetailClient({ project }: { project: ProjectDetail }) {
   const [headerLogoTrigger, setHeaderLogoTrigger] = useState<number | undefined>(undefined);
   const searchParams = useSearchParams();
-  
+
   // URL 쿼리 파라미터에서 hero 이미지 src 가져오기
   const heroImageSrc = searchParams.get('hero') ? decodeURIComponent(searchParams.get('hero')!) : undefined;
 
@@ -51,15 +51,8 @@ export default function ProjectDetailClient({ project }: { project: ProjectDetai
       <Header headerLogoTrigger={headerLogoTrigger} />
       <MobileMenu headerLogoTrigger={headerLogoTrigger} />
       <main className="w-ful relative h-full">
-        {contents && (
-          <ProjectDetailContent
-            contents={contents}
-            title={project.title}
-            heroImageSrc={heroImageSrc}
-          />
-        )}
+        {contents && <ProjectDetailContent contents={contents} title={project.title} heroImageSrc={heroImageSrc} />}
       </main>
     </>
   );
 }
-

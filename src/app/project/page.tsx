@@ -2,15 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { usePathname } from 'next/navigation';
 import HomeContainer from '@/components/HomeContainer';
 import HomeGallery, { type GallerySelection } from '@/components/HomeGallery';
 import { PROJECT_LAYOUT_CONFIG } from '@/config/projectLayout';
 import Header from '@/components/Header';
 import MobileMenu from '@/components/MobileMenu';
 import ProjectDetailContent from '@/components/ProjectDetailContent';
-import { useIntersection } from '@/hooks/useIntersectionObserver';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { useZoom } from '@/hooks/useZoom';
 import { supabase } from '@/lib/supabase';
+import { cn } from '@/lib/utils';
 
 interface ProjectContent {
   thumbnail43?: string;
@@ -39,22 +40,42 @@ interface Project {
 }
 
 export default function ProjectPage() {
-  const pathname = usePathname();
-  // section ID 배열: 초기값 [0, 1, 2] (3개 section) - 홈 페이지와 동일한 방식
-  const [sectionIds, setSectionIds] = useState<number[]>([0, 1, 2]);
-  const [triggerElement, setTriggerElement] = useState<HTMLElement | null>(null);
-  const triggeredRef = useRef(false);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [selected, setSelected] = useState<GallerySelection | null>(null);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [zoomStyle, setZoomStyle] = useState({ x: 0, y: 0, scale: 1, originX: 0, originY: 0 });
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [imagesLoaded, setImagesLoaded] = useState(false);
-  const isInitialZoomRef = useRef(false);
+  // const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  // const [showDetailModal, setShowDetailModal] = useState(false);
+  // const [imagesLoaded, setImagesLoaded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const scrollPositionRef = useRef<number>(0);
   const [headerLogoTrigger, setHeaderLogoTrigger] = useState<number | undefined>(undefined);
+  const modeRef = useRef<string>('default');
+
+  // useZoom 훅 사용 - 초기 모드는 default
+  const { selected, mode, zoomStyle, isAnimating, selectImage, zoomOut } = useZoom({
+    initialMode: 'default',
+    centerPadding: 200,
+    containerRef,
+    animationDuration: 800,
+    lockScroll: true,
+    zoomOutOnResize: true,
+    debug: false,
+  });
+
+  // 무한 스크롤 훅 사용
+  const { setTriggerElement, renderSections } = useInfiniteScroll({
+    initialSectionIds: [0, 1, 2],
+    triggerIndex: 1,
+    triggerOffset: 1000,
+    disabled: mode !== 'default',
+  });
+
+  // mode가 변경될 때 ref 업데이트 및 히스토리 관리
+  useEffect(() => {
+    modeRef.current = mode;
+
+    // cover 모드로 진입할 때 히스토리에 상태 추가
+    if (mode === 'cover') {
+      window.history.pushState({ zoomed: true }, '');
+    }
+  }, [mode]);
 
   // 프로젝트 목록 가져오기
   useEffect(() => {
@@ -84,9 +105,20 @@ export default function ProjectPage() {
     if ('scrollRestoration' in history) {
       history.scrollRestoration = 'manual';
     }
-    window.scrollTo(0, 0);
 
-    // 헤더 로고 애니메이션 트리거
+    // 초기 히스토리 상태 설정 (뒤로가기 감지용)
+    window.history.replaceState({ zoomed: false }, '', window.location.pathname);
+
+    const scrollToTop = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    };
+
+    scrollToTop();
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(scrollToTop);
+    });
+
     setHeaderLogoTrigger(Date.now());
 
     return () => {
@@ -95,156 +127,6 @@ export default function ProjectPage() {
       }
     };
   }, []);
-
-  // 이미지 프리로드 함수
-  const preloadImage = (src: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      const img = new window.Image();
-      img.onload = () => resolve();
-      img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-      img.src = src;
-    });
-  };
-
-  // 선택된 이미지에 해당하는 프로젝트 상세 정보 가져오기 및 이미지 프리로드
-  useEffect(() => {
-    if (!selected) {
-      setSelectedProject(null);
-      setImagesLoaded(false);
-      return;
-    }
-
-    // projectId를 사용해서 정확한 프로젝트 찾기
-    const fetchProjectDetail = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('project')
-          .select('id, slug, title, description, contents')
-          .eq('id', parseInt(selected.projectId))
-          .single();
-
-        let project: Project | null = null;
-        if (!error && data) {
-          project = data as Project;
-          setSelectedProject(project);
-        } else {
-          // projectId로 찾지 못하면 slug로 시도
-          const foundProject = projects.find((p) => p.id.toString() === selected.projectId);
-          if (foundProject) {
-            project = foundProject;
-            setSelectedProject(project);
-          }
-        }
-
-        // 프로젝트를 찾았으면 Hero 이미지 먼저 프리로드 (나머지는 나중에)
-        if (project?.contents) {
-          // Hero 이미지 (클릭한 이미지 또는 썸네일) - 우선 로드
-          const heroImageSrc = selected.src || project.contents.thumbnail43 || project.contents.thumbnail34;
-          if (heroImageSrc) {
-            try {
-              await preloadImage(heroImageSrc);
-              // Hero 이미지 로드 완료 후 상태 업데이트
-              setImagesLoaded(true);
-            } catch {
-              // Hero 이미지 로드 실패해도 계속 진행
-              setImagesLoaded(true);
-            }
-          } else {
-            // Hero 이미지가 없으면 즉시 완료
-            setImagesLoaded(true);
-          }
-
-          // 나머지 상세 이미지들은 백그라운드에서 로드 (필수 아님)
-          const detailImagesToPreload: string[] = [];
-          if (project.contents.detailImages && project.contents.detailImages.length > 0) {
-            project.contents.detailImages.forEach((detailImage) => {
-              if (detailImage.url) {
-                detailImagesToPreload.push(detailImage.url);
-              }
-            });
-          }
-
-          // 상세 이미지들은 백그라운드에서 로드 (await 안함)
-          if (detailImagesToPreload.length > 0) {
-            Promise.all(detailImagesToPreload.map((src) => preloadImage(src))).catch(() => {
-              // 상세 이미지 로드 실패는 무시
-            });
-          }
-        } else {
-          // 프로젝트를 찾지 못한 경우에도 계속 진행
-          setImagesLoaded(true);
-        }
-      } catch {
-        // Error handling
-        setImagesLoaded(true);
-      }
-    };
-
-    fetchProjectDetail();
-  }, [selected, projects]);
-
-  // sectionIds가 변경되면 트리거 리셋 (홈 페이지와 동일)
-  useEffect(() => {
-    triggeredRef.current = false;
-  }, [sectionIds]);
-
-  // 트리거 지점에 도달했는지 감지 (IntersectionObserver) - 두 번째 섹션을 감시
-  useIntersection(
-    triggerElement,
-    (entry: IntersectionObserverEntry) => {
-      if (selected) return;
-
-      // 두 번째 섹션의 바닥이 화면 중간쯤 왔을 때 미리 로딩
-      if (entry.isIntersecting) {
-        const rect = entry.boundingClientRect;
-        // 두 번째 섹션의 바닥이 뷰포트 높이 + 1000px (여유분) 보다 위에 있을 때
-        const isTriggerPoint = rect.bottom <= window.innerHeight + 1000;
-
-        if (isTriggerPoint && !triggeredRef.current) {
-          triggeredRef.current = true;
-
-          setSectionIds((prev) => {
-            const lastId = prev[prev.length - 1];
-            const newId = lastId + 1;
-            const newIds = [...prev.slice(1), newId];
-            return newIds;
-          });
-        }
-      }
-    },
-    { rootMargin: '0px 0px 500px 0px', threshold: [0, 0.1, 0.5, 1] },
-  );
-
-  // 스크롤 이벤트로도 감지 (백업) - 두 번째 섹션 기준
-  useEffect(() => {
-    if (selected) return;
-
-    const handleScroll = () => {
-      if (!triggerElement || triggeredRef.current) return;
-
-      const rect = triggerElement.getBoundingClientRect();
-      const windowHeight = window.innerHeight;
-
-      // 두 번째 섹션의 바닥이 화면 하단 근처에 도달했는지 확인
-      const isTriggerPoint = rect.bottom <= windowHeight + 1000;
-
-      if (isTriggerPoint) {
-        triggeredRef.current = true;
-
-        setSectionIds((prev) => {
-          const lastId = prev[prev.length - 1];
-          const newId = lastId + 1;
-          const newIds = [...prev.slice(1), newId];
-          return newIds;
-        });
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [selected, sectionIds, triggerElement]);
 
   // 프로젝트 레이아웃 설정 불러오기
   const [layoutItems, setLayoutItems] = useState<
@@ -275,7 +157,6 @@ export default function ProjectPage() {
                 }>;
               }
             ).items || [];
-          // order 기준으로 정렬
           const sortedItems = [...items]
             .sort((a, b) => (a.order || 0) - (b.order || 0))
             .map((item) => ({
@@ -293,16 +174,13 @@ export default function ProjectPage() {
     fetchLayout();
   }, []);
 
-  // 프로젝트 이미지 배열 생성 (레이아웃 설정 기반)
+  // 프로젝트 이미지 배열 생성
   const projectImages = useMemo(() => {
     if (layoutItems.length === 0) return [];
 
-    // 레이아웃 아이템을 순서대로 처리하여 프로젝트 이미지 생성
     return layoutItems
       .map((item) => {
-        // 이미지 URL이 있으면 그것을 사용 (업로드한 이미지만 사용)
         if (item.imageUrl) {
-          // orientation에 따라 verticalSrc와 horizontalSrc 결정
           const isVertical = item.orientation === 'vertical';
           return {
             projectId: item.projectId || `img-${item.frameIndex}`,
@@ -310,295 +188,120 @@ export default function ProjectPage() {
             horizontalSrc: !isVertical ? item.imageUrl : item.imageUrl,
           };
         }
-
-        // 이미지가 없으면 표시하지 않음
         return null;
       })
       .filter((img): img is { projectId: string; verticalSrc: string; horizontalSrc: string } => img !== null);
   }, [layoutItems]);
 
-  // 이미지 선택 핸들러
-  const handleSelectImage = useCallback((image: GallerySelection) => {
-    isInitialZoomRef.current = true;
+  // 이미지 선택 핸들러 - center를 건너뛰고 바로 cover로
+  const handleSelectImage = useCallback(
+    (image: GallerySelection) => {
+      console.log('[ProjectPage] handleSelectImage called', {
+        imageProjectId: image.projectId,
+        selectedProjectId: selected?.projectId,
+        currentMode: mode,
+      });
 
-    // 이미 선택된 이미지를 다시 클릭하면 줌 아웃
-    setSelected((current) => {
-      if (current?.projectId === image.projectId) {
-        isInitialZoomRef.current = false;
-        return null;
+      // 같은 이미지를 클릭한 경우: 이미 cover 상태이므로 아무 동작 안함
+      if (selected?.projectId === image.projectId) {
+        return;
       }
-      // 새로운 이미지를 선택할 때 상태 리셋
-      setImagesLoaded(false);
-      setShowDetailModal(false);
-      setIsAnimating(false);
-      return image;
-    });
-  }, []);
+
+      // 다른 이미지를 클릭한 경우: 새로운 이미지 선택하고 바로 cover 모드로
+      console.log('[ProjectPage] 새로운 이미지 선택, 바로 cover 모드로');
+      selectImage(image, 'cover');
+    },
+    [selected, mode, selectImage],
+  );
 
   // 섹션 리스트 생성
   const list = useMemo(
     () =>
-      sectionIds.map((id, index) => {
-        // 3개 중 2번째 요소(index 1)를 트리거로 사용 (미리 로딩)
-        const isTrigger = index === 1;
-
-        return (
-          <div key={id} ref={isTrigger ? setTriggerElement : null} data-section-id={id} data-is-trigger={isTrigger}>
-            <HomeGallery
-              images={projectImages}
-              onSelectImage={handleSelectImage}
-              selectedProjectId={selected?.projectId ?? null}
-              layoutConfig={PROJECT_LAYOUT_CONFIG}
-            />
-          </div>
-        );
-      }),
-    [sectionIds, handleSelectImage, selected?.projectId, projectImages],
+      renderSections((id, index, isTrigger) => (
+        <div key={id} ref={isTrigger ? setTriggerElement : null} data-section-id={id} data-is-trigger={isTrigger}>
+          <HomeGallery
+            images={projectImages}
+            onSelectImage={handleSelectImage}
+            selectedProjectId={selected?.projectId ?? null}
+            layoutConfig={PROJECT_LAYOUT_CONFIG}
+          />
+        </div>
+      )),
+    [renderSections, setTriggerElement, handleSelectImage, selected?.projectId, projectImages],
   );
 
-  // 확대 계산 (홈 페이지와 동일한 로직)
-  useEffect(() => {
-    const calculateZoom = () => {
-      if (!selected) {
-        setZoomStyle((prev) => ({ ...prev, x: 0, y: 0, scale: 1 }));
-        setShowDetailModal(false);
-        setIsAnimating(false);
-        setImagesLoaded(false);
-        // URL 복원 - 뒤로가기로 이미 변경되었을 수도 있으므로 현재 URL 확인
-        if (window.location.pathname.startsWith('/project/') && window.location.pathname !== '/project') {
-          window.history.replaceState({}, '', '/project');
-        }
-        // 스크롤 및 상호작용 복원
-        document.body.style.overflow = '';
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.width = '';
-        document.body.style.pointerEvents = '';
-        document.body.style.userSelect = '';
-        if (scrollPositionRef.current !== undefined) {
-          window.scrollTo(0, scrollPositionRef.current);
-        }
-        document.documentElement.style.setProperty('--gallery-gap', '20px');
-        return;
-      }
-
-      let rect = selected.rect;
-
-      // 최초 줌(클릭 직후)이 아니고, 리사이즈 등으로 인해 다시 계산해야 할 때만 역산 로직 수행
-      if (!isInitialZoomRef.current) {
-        const element = document.getElementById(`project-${selected.projectId}`);
-        if (element) {
-          // 현재(변환된) rect 가져오기
-          const currentRect = element.getBoundingClientRect();
-          const currentScale = zoomStyle.scale;
-          const currentX = zoomStyle.x;
-          const currentY = zoomStyle.y;
-          const currentOriginX = zoomStyle.originX;
-          const currentOriginY = zoomStyle.originY;
-          const currentScrollX = window.scrollX;
-          const currentScrollY = window.scrollY;
-
-          // 역산 로직: 변환된 좌표에서 원본 페이지 좌표 유추
-          if (currentScale > 1.01) {
-            const cxView = currentRect.left + currentRect.width / 2;
-            const cyView = currentRect.top + currentRect.height / 2;
-
-            const cxPage = currentOriginX + (cxView - currentX + currentScrollX - currentOriginX) / currentScale;
-            const cyPage = currentOriginY + (cyView - currentY + currentScrollY - currentOriginY) / currentScale;
-
-            const wPage = currentRect.width / currentScale;
-            const hPage = currentRect.height / currentScale;
-
-            rect = {
-              left: cxPage - wPage / 2 - currentScrollX,
-              top: cyPage - hPage / 2 - currentScrollY,
-              width: wPage,
-              height: hPage,
-              bottom: cyPage + hPage / 2 - currentScrollY,
-              right: cxPage + wPage / 2 - currentScrollX,
-            } as DOMRect;
-          }
-        }
-      }
-
-      // 계산 후 초기 플래그 해제
-      isInitialZoomRef.current = false;
-
-      if (!rect) return;
-
-      // window를 cover로 꽉 채우도록 스케일 계산
-      // width와 height 중 더 큰 scale을 사용하여 화면을 완전히 덮도록 함
-      const scaleX = window.innerWidth / rect.width;
-      const scaleY = window.innerHeight / rect.height;
-      const scale = Math.max(scaleX, scaleY);
-
-      // Transform Origin 설정
-      let originX = 0;
-      let originY = 0;
-
-      if (containerRef.current) {
-        const containerRect = containerRef.current.getBoundingClientRect();
-        // 뷰포트 좌상단(0,0)은 motion.div의 좌상단으로부터 (-left, -top) 만큼 떨어져 있음
-        originX = -containerRect.left;
-        originY = -containerRect.top;
-      } else {
-        // fallback (초기 로드 등)
-        originX = window.scrollX;
-        originY = window.scrollY;
-      }
-
-      // 이미지의 중심 좌표 (뷰포트 기준)
-      const imageCenterX = rect.left + rect.width / 2;
-      const imageCenterY = rect.top + rect.height / 2;
-
-      // 화면의 중심 좌표 (뷰포트 기준)
-      const screenCenterX = window.innerWidth / 2;
-      const screenCenterY = window.innerHeight / 2;
-
-      // 목표: 이미지의 중심을 화면의 중심으로 이동
-      // Translate = ScreenCenter - ImageCenter * Scale
-      const tx = screenCenterX - imageCenterX * scale;
-      const ty = screenCenterY - imageCenterY * scale;
-
-      setZoomStyle({ x: tx, y: ty, scale, originX, originY });
-
-      // 확대 애니메이션 시작 - 모든 상호작용 차단
-      setIsAnimating(true);
-      scrollPositionRef.current = window.scrollY;
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollPositionRef.current}px`;
-      document.body.style.width = '100%';
-      document.body.style.pointerEvents = 'none';
-      document.body.style.userSelect = 'none';
-
-      // 확대 애니메이션 완료 후 모달 표시 (이미지 로드 완료는 별도 useEffect에서 처리)
-      setTimeout(() => {
-        setIsAnimating(false);
-      }, 800); // 확대 애니메이션 duration과 동일
-    };
-
-    calculateZoom();
-
-    // 윈도우 리사이즈 시 줌 아웃
-    const handleResize = () => {
-      setSelected(null);
-      isInitialZoomRef.current = false;
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected]);
-
-  // 확대 애니메이션 완료 후 모달 표시 (이미지 로드 완료는 배경 이미지로 처리)
-  useEffect(() => {
-    if (!selected || !selectedProject || isAnimating) {
-      return;
-    }
-
-    // 애니메이션이 완료되면 모달 표시 (이미지 로드 완료 전에도 배경 이미지로 깜빡임 방지)
-    setShowDetailModal(true);
-
-    // URL만 업데이트 (페이지 이동 없음)
-    const project = projects.find((p) => p.id.toString() === selected.projectId);
-    if (project?.slug) {
-      window.history.pushState({}, '', `/project/${project.slug}`);
-    }
-
-    // 애니메이션 완료 후 스크롤 허용
-    document.body.style.overflow = '';
-    document.body.style.position = '';
-    document.body.style.top = '';
-    document.body.style.width = '';
-    document.body.style.pointerEvents = '';
-    document.body.style.userSelect = '';
-    if (scrollPositionRef.current !== undefined) {
-      window.scrollTo(0, scrollPositionRef.current);
-    }
-  }, [selected, selectedProject, isAnimating, projects]);
-
-  // ESC 키로 모달 닫기
+  // ESC 키로 줌 아웃
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && showDetailModal) {
-        setSelected(null);
+      if (e.key === 'Escape' && mode === 'cover') {
+        zoomOut();
       }
     };
 
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [showDetailModal]);
+  }, [mode, zoomOut]);
 
-  // 뒤로가기 버튼 처리
+  // 뒤로가기 버튼 처리 - cover 모드에서 줌 아웃
   useEffect(() => {
-    const handlePopState = () => {
-      const currentPath = window.location.pathname;
+    const handlePopState = (e: PopStateEvent) => {
+      console.log('[ProjectPage] popstate 감지', {
+        state: e.state,
+        modeRef: modeRef.current,
+      });
 
-      // URL이 /project로 돌아왔으면 모달 닫기
-      if (currentPath === '/project' && (selected || showDetailModal)) {
-        setSelected(null);
-        setShowDetailModal(false);
-        setImagesLoaded(false);
-        setIsAnimating(false);
+      if (modeRef.current === 'cover') {
+        console.log('[ProjectPage] 뒤로가기로 줌 아웃 실행');
+        zoomOut();
       }
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [selected, showDetailModal]);
-
-  const handleProjectHeaderClick = () => {
-    if (showDetailModal || selected) {
-      // 모달이 열려있으면 새로고침
-      window.location.href = '/project';
-    }
-  };
+  }, [zoomOut]);
 
   return (
     <>
-      <Header isFixed={true} onProjectClick={handleProjectHeaderClick} headerLogoTrigger={headerLogoTrigger} />
-      <MobileMenu onProjectClick={handleProjectHeaderClick} headerLogoTrigger={headerLogoTrigger} />
-      <motion.div
-        ref={containerRef}
-        animate={{
-          x: zoomStyle.x,
-          y: zoomStyle.y,
-          scale: zoomStyle.scale,
-        }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        style={{
-          transformOrigin: `${zoomStyle.originX}px ${zoomStyle.originY}px`,
-          width: '100%',
-          pointerEvents: isAnimating ? 'none' : 'auto',
-        }}>
-        <HomeContainer isFixed={false}>
-          <div className="relative flex w-full flex-col">{list}</div>
-        </HomeContainer>
-      </motion.div>
+      <Header isFixed={true} headerLogoTrigger={headerLogoTrigger} />
+      <MobileMenu headerLogoTrigger={headerLogoTrigger} />
 
-      {/* 확대 애니메이션 중 오버레이 (모든 상호작용 차단) */}
-      {isAnimating && (
-        <div
-          className="fixed inset-0 z-[300] bg-transparent"
-          style={{
-            pointerEvents: 'all',
-            userSelect: 'none',
-            touchAction: 'none',
+      <div
+        className={cn(
+          'h-screen overflow-y-scroll',
+          mode === 'cover' || isAnimating ? 'pointer-events-none overflow-hidden' : 'pointer-events-auto',
+        )}>
+        <motion.main
+          ref={containerRef}
+          animate={{
+            x: zoomStyle.x,
+            y: zoomStyle.y,
+            scale: zoomStyle.scale,
           }}
-          onMouseDown={(e) => e.preventDefault()}
-          onMouseMove={(e) => e.preventDefault()}
-          onClick={(e) => e.preventDefault()}
-        />
-      )}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          style={{
+            transformOrigin: `${zoomStyle.originX}px ${zoomStyle.originY}px`,
+            width: '100vw',
+            height: '100vh',
+            overflow: 'hidden !important',
+            pointerEvents: isAnimating ? 'none' : 'auto',
+            position: 'relative',
+          }}>
+          <div
+            className={cn(
+              'h-screen overflow-y-scroll',
+              isAnimating ? 'pointer-events-none overflow-hidden' : 'pointer-events-auto',
+              mode === 'cover' ? 'pointer-events-none' : 'pointer-events-auto',
+            )}>
+            {list}
+          </div>
+        </motion.main>
+      </div>
 
-      {/* 상세 페이지 모달 (확대 애니메이션 완료 후 표시) */}
-      {selectedProject && selectedProject.contents && (
+      {/* 상세 페이지 모달 (cover 모드에서만 표시) - 임시 주석처리 */}
+      {/* {selectedProject && selectedProject.contents && (
         <div
           className={`fixed inset-0 z-[200] overflow-y-auto transition-opacity duration-300 ${
-            showDetailModal ? 'opacity-100' : 'pointer-events-none opacity-0'
+            showDetailModal && mode === 'cover' ? 'opacity-100' : 'pointer-events-none opacity-0'
           }`}
           style={{
             backgroundColor: 'white',
@@ -614,7 +317,7 @@ export default function ProjectPage() {
           }}
           onClick={(e) => {
             if (e.target === e.currentTarget && showDetailModal) {
-              setSelected(null);
+              zoomOut();
             }
           }}>
           <main className="w-ful relative h-full">
@@ -627,7 +330,7 @@ export default function ProjectPage() {
             />
           </main>
         </div>
-      )}
+      )} */}
     </>
   );
 }

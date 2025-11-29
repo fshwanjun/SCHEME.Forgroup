@@ -93,12 +93,12 @@ function HomeGallery({
   selectedProjectId,
   layoutConfig = HOME_LAYOUT_CONFIG,
 }: HomeGalleryProps) {
-  console.log('[HomeGallery] render', {
-    imagesCount: images.length,
-    selectedProjectId,
-    timestamp: Date.now(),
-  });
-  
+  // console.log('[HomeGallery] render', {
+  //   imagesCount: images.length,
+  //   selectedProjectId,
+  //   timestamp: Date.now(),
+  // });
+
   // 화면 크기 감지
   const windowSize = useWindowSize();
   const [isMobile, setIsMobile] = useState(false);
