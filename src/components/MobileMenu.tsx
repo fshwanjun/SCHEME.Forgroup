@@ -5,26 +5,60 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import useWindowSize from '@/hooks/useWindowSize';
+import { supabase } from '@/lib/supabase';
 import LogoInline from './LogoInline';
 
 const navItems = [
-  { href: '/', label: 'Home' },
   { href: '/project', label: 'Project' },
   { href: '/studio', label: 'Studio' },
 ];
 
-export default function MobileMenu({ onProjectClick, headerLogoTrigger }: { onProjectClick?: () => void; headerLogoTrigger?: number }) {
+export default function MobileMenu({
+  onProjectClick,
+  headerLogoTrigger,
+}: {
+  onProjectClick?: () => void;
+  headerLogoTrigger?: number;
+}) {
   const pathname = usePathname();
   const windowSize = useWindowSize();
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [social, setSocial] = useState<string>('@forforfor'); // 기본값
 
   // 클라이언트 사이드에서만 모바일 여부 업데이트 (hydration 불일치 방지)
   useEffect(() => {
     setMounted(true);
     setIsMobile(windowSize.isSm);
   }, [windowSize.isSm]);
+
+  // studio 페이지처럼 social 데이터 가져오기
+  useEffect(() => {
+    const fetchSocial = async () => {
+      const { data: configData, error } = await supabase.from('config').select('content').eq('id', 'about').single();
+
+      if (error) {
+        return;
+      }
+
+      if (configData?.content) {
+        try {
+          const content = configData.content;
+          const parsed = typeof content === 'string' ? JSON.parse(content) : content;
+          if (parsed.social) {
+            // @가 없으면 추가
+            const socialValue = parsed.social.startsWith('@') ? parsed.social : `@${parsed.social}`;
+            setSocial(socialValue);
+          }
+        } catch {
+          // 파싱 실패 시 무시
+        }
+      }
+    };
+
+    fetchSocial();
+  }, []);
 
   const isVisible = pathname === '/' || pathname === '/studio' || pathname.startsWith('/project');
 
@@ -71,13 +105,6 @@ export default function MobileMenu({ onProjectClick, headerLogoTrigger }: { onPr
       {isMenuOpen && (
         <nav className="pointer-events-auto fixed inset-0 z-[300] bg-white text-black">
           <div className="flex h-full flex-col p-6 pt-30">
-            {/* 모바일 메뉴 로고 */}
-            <div className="mb-8 h-[80px] w-[200px]">
-              <LogoInline
-                playTrigger={headerLogoTrigger}
-                invert={true}
-              />
-            </div>
             {navItems.map(({ href, label }) => {
               const active = pathname === href || (href !== '/' && pathname.startsWith(href));
               const isProjectLink = href === '/project';
@@ -96,8 +123,12 @@ export default function MobileMenu({ onProjectClick, headerLogoTrigger }: { onPr
               );
             })}
           </div>
-          <a href="https://instagram.com/forforfor" className="absolute right-4 bottom-4 text-right">
-            @forforfor
+          <a
+            href={`https://instagram.com/${social.replace('@', '')}`}
+            className="absolute right-4 bottom-4 text-right"
+            target="_blank"
+            rel="noopener noreferrer">
+            {social}
           </a>
         </nav>
       )}
