@@ -58,9 +58,7 @@ export default function Header({
     <header
       className={cn(
         'w-full text-white mix-blend-difference',
-        isFixed
-          ? `pointer-events-none fixed top-0 ${zIndexClass} px-4 pt-5 md:px-5`
-          : `relative ${zIndexClass} px-4 md:px-5`,
+        isFixed ? `pointer-events-none fixed top-0 ${zIndexClass} px-4 pt-5 md:px-5` : `relative ${zIndexClass}`,
       )}
       style={{
         // mix-blend-difference가 transform된 요소와 올바르게 작동하도록
