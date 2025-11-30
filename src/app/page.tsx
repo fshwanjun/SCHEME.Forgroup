@@ -166,23 +166,56 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleEscape);
   }, [mode, zoomOut]);
 
-  // 뒤로가기 버튼 처리 - center/cover 모드에서 줌 아웃
-  useEffect(() => {
-    const handlePopState = (e: PopStateEvent) => {
-      console.log('[Home] popstate 감지', {
-        state: e.state,
-        modeRef: modeRef.current,
-      });
+  // center 모드일 때 외부 영역 클릭/터치로 줌 아웃
+  const handleClickOutside = useCallback(
+    (e: React.MouseEvent | React.TouchEvent) => {
+      // center 모드가 아니거나 애니메이션 중이면 무시
+      if (mode !== 'center' || isAnimating || !selected) return;
 
-      if (modeRef.current === 'center' || modeRef.current === 'cover') {
-        console.log('[Home] 뒤로가기로 줌 아웃 실행');
+      const target = e.target as HTMLElement;
+
+      // 클릭된 요소가 선택된 이미지 요소인지 확인
+      const selectedImageElement = document.getElementById(`project-${selected.projectId}`);
+      if (!selectedImageElement) {
+        // 이미지 요소를 찾을 수 없으면 줌 아웃
         zoomOut();
+        return;
       }
-    };
 
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [zoomOut]);
+      // ImageCard에서 stopPropagation을 사용하므로, 이 핸들러가 호출되면 외부 클릭으로 간주
+      // 하지만 transform으로 인해 이동한 이미지의 실제 화면상 위치도 확인
+      if (selectedImageElement.contains(target)) {
+        return; // 선택된 이미지를 클릭한 경우 무시
+      }
+
+      // 클릭 위치가 선택된 이미지의 실제 화면상 위치와 겹치는지 확인
+      const rect = selectedImageElement.getBoundingClientRect();
+      let clickX = 0;
+      let clickY = 0;
+
+      if ('clientX' in e) {
+        // 마우스 이벤트
+        clickX = e.clientX;
+        clickY = e.clientY;
+      } else {
+        // 터치 이벤트 (onTouchEnd에서는 changedTouches 사용)
+        const touch = e.changedTouches?.[0];
+        if (touch) {
+          clickX = touch.clientX;
+          clickY = touch.clientY;
+        }
+      }
+
+      // 클릭 위치가 이미지 영역 내부인지 확인
+      if (clickX >= rect.left && clickX <= rect.right && clickY >= rect.top && clickY <= rect.bottom) {
+        return; // 이미지 영역 내부를 클릭한 경우 무시
+      }
+
+      // 외부 영역을 클릭한 경우 줌 아웃
+      zoomOut();
+    },
+    [mode, isAnimating, selected, zoomOut],
+  );
 
   const handleHeaderAnimationStart = useCallback(() => {
     const trigger = Date.now();
@@ -199,7 +232,9 @@ export default function Home() {
         className={cn(
           'h-screen overflow-y-scroll',
           mode === 'center' || mode === 'cover' || isAnimating ? 'overflow-hidden' : '',
-        )}>
+        )}
+        onClick={handleClickOutside}
+        onTouchEnd={handleClickOutside}>
         <motion.main
           ref={containerRef}
           animate={{
@@ -218,7 +253,7 @@ export default function Home() {
           <div
             className={cn(
               isAnimating ? 'pointer-events-none' : 'pointer-events-auto',
-              mode === 'center' ? 'pointer-events-none' : 'pointer-events-auto',
+              // center 모드일 때는 외부 클릭을 감지하기 위해 pointer-events를 유지
               mode === 'cover' ? 'pointer-events-none' : 'pointer-events-auto',
             )}>
             {list}
