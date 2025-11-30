@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import HomeContainer from '@/components/HomeContainer';
 import HomeGallery, { type GallerySelection } from '@/components/HomeGallery';
 import { PROJECT_LAYOUT_CONFIG } from '@/config/projectLayout';
 import Header from '@/components/Header';
@@ -41,21 +40,21 @@ interface Project {
 
 export default function ProjectPage() {
   const [projects, setProjects] = useState<Project[]>([]);
-  // const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  // const [showDetailModal, setShowDetailModal] = useState(false);
-  // const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [imagesLoaded, setImagesLoaded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [headerLogoTrigger, setHeaderLogoTrigger] = useState<number | undefined>(undefined);
   const modeRef = useRef<string>('default');
 
   // useZoom 훅 사용 - 초기 모드는 default
+  // cover 모드일 때는 리사이즈 시 페이지 이동을 위해 zoomOutOnResize를 false로 설정
   const { selected, mode, zoomStyle, isAnimating, selectImage, zoomOut } = useZoom({
     initialMode: 'default',
     centerPadding: 200,
     containerRef,
     animationDuration: 800,
     lockScroll: true,
-    zoomOutOnResize: true,
+    zoomOutOnResize: false, // cover 모드일 때는 직접 처리
     debug: false,
   });
 
@@ -67,14 +66,38 @@ export default function ProjectPage() {
     disabled: mode !== 'default',
   });
 
-  // mode가 변경될 때 ref 업데이트 및 히스토리 관리
+  // 선택된 프로젝트 찾기
+  const selectedProjectData = useMemo(() => {
+    if (!selected) return null;
+
+    // projectId가 slug인지 확인하고 프로젝트 찾기
+    const project = projects.find((p) => p.slug === selected.projectId || p.id.toString() === selected.projectId);
+    return project || null;
+  }, [selected, projects]);
+
+  // cover 모드로 진입할 때 프로젝트 설정 및 URL 변경
+  useEffect(() => {
+    if (mode === 'cover' && selectedProjectData) {
+      setSelectedProject(selectedProjectData);
+      setImagesLoaded(false);
+
+      // URL을 슬러그로 변경 (실제 페이지 이동 없이)
+      const newUrl = `/project/${selectedProjectData.slug}`;
+      window.history.pushState({ zoomed: true, modal: true }, '', newUrl);
+    } else if (mode !== 'cover') {
+      // cover 모드가 아니면 프로젝트 초기화 및 URL 복원
+      if (selectedProject) {
+        setSelectedProject(null);
+        setImagesLoaded(false);
+        // URL을 /project로 복원
+        window.history.pushState({ zoomed: false }, '', '/project');
+      }
+    }
+  }, [mode, selectedProjectData, selectedProject]);
+
+  // mode가 변경될 때 ref 업데이트
   useEffect(() => {
     modeRef.current = mode;
-
-    // cover 모드로 진입할 때 히스토리에 상태 추가
-    if (mode === 'cover') {
-      window.history.pushState({ zoomed: true }, '');
-    }
   }, [mode]);
 
   // 프로젝트 목록 가져오기
@@ -242,7 +265,7 @@ export default function ProjectPage() {
     return () => window.removeEventListener('keydown', handleEscape);
   }, [mode, zoomOut]);
 
-  // 뒤로가기 버튼 처리 - cover 모드에서 줌 아웃
+  // 뒤로가기 버튼 처리 - cover 모드에서 줌 아웃 및 URL 복원
   useEffect(() => {
     const handlePopState = (e: PopStateEvent) => {
       console.log('[ProjectPage] popstate 감지', {
@@ -253,12 +276,57 @@ export default function ProjectPage() {
       if (modeRef.current === 'cover') {
         console.log('[ProjectPage] 뒤로가기로 줌 아웃 실행');
         zoomOut();
+        setSelectedProject(null);
+        setImagesLoaded(false);
+
+        // URL을 /project로 복원 (뒤로가기로 이미 변경되었으므로 replaceState로 확정)
+        window.history.replaceState({ zoomed: false }, '', '/project');
       }
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, [zoomOut]);
+
+  // 리사이즈 처리 - 상세 모달이 나온 상태에서 화면 사이즈 변경 시 해당 페이지로 이동
+  useEffect(() => {
+    let resizeTimer: NodeJS.Timeout;
+
+    const handleResize = () => {
+      // cover 모드이고 선택된 프로젝트가 있을 때만 처리
+      if (mode === 'cover' && selectedProject) {
+        const currentPath = window.location.pathname;
+        console.log('[ProjectPage] 리사이즈 감지 - cover 모드', { currentPath, selectedProject: selectedProject.slug });
+
+        // 현재 URL이 프로젝트 상세 페이지인지 확인
+        if (currentPath.startsWith('/project/') && currentPath !== '/project') {
+          console.log('[ProjectPage] 해당 페이지로 이동:', currentPath);
+          // 해당 페이지로 새로고침하여 이동
+          window.location.href = currentPath;
+        } else if (currentPath === '/project') {
+          // URL이 아직 변경되지 않았다면 변경 후 이동
+          const newUrl = `/project/${selectedProject.slug}`;
+          console.log('[ProjectPage] URL 변경 후 이동:', newUrl);
+          window.location.href = newUrl;
+        }
+      } else if (mode !== 'cover' && selected) {
+        // cover 모드가 아닐 때는 줌아웃 (기본 동작)
+        zoomOut();
+      }
+    };
+
+    // 디바운스를 위한 타이머
+    const debouncedResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(handleResize, 150);
+    };
+
+    window.addEventListener('resize', debouncedResize, { passive: true });
+    return () => {
+      window.removeEventListener('resize', debouncedResize);
+      clearTimeout(resizeTimer);
+    };
+  }, [mode, selectedProject, selected, zoomOut]);
 
   return (
     <>
@@ -297,12 +365,16 @@ export default function ProjectPage() {
         </motion.main>
       </div>
 
-      {/* 상세 페이지 모달 (cover 모드에서만 표시) - 임시 주석처리 */}
-      {/* {selectedProject && selectedProject.contents && (
-        <div
-          className={`fixed inset-0 z-[200] overflow-y-auto transition-opacity duration-300 ${
-            showDetailModal && mode === 'cover' ? 'opacity-100' : 'pointer-events-none opacity-0'
-          }`}
+      {/* 상세 페이지 모달 (cover 모드에서만 표시) */}
+      {selectedProject && selectedProject.contents && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: mode === 'cover' && !isAnimating ? 1 : 0 }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className={cn(
+            'fixed inset-0 z-[200] overflow-y-auto',
+            mode === 'cover' && !isAnimating ? 'pointer-events-auto' : 'pointer-events-none',
+          )}
           style={{
             backgroundColor: 'white',
             ...(selected?.src && !imagesLoaded
@@ -316,11 +388,11 @@ export default function ProjectPage() {
             transition: 'background-image 0.3s ease-out',
           }}
           onClick={(e) => {
-            if (e.target === e.currentTarget && showDetailModal) {
+            if (e.target === e.currentTarget && mode === 'cover') {
               zoomOut();
             }
           }}>
-          <main className="w-ful relative h-full">
+          <main className="relative h-full w-full">
             <ProjectDetailContent
               key={selected?.projectId || 'default'}
               contents={selectedProject.contents}
@@ -329,8 +401,8 @@ export default function ProjectPage() {
               onHeroImageLoad={() => setImagesLoaded(true)}
             />
           </main>
-        </div>
-      )} */}
+        </motion.div>
+      )}
     </>
   );
 }
