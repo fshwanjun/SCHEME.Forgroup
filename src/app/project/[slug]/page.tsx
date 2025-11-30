@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import { notFound } from 'next/navigation';
 import ProjectDetailClient from './ProjectDetailClient';
@@ -77,5 +78,9 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     notFound();
   }
 
-  return <ProjectDetailClient project={project} />;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ProjectDetailClient project={project} />
+    </Suspense>
+  );
 }
