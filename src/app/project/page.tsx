@@ -350,7 +350,6 @@ export default function ProjectPage() {
             transformOrigin: `${zoomStyle.originX}px ${zoomStyle.originY}px`,
             width: '100vw',
             height: '100vh',
-            overflow: 'hidden !important',
             pointerEvents: isAnimating ? 'none' : 'auto',
             position: 'relative',
           }}>

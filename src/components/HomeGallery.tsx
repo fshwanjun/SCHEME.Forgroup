@@ -22,6 +22,7 @@ export type GallerySelection = {
 };
 
 import { HOME_LAYOUT_CONFIG } from '@/config/homeLayout';
+import { PROJECT_LAYOUT_CONFIG } from '@/config/projectLayout';
 
 // 갤러리에 표시될 실제 프로젝트 이미지 데이터 목록입니다.
 // Landing Page Manager에서 관리하는 이미지 데이터를 사용합니다.
@@ -147,16 +148,25 @@ function HomeGallery({
   const totalFrames = currentFrameClasses.length;
 
   // 🌟 수정: 컴포넌트가 처음 마운트될 때 건너뛸 '행'의 개수를 계산합니다.
+  // 배치 확인을 위해 프로젝트 페이지에서는 랜덤 행 건너뛰기 비활성화
   useEffect(() => {
-    // 최대 건너뛸 행 개수: 전체 행의 1/3 (예시) 또는 원하는 임의의 최대값
-    // 여기서는 전체 행의 절반 정도까지만 건너뛰도록 제한합니다.
-    const maxSkipRows = Math.floor(totalRows / 2);
+    // 프로젝트 레이아웃인지 확인 (PROJECT_LAYOUT_CONFIG 사용 시)
+    const isProjectLayout = layoutConfig === PROJECT_LAYOUT_CONFIG;
 
-    // 0부터 maxSkipRows 사이의 난수를 생성합니다.
-    const randomSkip = Math.floor(Math.random() * maxSkipRows);
+    if (isProjectLayout) {
+      // 프로젝트 페이지에서는 건너뛰지 않음 (배치 확인용)
+      setSkipRows(0);
+    } else {
+      // 최대 건너뛸 행 개수: 전체 행의 1/3 (예시) 또는 원하는 임의의 최대값
+      // 여기서는 전체 행의 절반 정도까지만 건너뛰도록 제한합니다.
+      const maxSkipRows = Math.floor(totalRows / 2);
 
-    setSkipRows(randomSkip);
-  }, [totalRows]); // totalRows가 변경되면 다시 계산합니다 (단, 이 값은 고정되어 있으므로 마운트 시 한 번만 실행됨)
+      // 0부터 maxSkipRows 사이의 난수를 생성합니다.
+      const randomSkip = Math.floor(Math.random() * maxSkipRows);
+
+      setSkipRows(randomSkip);
+    }
+  }, [totalRows, layoutConfig]); // totalRows와 layoutConfig가 변경되면 다시 계산합니다
 
   // 🌟 수정: 건너뛸 프레임의 인덱스 목록을 계산합니다.
   const framesToSkip = useMemo(() => {
