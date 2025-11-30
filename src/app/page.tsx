@@ -212,15 +212,14 @@ export default function Home() {
             transformOrigin: `${zoomStyle.originX}px ${zoomStyle.originY}px`,
             width: '100vw',
             height: '100vh',
-            overflow: 'hidden !important',
             pointerEvents: isAnimating ? 'none' : 'auto',
             position: 'relative',
           }}>
           <div
             className={cn(
-              'h-screen overflow-y-scroll',
-              isAnimating ? 'pointer-events-none overflow-hidden' : 'pointer-events-auto',
-              mode === 'center' || mode === 'cover' || isAnimating ? 'overflow-hidden' : '',
+              isAnimating ? 'pointer-events-none' : 'pointer-events-auto',
+              mode === 'center' ? 'pointer-events-none' : 'pointer-events-auto',
+              mode === 'cover' ? 'pointer-events-none' : 'pointer-events-auto',
             )}>
             {list}
           </div>

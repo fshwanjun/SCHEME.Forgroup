@@ -62,6 +62,12 @@ export default function Header({
           ? `pointer-events-none fixed top-0 ${zIndexClass} px-4 pt-5 md:px-5`
           : `relative ${zIndexClass} px-4 md:px-5`,
       )}
+      style={{
+        // mix-blend-difference가 transform된 요소와 올바르게 작동하도록
+        // transform을 사용하여 새로운 stacking context를 만들되,
+        // 헤더가 transform된 요소의 배경과 blend되도록 함
+        transform: 'translateZ(0)',
+      }}
       suppressHydrationWarning>
       <div className="relative mx-auto flex items-start justify-between">
         {/* 참고: HEADER_CONFIG.logo = { mobileWidth: 160, desktopWidth: 300 } */}

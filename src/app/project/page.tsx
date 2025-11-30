@@ -288,7 +288,7 @@ export default function ProjectPage() {
           }}>
           <div
             className={cn(
-              'h-screen overflow-y-scroll',
+              'overflow-y-scroll',
               isAnimating ? 'pointer-events-none overflow-hidden' : 'pointer-events-auto',
               mode === 'cover' ? 'pointer-events-none' : 'pointer-events-auto',
             )}>

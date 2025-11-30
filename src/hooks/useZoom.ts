@@ -87,7 +87,7 @@ export interface UseZoomReturn {
 }
 
 // 디버그 로그 유틸리티
-const debugLog = (debug: boolean, ...args: any[]) => {
+const debugLog = (debug: boolean, ...args: unknown[]) => {
   if (debug) console.log(...args);
 };
 
@@ -96,7 +96,7 @@ export function useZoom(options: UseZoomOptions = {}): UseZoomReturn {
     initialMode = 'default',
     centerPadding = 200,
     animationDuration = 800,
-    lockScroll = true,
+    // lockScroll 옵션은 제거됨 (스크롤 방지 기능 삭제)
     zoomOutOnResize = true,
     containerRef,
     debug = false,
@@ -107,7 +107,6 @@ export function useZoom(options: UseZoomOptions = {}): UseZoomReturn {
   const [zoomStyle, setZoomStyle] = useState<ZoomStyle>({ x: 0, y: 0, scale: 1, originX: 0, originY: 0 });
   const [isAnimating, setIsAnimating] = useState(false);
 
-  const scrollPositionRef = useRef<number>(0);
   const internalContainerRef = useRef<HTMLDivElement>(null);
   const actualContainerRef = containerRef || internalContainerRef;
   const zoomStyleRef = useRef<ZoomStyle>({ x: 0, y: 0, scale: 1, originX: 0, originY: 0 });
@@ -119,66 +118,6 @@ export function useZoom(options: UseZoomOptions = {}): UseZoomReturn {
   useEffect(() => {
     zoomStyleRef.current = zoomStyle;
   }, [zoomStyle]);
-
-  // 스크롤 고정
-  const lockBodyScroll = useCallback(() => {
-    if (!lockScroll) return;
-
-    scrollPositionRef.current = window.scrollY;
-    debugLog(debug, '[useZoom] 스크롤 고정', { scrollY: scrollPositionRef.current });
-
-    if (!document.body.dataset.originalHeight) {
-      document.body.dataset.originalHeight = document.body.style.height || '';
-    }
-
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.width = '100%';
-    document.body.style.top = `-${scrollPositionRef.current}px`;
-    document.body.style.height = `${document.documentElement.scrollHeight}px`;
-    document.documentElement.style.overflow = 'hidden';
-  }, [lockScroll, debug]);
-
-  // 스크롤 복원
-  const unlockBodyScroll = useCallback(() => {
-    if (!lockScroll) return;
-
-    const savedScrollY = scrollPositionRef.current;
-    debugLog(debug, '[useZoom] 스크롤 복원 시작', { savedScrollY });
-
-    const scrollYFromStyle = document.body.style.top;
-    let scrollYToRestore = savedScrollY;
-
-    if (scrollYFromStyle) {
-      const parsed = parseInt(scrollYFromStyle.replace(/px|-/g, ''), 10);
-      if (!isNaN(parsed)) {
-        scrollYToRestore = parsed;
-      }
-    }
-
-    document.body.style.overflow = '';
-    document.body.style.position = '';
-    document.body.style.width = '';
-    document.body.style.top = '';
-
-    const originalHeight = document.body.dataset.originalHeight;
-    if (originalHeight) {
-      document.body.style.height = originalHeight;
-      delete document.body.dataset.originalHeight;
-    } else {
-      document.body.style.height = '';
-    }
-    document.documentElement.style.overflow = '';
-
-    if (scrollYToRestore >= 0) {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          window.scrollTo({ top: scrollYToRestore, left: 0, behavior: 'auto' });
-          debugLog(debug, '[useZoom] 스크롤 위치 복원 완료', { scrollY: scrollYToRestore });
-        });
-      });
-    }
-  }, [lockScroll, debug]);
 
   // 줌 계산 (모드에 따라 다른 계산) - 클릭한 요소의 중심을 origin으로 사용
   const calculateZoom = useCallback(
@@ -205,7 +144,6 @@ export function useZoom(options: UseZoomOptions = {}): UseZoomReturn {
           originX: prev.originX,
           originY: prev.originY,
         }));
-        unlockBodyScroll();
         setIsAnimating(true);
 
         if (animationTimerRef.current) {
@@ -234,10 +172,10 @@ export function useZoom(options: UseZoomOptions = {}): UseZoomReturn {
       // 스케일 계산
       let scale: number;
       if (targetMode === 'cover') {
-        // 화면을 완전히 채우도록
+        // 화면을 완전히 채우도록 (부동소수점 오차 방지를 위해 약간의 여유 추가)
         const scaleX = window.innerWidth / rect.width;
         const scaleY = window.innerHeight / rect.height;
-        scale = Math.max(scaleX, scaleY);
+        scale = Math.max(scaleX, scaleY) * 1.001; // 0.1% 여유 추가로 여백 완전 제거
       } else {
         // center: 여백을 두고 중심에 배치
         const availableHeight = window.innerHeight - centerPadding;
@@ -249,8 +187,10 @@ export function useZoom(options: UseZoomOptions = {}): UseZoomReturn {
 
       // center ↔ cover 전환 시 scale만 변경 (origin 유지)
       if ((prevMode === 'center' && targetMode === 'cover') || (prevMode === 'cover' && targetMode === 'center')) {
-        debugLog(debug, '[useZoom] 모드 전환: scale만 변경', { from: prevMode, to: targetMode, scale });
-        setZoomStyle((prev) => ({ ...prev, scale }));
+        // cover 모드로 전환 시 여백 제거를 위한 여유 적용
+        const finalScale = targetMode === 'cover' ? scale * 1.001 : scale / 1.001;
+        debugLog(debug, '[useZoom] 모드 전환: scale만 변경', { from: prevMode, to: targetMode, scale: finalScale });
+        setZoomStyle((prev) => ({ ...prev, scale: finalScale }));
 
         setIsAnimating(true);
         if (animationTimerRef.current) {
@@ -308,11 +248,6 @@ export function useZoom(options: UseZoomOptions = {}): UseZoomReturn {
 
       setZoomStyle({ x: tx, y: ty, scale, originX, originY });
 
-      // default에서 다른 모드로 전환할 때만 스크롤 고정
-      if (prevMode === 'default' && targetMode !== 'default') {
-        lockBodyScroll();
-      }
-
       setIsAnimating(true);
 
       if (animationTimerRef.current) {
@@ -324,7 +259,7 @@ export function useZoom(options: UseZoomOptions = {}): UseZoomReturn {
         animationTimerRef.current = null;
       }, animationDuration);
     },
-    [selected, centerPadding, lockBodyScroll, unlockBodyScroll, actualContainerRef, animationDuration, debug],
+    [selected, centerPadding, actualContainerRef, animationDuration, debug],
   );
 
   // 모드가 변경될 때마다 줌 재계산
@@ -357,10 +292,9 @@ export function useZoom(options: UseZoomOptions = {}): UseZoomReturn {
       if (animationTimerRef.current) {
         clearTimeout(animationTimerRef.current);
       }
-      unlockBodyScroll();
       originalRectRef.current = null;
     };
-  }, [unlockBodyScroll]);
+  }, []);
 
   // 이미지 선택
   const selectImage = useCallback(
