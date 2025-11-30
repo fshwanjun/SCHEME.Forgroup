@@ -201,19 +201,27 @@ export default function ProjectPage() {
   const projectImages = useMemo(() => {
     if (layoutItems.length === 0) return [];
 
-    return layoutItems
-      .map((item) => {
-        if (item.imageUrl) {
-          const isVertical = item.orientation === 'vertical';
-          return {
-            projectId: item.projectId || `img-${item.frameIndex}`,
-            verticalSrc: isVertical ? item.imageUrl : item.imageUrl,
-            horizontalSrc: !isVertical ? item.imageUrl : item.imageUrl,
-          };
-        }
-        return null;
-      })
-      .filter((img): img is { projectId: string; verticalSrc: string; horizontalSrc: string } => img !== null);
+    const images: Array<{
+      projectId: string;
+      projectSlug?: string;
+      verticalSrc: string;
+      horizontalSrc: string;
+      orientation?: 'horizontal' | 'vertical';
+    }> = [];
+
+    for (const item of layoutItems) {
+      if (item.imageUrl) {
+        images.push({
+          projectId: item.projectId || `img-${item.frameIndex}`,
+          projectSlug: item.projectId || undefined,
+          verticalSrc: item.imageUrl, // 모든 이미지에 대해 동일한 URL 사용
+          horizontalSrc: item.imageUrl, // 모든 이미지에 대해 동일한 URL 사용
+          orientation: item.orientation || undefined, // admin에서 설정한 orientation 정보 포함
+        });
+      }
+    }
+    
+    return images;
   }, [layoutItems]);
 
   // 이미지 선택 핸들러 - center를 건너뛰고 바로 cover로

@@ -152,6 +152,7 @@ export default function Home() {
             projectSlug: img.projectSlug,
             verticalSrc: img.url,
             horizontalSrc: img.url,
+            orientation: img.orientation || undefined, // admin에서 설정한 orientation 정보 포함
           }));
 
           setLandingImages(projectImages);

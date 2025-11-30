@@ -1,6 +1,6 @@
 'use client'; // 이 컴포넌트가 클라이언트 측에서 렌더링되어야 함을 나타냅니다. (React 18 이상)
 
-import { useEffect, useMemo, useState, memo, useCallback } from 'react';
+import { useEffect, useMemo, useState, memo } from 'react';
 import ImageCard from '@/components/ImageCard'; // 이미지 카드 렌더링을 위한 컴포넌트입니다.
 import useWindowSize from '@/hooks/useWindowSize';
 
@@ -10,6 +10,7 @@ type ProjectImage = {
   projectSlug?: string; // 프로젝트 상세 페이지 링크 (선택적)
   verticalSrc: string; // 세로 방향 이미지 소스 경로 (aspect-[3/4] 프레임용)
   horizontalSrc: string; // 가로 방향 이미지 소스 경로 (aspect-[4/3] 프레임용)
+  orientation?: 'horizontal' | 'vertical'; // 이미지의 orientation (admin에서 설정한 값)
 };
 
 export type GallerySelection = {
@@ -22,7 +23,6 @@ export type GallerySelection = {
 };
 
 import { HOME_LAYOUT_CONFIG } from '@/config/homeLayout';
-import { PROJECT_LAYOUT_CONFIG } from '@/config/projectLayout';
 
 // 갤러리에 표시될 실제 프로젝트 이미지 데이터 목록입니다.
 // Landing Page Manager에서 관리하는 이미지 데이터를 사용합니다.
@@ -52,7 +52,7 @@ function shuffleWithSeed<T>(input: T[], seed: number): T[] {
 }
 
 // 🌟 추가: FRAME_CLASSES를 분석하여 행(row)별로 프레임을 그룹화하고 전체 행 수를 계산하는 함수
-function getRowGroups(frameClasses: string[]): { rowFrames: number[][]; totalRows: number } {
+function getRowGroups(frameClasses: readonly string[]): { rowFrames: number[][]; totalRows: number } {
   const rowMap: Map<number, number[]> = new Map();
   let maxRow = 0;
 
@@ -81,11 +81,26 @@ function getRowGroups(frameClasses: string[]): { rowFrames: number[][]; totalRow
   return { rowFrames, totalRows: maxRow };
 }
 
+type LayoutConfig = {
+  desktop: {
+    frameClasses: readonly string[];
+    gridCols: number;
+    gap: number;
+    horizontalPadding: number;
+  };
+  mobile: {
+    frameClasses: readonly string[];
+    gridCols: number;
+    gap: number;
+    horizontalPadding: number;
+  };
+};
+
 type HomeGalleryProps = {
   images?: ProjectImage[]; // Landing Page Manager에서 가져온 이미지 목록
   onSelectImage?: (image: GallerySelection) => void;
   selectedProjectId?: string | null;
-  layoutConfig?: typeof HOME_LAYOUT_CONFIG; // 레이아웃 설정 (기본값: HOME_LAYOUT_CONFIG)
+  layoutConfig?: LayoutConfig; // 레이아웃 설정 (기본값: HOME_LAYOUT_CONFIG)
 };
 
 function HomeGallery({
@@ -151,7 +166,8 @@ function HomeGallery({
   // 배치 확인을 위해 프로젝트 페이지에서는 랜덤 행 건너뛰기 비활성화
   useEffect(() => {
     // 프로젝트 레이아웃인지 확인 (PROJECT_LAYOUT_CONFIG 사용 시)
-    const isProjectLayout = layoutConfig === PROJECT_LAYOUT_CONFIG;
+    // layoutConfig의 desktop.gap 값이 50이면 프로젝트 레이아웃 (홈은 20)
+    const isProjectLayout = (layoutConfig.desktop.gap as number) === 50;
 
     if (isProjectLayout) {
       // 프로젝트 페이지에서는 건너뛰지 않음 (배치 확인용)
@@ -180,40 +196,45 @@ function HomeGallery({
     return skipIndices;
   }, [skipRows, rowFrames]);
 
-  // 프로젝트 할당 로직은 그대로 유지하되, 건너뛸 프레임 인덱스를 사용하지 않으므로,
-  // 할당 로직 자체는 변경되지 않고 렌더링 시에만 건너뛰기를 적용합니다.
+  // 이미지의 orientation에 맞는 틀을 찾아 할당하는 로직
   const projectAssignments = useMemo(() => {
     if (projectCount === 0 || totalFrames === 0) return [];
-    const assignments: ProjectImage[] = [];
+    const assignments: (ProjectImage | null)[] = new Array(totalFrames).fill(null);
     const shuffleCache: ProjectImage[][] = [];
 
-    // FRAME_CLASSES 배열의 길이에 맞춰 이미지를 할당합니다. (할당 순서는 건너뛰기와 무관하게 결정)
-    for (let index = 0; index < totalFrames; index++) {
-      const cycle = Math.floor(index / projectCount);
-      const withinCycle = index % projectCount;
+    // 틀의 orientation을 미리 계산
+    const frameOrientations: ('horizontal' | 'vertical')[] = currentFrameClasses.map((frameClass) =>
+      frameClass.includes('aspect-[3/4]') ? 'vertical' : 'horizontal',
+    );
+
+    // 각 틀에 대해 이미지 할당
+    for (let frameIndex = 0; frameIndex < totalFrames; frameIndex++) {
+      const frameOrientation = frameOrientations[frameIndex];
+      const cycle = Math.floor(frameIndex / projectCount);
+      const withinCycle = frameIndex % projectCount;
+
+      let img: ProjectImage | undefined;
 
       if (cycle === 0) {
-        const img = PROJECT_IMAGES[withinCycle];
-        if (img && img.verticalSrc && img.horizontalSrc) {
-          assignments.push(img);
-        } else {
-          // 이미지가 없으면 빈 객체를 push하지 않고 null을 push하여 나중에 필터링
-          assignments.push(null as unknown as ProjectImage);
-        }
+        img = PROJECT_IMAGES[withinCycle];
       } else {
         if (!shuffleCache[cycle]) {
           shuffleCache[cycle] = shuffleWithSeed(PROJECT_IMAGES, cycle);
         }
-        const img = shuffleCache[cycle][withinCycle];
-        if (img && img.verticalSrc && img.horizontalSrc) {
-          assignments.push(img);
-        } else {
-          assignments.push(null as unknown as ProjectImage);
+        img = shuffleCache[cycle][withinCycle];
+      }
+
+      if (img && img.verticalSrc && img.horizontalSrc) {
+        // 이미지의 orientation이 설정되어 있고 틀의 orientation과 일치하는 경우에만 할당
+        // orientation이 없는 경우에는 모든 틀에 할당 가능
+        if (!img.orientation || img.orientation === frameOrientation) {
+          assignments[frameIndex] = img;
         }
       }
     }
+
     return assignments;
-  }, [projectCount, totalFrames, PROJECT_IMAGES]); // PROJECT_IMAGES를 dependency로 사용
+  }, [projectCount, totalFrames, PROJECT_IMAGES, currentFrameClasses]); // currentFrameClasses를 dependency로 추가
 
   // 이미지가 없으면 빈 갤러리 렌더링
   if (projectCount === 0) {
@@ -252,7 +273,19 @@ function HomeGallery({
             return null;
           }
 
-          const orientation = frameClass.includes('aspect-[3/4]') ? 'vertical' : 'horizontal';
+          // 틀의 orientation 결정 (틀의 aspect 비율에 따라)
+          const frameOrientation = frameClass.includes('aspect-[3/4]') ? 'vertical' : 'horizontal';
+
+          // 이미지의 orientation이 설정되어 있으면 그것을 사용, 없으면 틀의 orientation 사용
+          const imageOrientation = assignment.orientation || frameOrientation;
+
+          // 이미지의 orientation과 틀의 orientation이 일치하는지 확인
+          // 일치하지 않으면 렌더링하지 않음 (다른 틀에서 렌더링됨)
+          if (imageOrientation !== frameOrientation) {
+            return null;
+          }
+
+          const orientation = imageOrientation;
           const aspectRatio = orientation === 'vertical' ? '3 / 4' : '4 / 3';
           const src = orientation === 'vertical' ? assignment.verticalSrc : assignment.horizontalSrc;
           const isSelected = selectedProjectId != null && assignment.projectId === selectedProjectId;
