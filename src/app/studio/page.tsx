@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 
 import Header from '@/components/Header';
@@ -29,7 +30,7 @@ interface AboutData {
 // 기본값
 const defaultData: AboutData = {
   imageUrl: '/images/dummy/studio.jpg',
-  description: 'No description available.',
+  description: '',
   experience: [],
   services: [],
   clients: [],
@@ -63,34 +64,41 @@ function RenderList({ items }: { items: ListItem[] | string }) {
 export default function StudioPage() {
   const [data, setData] = useState<AboutData>(defaultData);
   const [headerLogoTrigger, setHeaderLogoTrigger] = useState<number | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
-      const { data: configData, error } = await supabase.from('config').select('content').eq('id', 'about').single();
+      setIsLoading(true);
+      try {
+        const { data: configData, error } = await supabase.from('config').select('content').eq('id', 'about').single();
 
-      if (error) {
-        return;
-      }
+        if (error) {
+          setIsLoading(false);
+          return;
+        }
 
-      let parsedData: AboutData = defaultData;
+        let parsedData: AboutData = defaultData;
 
-      if (configData?.content) {
-        try {
-          // jsonb 타입이므로 이미 객체로 반환됨 (또는 string일 수도 있음)
-          const content = configData.content;
-          const parsed = typeof content === 'string' ? JSON.parse(content) : content;
-          parsedData = { ...defaultData, ...parsed };
-        } catch {
-          // 파싱 실패 시 description으로 간주 (구버전 호환)
-          if (typeof configData.content === 'string') {
-            parsedData.description = configData.content;
+        if (configData?.content) {
+          try {
+            // jsonb 타입이므로 이미 객체로 반환됨 (또는 string일 수도 있음)
+            const content = configData.content;
+            const parsed = typeof content === 'string' ? JSON.parse(content) : content;
+            parsedData = { ...defaultData, ...parsed };
+          } catch {
+            // 파싱 실패 시 description으로 간주 (구버전 호환)
+            if (typeof configData.content === 'string') {
+              parsedData.description = configData.content;
+            }
           }
         }
-      }
 
-      setData(parsedData);
-      // 헤더 로고 애니메이션 트리거
-      setHeaderLogoTrigger(Date.now());
+        setData(parsedData);
+        // 헤더 로고 애니메이션 트리거
+        setHeaderLogoTrigger(Date.now());
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     fetchData();
@@ -102,16 +110,23 @@ export default function StudioPage() {
       addClassName="studio-typography p-5 min-h-screen h-full flex flex-col gap-5 overflow-y-auto md:max-h-screen md:overflow-y-hidden">
       <Header isFixed={false} headerLogoTrigger={headerLogoTrigger} />
       <MobileMenu headerLogoTrigger={headerLogoTrigger} />
-      <div className="page-studio">
+      <motion.div
+        className="page-studio"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: isLoading ? 0 : 1 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}>
         {/* [좌측] 데스크탑 이미지 영역 (40%) */}
-        <div className="relative hidden h-full min-h-0 overflow-hidden md:flex md:max-w-[40%] md:min-w-0 md:flex-[0_0_50%]">
+        <div className="relative hidden h-full min-h-0 w-fit overflow-hidden md:flex md:max-w-[40%] md:min-w-0">
           {data.imageUrl ? (
             <Image
-              className="h-full w-auto max-w-full object-contain object-top"
+              className="h-full w-auto max-w-full object-cover object-top"
               src={data.imageUrl}
               alt="Studio preview"
               width={1200}
               height={1600}
+              sizes="40vw"
+              priority
+              quality={85}
               draggable={false}
             />
           ) : (
@@ -121,9 +136,9 @@ export default function StudioPage() {
         </div>
 
         {/* [우측] 컨텐츠 영역 (60%) */}
-        <div className="flex min-w-0 basis-full flex-col justify-between gap-5 md:max-w-[58%] md:min-w-0 md:flex-[0_0_60%] md:overflow-hidden">
+        <div className="flex w-full min-w-0 basis-full flex-col justify-between gap-5 md:max-w-[62%] md:min-w-0 md:overflow-hidden">
           {/* 1. 메인 설명 (스크롤 가능 영역) */}
-          <div className="custom-scroll overflow-hidden md:flex md:flex-col md:overflow-auto md:pr-3">
+          <div className="custom-scroll min-h-[20vh] overflow-hidden md:flex md:flex-col md:overflow-auto md:pr-3">
             <h3>{data.description}</h3>
           </div>
 
@@ -135,6 +150,8 @@ export default function StudioPage() {
               alt="Studio preview mobile"
               width={1200}
               height={1600}
+              sizes="100vw"
+              priority
               draggable={false}
             />
           )}
@@ -173,7 +190,7 @@ export default function StudioPage() {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </HomeContainer>
   );
 }

@@ -47,10 +47,14 @@ export default function HoverDistortImage({
 }) {
   const id = useId().replace(/:/g, '-');
   const filterId = `hover-distort-${id}`;
+  const maskFilterId = `hover-distort-mask-filter-${id}`;
+  const maskId = `hover-distort-mask-${id}`;
 
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const feImageRef = useRef<SVGFEImageElement | null>(null);
   const feDispRef = useRef<SVGFEDisplacementMapElement | null>(null);
+  const maskFeImageRef = useRef<SVGFEImageElement | null>(null);
+  const maskFeDispRef = useRef<SVGFEDisplacementMapElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const elemSizeRef = useRef<{ w: number; h: number }>({ w: 0, h: 0 });
   const animRafRef = useRef<number | null>(null);
@@ -91,37 +95,70 @@ export default function HoverDistortImage({
         animRafRef.current = null;
       }
     };
+  }, [distortionEnabled]);
 
-    // distortion이 활성화될 때 모든 상태를 초기값으로 리셋
-    currentScaleRef.current = 0;
-    targetScaleRef.current = 0;
-    currentPctRef.current = { x: 50, y: 50 };
-    targetPctRef.current = { x: 50, y: 50 };
-    prevMousePosRef.current = null;
-    animatingRef.current = false;
+  // distortion이 활성화될 때 모든 상태를 초기값으로 리셋 (별도 useEffect로 분리)
+  useEffect(() => {
+    if (!distortionEnabled) return;
 
-    // SVG displacement map scale을 0으로 리셋
-    feDispRef.current?.setAttribute('scale', '0');
+    // 약간의 지연을 두어 DOM이 완전히 렌더링되도록 함
+    const timeoutId = setTimeout(() => {
+      // 모든 상태를 초기값으로 리셋
+      currentScaleRef.current = 0;
+      targetScaleRef.current = 0;
+      currentPctRef.current = { x: 50, y: 50 };
+      targetPctRef.current = { x: 50, y: 50 };
+      prevMousePosRef.current = null;
+      animatingRef.current = false;
 
-    // displacement map을 중립 상태로 리셋
-    if (!canvasRef.current || !feImageRef.current) return;
+      // SVG displacement map scale을 0으로 리셋
+      if (feDispRef.current) {
+        feDispRef.current.setAttribute('scale', '0');
+      }
+      // 마스크 필터의 scale도 0으로 리셋
+      if (maskFeDispRef.current) {
+        maskFeDispRef.current.setAttribute('scale', '0');
+      }
 
-    const c = canvasRef.current!;
-    const feImage = feImageRef.current!;
-    const ctx = c.getContext('2d')!;
+      // displacement map을 중립 상태로 리셋
+      if (!canvasRef.current || !feImageRef.current) return;
 
-    const img = ctx.createImageData(c.width, c.height);
-    const data = img.data;
-    // 중립 상태: 모든 픽셀을 128, 128로 설정
-    for (let i = 0; i < data.length; i += 4) {
-      data[i] = 128; // R
-      data[i + 1] = 128; // G
-      data[i + 2] = 0; // B
-      data[i + 3] = 255; // A
-    }
-    ctx.putImageData(img, 0, 0);
-    const url = c.toDataURL('image/png');
-    feImage.setAttribute('href', url);
+      const c = canvasRef.current;
+      const feImage = feImageRef.current;
+      const ctx = c.getContext('2d', { willReadFrequently: false });
+      if (!ctx) return;
+
+      // Canvas 렌더링 품질 향상
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      // canvas가 초기화되지 않았으면 기본 크기로 설정
+      if (c.width === 0 || c.height === 0) {
+        c.width = HOVER_DISTORT_CONFIG.canvas.minSize;
+        c.height = HOVER_DISTORT_CONFIG.canvas.minSize;
+      }
+
+      const img = ctx.createImageData(c.width, c.height);
+      const data = img.data;
+      // 중립 상태: 모든 픽셀을 128, 128로 설정
+      for (let i = 0; i < data.length; i += 4) {
+        data[i] = 128; // R
+        data[i + 1] = 128; // G
+        data[i + 2] = 0; // B
+        data[i + 3] = 255; // A
+      }
+      ctx.putImageData(img, 0, 0);
+      const url = c.toDataURL('image/png');
+      feImage.setAttribute('href', url);
+      // 마스크 필터의 feImage도 동일하게 리셋
+      if (maskFeImageRef.current) {
+        maskFeImageRef.current.setAttribute('href', url);
+      }
+    }, 10);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
   }, [distortionEnabled]);
 
   useEffect(() => {
@@ -137,27 +174,61 @@ export default function HoverDistortImage({
   useEffect(() => {
     if (!distortionEnabled) return;
     if (!wrapperRef.current) return;
+    if (!canvasRef.current) return;
+
     const el = wrapperRef.current;
     const measure = () => {
+      if (!el || !canvasRef.current) return;
       const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) return; // 요소가 아직 렌더링되지 않음
+
       elemSizeRef.current = { w: r.width, h: r.height };
-      if (canvasRef.current) {
-        const dpr = Math.min(window.devicePixelRatio || 1, HOVER_DISTORT_CONFIG.canvas.devicePixelRatioLimit);
-        const target = Math.min(
-          HOVER_DISTORT_CONFIG.canvas.maxSize,
-          Math.max(HOVER_DISTORT_CONFIG.canvas.minSize, Math.max(r.width, r.height) * dpr),
-        );
-        const dim = Math.round(target);
-        if (canvasRef.current.width !== dim || canvasRef.current.height !== dim) {
-          canvasRef.current.width = dim;
-          canvasRef.current.height = dim;
+      const dpr = Math.min(window.devicePixelRatio || 1, HOVER_DISTORT_CONFIG.canvas.devicePixelRatioLimit);
+      const target = Math.min(
+        HOVER_DISTORT_CONFIG.canvas.maxSize,
+        Math.max(HOVER_DISTORT_CONFIG.canvas.minSize, Math.max(r.width, r.height) * dpr),
+      );
+      const dim = Math.round(target);
+      if (canvasRef.current.width !== dim || canvasRef.current.height !== dim) {
+        canvasRef.current.width = dim;
+        canvasRef.current.height = dim;
+        // canvas 크기가 변경되면 중립 상태로 리셋
+        if (feImageRef.current) {
+          const ctx = canvasRef.current.getContext('2d', { willReadFrequently: false });
+          if (ctx) {
+            // Canvas 렌더링 품질 향상
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+
+            const img = ctx.createImageData(dim, dim);
+            const data = img.data;
+            for (let i = 0; i < data.length; i += 4) {
+              data[i] = 128;
+              data[i + 1] = 128;
+              data[i + 2] = 0;
+              data[i + 3] = 255;
+            }
+            ctx.putImageData(img, 0, 0);
+            const url = canvasRef.current.toDataURL('image/png');
+            feImageRef.current.setAttribute('href', url);
+            // 마스크 필터의 feImage도 동일하게 업데이트
+            if (maskFeImageRef.current) {
+              maskFeImageRef.current.setAttribute('href', url);
+            }
+          }
         }
       }
     };
-    measure();
+
+    // 초기 측정을 약간 지연시켜 DOM이 완전히 렌더링되도록 함
+    const timeoutId = setTimeout(measure, 0);
     const ro = new ResizeObserver(measure);
     ro.observe(el);
-    return () => ro.disconnect();
+
+    return () => {
+      clearTimeout(timeoutId);
+      ro.disconnect();
+    };
   }, [distortionEnabled]);
 
   const updateDisplacementMap = useCallback(
@@ -168,8 +239,12 @@ export default function HoverDistortImage({
       if (!c || !imgEl) return;
       const cw = c.width;
       const ch = c.height;
-      const ctx = c.getContext('2d');
+      const ctx = c.getContext('2d', { willReadFrequently: false });
       if (!ctx) return;
+
+      // Canvas 렌더링 품질 향상
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
 
       const { w: ew, h: eh } = elemSizeRef.current;
       const rx = Math.max(HOVER_DISTORT_CONFIG.canvas.minRadius, (radiusPx * cw) / Math.max(ew, 1));
@@ -202,12 +277,18 @@ export default function HoverDistortImage({
       ctx.putImageData(img, 0, 0);
       const url = c.toDataURL('image/png');
       imgEl.setAttribute('href', url);
+      // 마스크 필터의 feImage도 동일하게 업데이트
+      if (maskFeImageRef.current) {
+        maskFeImageRef.current.setAttribute('href', url);
+      }
     },
     [radiusPx, distortionEnabled],
   );
 
   const startAnimIfNeeded = useCallback(() => {
     if (!distortionEnabled) return;
+    if (!canvasRef.current || !feImageRef.current || !feDispRef.current) return;
+    if (!maskFeImageRef.current || !maskFeDispRef.current) return;
     if (animatingRef.current) return;
     animatingRef.current = true;
 
@@ -233,6 +314,8 @@ export default function HoverDistortImage({
 
       currentScaleRef.current = ns;
       feDispRef.current?.setAttribute('scale', ns.toFixed(2));
+      // 마스크 필터의 scale도 동일하게 업데이트
+      maskFeDispRef.current?.setAttribute('scale', ns.toFixed(2));
 
       const nearPos = Math.hypot(tp.x - nx, tp.y - ny) < HOVER_DISTORT_CONFIG.animation.nearPosThreshold;
       const nearScale = Math.abs(ts - ns) < HOVER_DISTORT_CONFIG.animation.nearScaleThreshold;
@@ -255,6 +338,8 @@ export default function HoverDistortImage({
     (e: React.MouseEvent<HTMLDivElement>) => {
       if (!distortionEnabled) return;
       if (!wrapperRef.current) return;
+      if (!canvasRef.current || !feImageRef.current || !feDispRef.current) return;
+
       const rect = wrapperRef.current.getBoundingClientRect();
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;
@@ -274,6 +359,8 @@ export default function HoverDistortImage({
     (e: React.MouseEvent<HTMLDivElement>) => {
       if (!distortionEnabled) return;
       if (!wrapperRef.current) return;
+      if (!canvasRef.current || !feImageRef.current || !feDispRef.current) return;
+
       const rect = wrapperRef.current.getBoundingClientRect();
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;
@@ -346,10 +433,18 @@ export default function HoverDistortImage({
           lineHeight: 0,
         } as React.CSSProperties
       }>
-      <svg className="block h-full w-full" xmlns="http://www.w3.org/2000/svg">
+      <svg className="block h-full w-full" xmlns="http://www.w3.org/2000/svg" style={{ imageRendering: 'auto' }}>
         {distortionEnabled ? (
           <defs>
-            <filter id={filterId} x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
+            {/* 메인 이미지용 필터 */}
+            <filter
+              id={filterId}
+              x="0"
+              y="0"
+              width="100%"
+              height="100%"
+              colorInterpolationFilters="sRGB"
+              filterRes="200%">
               <feImage
                 ref={feImageRef}
                 x="0"
@@ -369,17 +464,59 @@ export default function HoverDistortImage({
                 yChannelSelector="G"
               />
             </filter>
+            {/* 마스크용 필터 - 같은 displacement map 사용 */}
+            <filter
+              id={maskFilterId}
+              x="-5%"
+              y="-5%"
+              width="110%"
+              height="110%"
+              colorInterpolationFilters="sRGB"
+              filterRes="200%">
+              <feImage
+                ref={maskFeImageRef}
+                x="0"
+                y="0"
+                width="100%"
+                height="100%"
+                preserveAspectRatio="none"
+                result="maskMap"
+              />
+              <feGaussianBlur in="maskMap" stdDeviation={blurStd} result="maskSmap" />
+              <feDisplacementMap
+                ref={maskFeDispRef}
+                in="SourceGraphic"
+                in2="maskSmap"
+                scale={0}
+                xChannelSelector="R"
+                yChannelSelector="G"
+              />
+            </filter>
+            {/* 마스크 정의 - 같은 displacement map 사용하여 외곽도 함께 왜곡 */}
+            <mask id={maskId} maskUnits="objectBoundingBox">
+              <rect
+                x="0"
+                y="0"
+                width="100%"
+                height="100%"
+                fill="white"
+                filter={distortionEnabled ? `url(#${maskFilterId})` : undefined}
+              />
+            </mask>
           </defs>
         ) : null}
-        <image
-          href={src}
-          x="0"
-          y="0"
-          width="100%"
-          height="100%"
-          preserveAspectRatio={preserveAspect}
-          filter={distortionEnabled ? `url(#${filterId})` : undefined}
-        />
+        <g mask={distortionEnabled ? `url(#${maskId})` : undefined}>
+          <image
+            href={src}
+            x="0"
+            y="0"
+            width="100%"
+            height="100%"
+            preserveAspectRatio={preserveAspect}
+            filter={distortionEnabled ? `url(#${filterId})` : undefined}
+            imageRendering="optimizeQuality"
+          />
+        </g>
       </svg>
     </div>
   );

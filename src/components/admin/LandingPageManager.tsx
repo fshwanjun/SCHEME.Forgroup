@@ -199,12 +199,12 @@ export default function LandingPageManager() {
           .order('display_order', { ascending: true });
 
         if (error) {
-          console.error('프로젝트 로드 에러:', error);
+          // 에러 무시
         } else {
           setProjects((data as Project[]) || []);
         }
       } catch (error) {
-        console.error('프로젝트 로드 에러:', error);
+        // 에러 무시
       }
     };
 
@@ -226,7 +226,7 @@ export default function LandingPageManager() {
           setOriginalImages(sortedImages); // 원본 데이터 저장
         }
       } catch (error) {
-        console.error('랜딩 페이지 이미지 로드 에러:', error);
+        // 에러 무시
       }
       setLoading(false);
     };
@@ -285,14 +285,12 @@ export default function LandingPageManager() {
       });
 
       if (error) {
-        console.error('Save error:', error);
         alert('An error occurred while saving: ' + error.message);
       } else {
         setOriginalImages(imagesToSave); // 저장 성공 시 원본 데이터 갱신
         alert('Saved successfully.');
       }
     } catch (error) {
-      console.error('Save error:', error);
       alert('An error occurred while saving.');
     }
     setLoading(false);
@@ -377,7 +375,6 @@ export default function LandingPageManager() {
         };
         newImages.push(newImage);
       } catch (error) {
-        console.error('Upload error:', file.name, error);
         const message = error instanceof Error ? error.message : 'Unknown error';
         alert(`Failed to upload ${file.name}: ${message}`);
       } finally {

@@ -219,7 +219,7 @@ export default function StudioManager() {
           setData(newData);
           setOriginalData(newData); // 👈 원본 데이터 설정
         } catch (e) {
-          console.log('데이터 로드 실패 또는 구버전 데이터', e);
+          // 데이터 로드 실패 또는 구버전 데이터
           // 구버전 텍스트 데이터가 있다면 description으로 간주
           if (typeof configData.content === 'string') {
             const newData = { ...initialData, description: configData.content };
@@ -256,7 +256,6 @@ export default function StudioManager() {
     const { error } = await supabase.from('config').update({ content: contentPayload }).eq('id', 'about');
 
     if (error) {
-      console.error(error);
       alert('Error occurred: ' + error.message);
     } else {
       alert('Saved successfully.');

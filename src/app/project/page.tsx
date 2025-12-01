@@ -201,45 +201,33 @@ export default function ProjectPage() {
   const projectImages = useMemo(() => {
     if (layoutItems.length === 0) return [];
 
-    const images: Array<{
-      projectId: string;
-      projectSlug?: string;
-      verticalSrc: string;
-      horizontalSrc: string;
-      orientation?: 'horizontal' | 'vertical';
-    }> = [];
-
-    for (const item of layoutItems) {
-      if (item.imageUrl) {
-        images.push({
-          projectId: item.projectId || `img-${item.frameIndex}`,
-          projectSlug: item.projectId || undefined,
-          verticalSrc: item.imageUrl, // 모든 이미지에 대해 동일한 URL 사용
-          horizontalSrc: item.imageUrl, // 모든 이미지에 대해 동일한 URL 사용
-          orientation: item.orientation || undefined, // admin에서 설정한 orientation 정보 포함
-        });
-      }
-    }
-    
-    return images;
+    return layoutItems
+      .map((item) => {
+        if (item.imageUrl) {
+          const isVertical = item.orientation === 'vertical';
+          return {
+            projectId: item.projectId || `img-${item.frameIndex}`,
+            projectSlug: item.projectId || undefined, // projectId가 slug일 수 있음
+            verticalSrc: isVertical ? item.imageUrl : item.imageUrl,
+            horizontalSrc: !isVertical ? item.imageUrl : item.imageUrl,
+            orientation: item.orientation || undefined, // orientation 속성 추가
+            frameIndex: item.frameIndex, // frameIndex 저장
+          };
+        }
+        return null;
+      })
+      .filter((img): img is NonNullable<typeof img> => img !== null);
   }, [layoutItems]);
 
   // 이미지 선택 핸들러 - center를 건너뛰고 바로 cover로
   const handleSelectImage = useCallback(
     (image: GallerySelection) => {
-      console.log('[ProjectPage] handleSelectImage called', {
-        imageProjectId: image.projectId,
-        selectedProjectId: selected?.projectId,
-        currentMode: mode,
-      });
-
       // 같은 이미지를 클릭한 경우: 이미 cover 상태이므로 아무 동작 안함
       if (selected?.projectId === image.projectId) {
         return;
       }
 
       // 다른 이미지를 클릭한 경우: 새로운 이미지 선택하고 바로 cover 모드로
-      console.log('[ProjectPage] 새로운 이미지 선택, 바로 cover 모드로');
       selectImage(image, 'cover');
     },
     [selected, mode, selectImage],
@@ -275,20 +263,37 @@ export default function ProjectPage() {
 
   // 뒤로가기 버튼 처리 - cover 모드에서 줌 아웃 및 URL 복원
   useEffect(() => {
+    let isHandlingPopState = false;
+
     const handlePopState = (e: PopStateEvent) => {
-      console.log('[ProjectPage] popstate 감지', {
-        state: e.state,
-        modeRef: modeRef.current,
-      });
+      // 중복 처리 방지
+      if (isHandlingPopState) return;
 
-      if (modeRef.current === 'cover') {
-        console.log('[ProjectPage] 뒤로가기로 줌 아웃 실행');
-        zoomOut();
-        setSelectedProject(null);
-        setImagesLoaded(false);
+      const currentPath = window.location.pathname;
 
-        // URL을 /project로 복원 (뒤로가기로 이미 변경되었으므로 replaceState로 확정)
-        window.history.replaceState({ zoomed: false }, '', '/project');
+      // cover 모드이거나 프로젝트 상세 페이지에서 뒤로가기한 경우
+      if (modeRef.current === 'cover' || (currentPath.startsWith('/project/') && currentPath !== '/project')) {
+        isHandlingPopState = true;
+
+        // 현재 경로가 이미 /project가 아닌 경우에만 pushState
+        if (currentPath !== '/project') {
+          // 즉시 /project URL로 pushState하여 새로고침 방지
+          // popstate 이벤트가 발생한 직후 pushState를 호출하면
+          // Next.js가 페이지를 새로고침하지 않고 클라이언트 사이드에서만 처리됨
+          window.history.pushState({ zoomed: false, preventRefresh: true }, '', '/project');
+        }
+
+        // 동기적으로 줌 아웃 실행
+        if (modeRef.current === 'cover') {
+          zoomOut();
+          setSelectedProject(null);
+          setImagesLoaded(false);
+        }
+
+        // 다음 이벤트 루프에서 플래그 리셋
+        setTimeout(() => {
+          isHandlingPopState = false;
+        }, 100);
       }
     };
 
@@ -304,17 +309,14 @@ export default function ProjectPage() {
       // cover 모드이고 선택된 프로젝트가 있을 때만 처리
       if (mode === 'cover' && selectedProject) {
         const currentPath = window.location.pathname;
-        console.log('[ProjectPage] 리사이즈 감지 - cover 모드', { currentPath, selectedProject: selectedProject.slug });
 
         // 현재 URL이 프로젝트 상세 페이지인지 확인
         if (currentPath.startsWith('/project/') && currentPath !== '/project') {
-          console.log('[ProjectPage] 해당 페이지로 이동:', currentPath);
           // 해당 페이지로 새로고침하여 이동
           window.location.href = currentPath;
         } else if (currentPath === '/project') {
           // URL이 아직 변경되지 않았다면 변경 후 이동
           const newUrl = `/project/${selectedProject.slug}`;
-          console.log('[ProjectPage] URL 변경 후 이동:', newUrl);
           window.location.href = newUrl;
         }
       } else if (mode !== 'cover' && selected) {

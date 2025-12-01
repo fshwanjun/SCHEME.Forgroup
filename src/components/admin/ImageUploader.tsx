@@ -65,7 +65,6 @@ export default function ImageUploader({
 
       onChange(publicUrl);
     } catch (error: unknown) {
-      console.error('Upload error:', error);
       const message = error instanceof Error ? error.message : 'Unknown error';
       alert('Error occurred while uploading image: ' + message);
     } finally {

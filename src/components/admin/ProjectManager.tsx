@@ -232,7 +232,7 @@ export default function ProjectManager() {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('프로젝트 로드 에러:', error);
+        // 에러 무시
       } else {
         setProjects((data as Project[]) || []);
         setIsOrderChanged(false); // 로드 시 변경 상태 초기화
@@ -323,7 +323,6 @@ export default function ProjectManager() {
     }
 
     if (error) {
-      console.error(error);
       if (error.code === '23505') {
         alert('🚨 Slug already exists. Please use a different slug.');
       } else {
@@ -374,7 +373,6 @@ export default function ProjectManager() {
     setLoading(true);
     const { error } = await supabase.from('project').delete().eq('id', id);
     if (error) {
-      console.error('삭제 에러:', error);
       alert('Failed to delete project.');
     } else {
       setRefreshTrigger((prev) => prev + 1);
@@ -434,7 +432,6 @@ export default function ProjectManager() {
       setIsOrderChanged(false);
       alert('Order saved.');
     } catch (error) {
-      console.error('순서 저장 에러:', error);
       alert('Problem occurred while saving order.');
     }
 
@@ -463,7 +460,6 @@ export default function ProjectManager() {
       .eq('id', id);
 
     if (error) {
-      console.error('상태 변경 에러:', error);
       alert('Failed to change status.');
       setRefreshTrigger((prev) => prev + 1); // 실패 시 롤백을 위해 새로고침
     }

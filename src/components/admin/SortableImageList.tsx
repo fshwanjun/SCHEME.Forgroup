@@ -280,7 +280,6 @@ export default function SortableImageList({ images, onImagesChange, folderPath }
           };
           newImages.push(newImage);
         } catch (error) {
-          console.error('Upload error for file:', file.name, error);
           const message = error instanceof Error ? error.message : 'Unknown error';
           alert(`Failed to upload ${file.name}: ${message}`);
         } finally {

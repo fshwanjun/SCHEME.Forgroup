@@ -152,14 +152,13 @@ export default function Home() {
             projectSlug: img.projectSlug,
             verticalSrc: img.url,
             horizontalSrc: img.url,
-            orientation: img.orientation || undefined, // admin에서 설정한 orientation 정보 포함
           }));
 
           setLandingImages(projectImages);
         }
-      } catch (error) {
-        console.error('Landing page images load error:', error);
-      }
+        } catch (error) {
+          // 에러 무시
+        }
     };
 
     fetchLandingImages();
@@ -194,17 +193,10 @@ export default function Home() {
   // 이미지 선택 핸들러 - default에서는 center로, center에서는 cover로
   const handleSelectImage = useCallback(
     (image: GallerySelection) => {
-      console.log('[Home] handleSelectImage called', {
-        imageProjectId: image.projectId,
-        selectedProjectId: selected?.projectId,
-        currentMode: mode,
-      });
-
       // 같은 이미지를 클릭한 경우
       if (selected?.projectId === image.projectId) {
         // center 상태면 cover로 전환
         if (mode === 'center') {
-          console.log('[Home] center → cover');
           setMode('cover');
         }
         // cover 상태면 아무 동작 안함
@@ -212,7 +204,6 @@ export default function Home() {
       }
 
       // 다른 이미지를 클릭한 경우: 새로운 이미지 선택하고 center 모드로
-      console.log('[Home] 새로운 이미지 선택, center 모드로');
       selectImage(image, 'center');
     },
     [selected, mode, selectImage, setMode],
@@ -248,19 +239,16 @@ export default function Home() {
   // 뒤로가기 버튼 처리 - cover 모드에서 줌 아웃 및 URL 복원
   useEffect(() => {
     const handlePopState = (e: PopStateEvent) => {
-      console.log('[Home] popstate 감지', {
-        state: e.state,
-        modeRef: modeRef.current,
-      });
-
       if (modeRef.current === 'cover') {
-        console.log('[Home] 뒤로가기로 줌 아웃 실행');
+        // 즉시 홈 URL로 pushState하여 새로고침 방지
+        // popstate 이벤트가 발생한 직후 pushState를 호출하면
+        // Next.js가 페이지를 새로고침하지 않고 클라이언트 사이드에서만 처리됨
+        window.history.pushState({ zoomed: false, preventRefresh: true }, '', '/');
+
+        // 동기적으로 줌 아웃 실행
         zoomOut();
         setSelectedProject(null);
         setImagesLoaded(false);
-
-        // URL을 /로 복원 (뒤로가기로 이미 변경되었으므로 replaceState로 확정)
-        window.history.replaceState({ zoomed: false }, '', '/');
       }
     };
 
@@ -276,17 +264,14 @@ export default function Home() {
       // cover 모드이고 선택된 프로젝트가 있을 때만 처리
       if (mode === 'cover' && selectedProject) {
         const currentPath = window.location.pathname;
-        console.log('[Home] 리사이즈 감지 - cover 모드', { currentPath, selectedProject: selectedProject.slug });
 
         // 현재 URL이 프로젝트 상세 페이지인지 확인
         if (currentPath.startsWith('/project/') && currentPath !== '/project') {
-          console.log('[Home] 해당 페이지로 이동:', currentPath);
           // 해당 페이지로 새로고침하여 이동
           window.location.href = currentPath;
         } else if (currentPath === '/') {
           // URL이 아직 변경되지 않았다면 변경 후 이동
           const newUrl = `/project/${selectedProject.slug}`;
-          console.log('[Home] URL 변경 후 이동:', newUrl);
           window.location.href = newUrl;
         }
       } else if (mode !== 'cover' && selected) {

@@ -62,7 +62,7 @@ export default function ProjectDetailContent({
           delay: PROJECT_DETAIL_CONFIG.animation.delay,
           ease: PROJECT_DETAIL_CONFIG.animation.ease,
         }}
-        className="fixed bottom-0 left-0 z-10 flex w-full justify-between gap-4 px-[10px] pb-8 text-white mix-blend-difference md:px-5">
+        className="fixed bottom-0 left-0 z-10 flex w-full justify-between gap-4 px-5 pb-8 text-white mix-blend-difference md:px-5">
         <div className="flex flex-col gap-1">
           <h6>Project</h6>
           <h5>{contents.project || ''}</h5>
@@ -108,7 +108,7 @@ export default function ProjectDetailContent({
         </div>
       )}
 
-      <div className="mx-auto grid min-h-2/3 w-full grid-cols-2 gap-4 overflow-hidden px-[10px] py-16 md:px-5">
+      <div className="mx-auto grid min-h-2/3 w-full grid-cols-2 gap-4 overflow-hidden px-5 py-16 md:px-5">
         <h1 className="leading-[124%]">
           {title || contents.project || 'Design Project'}
           <br />
@@ -151,7 +151,7 @@ export default function ProjectDetailContent({
       </div>
       {/* Detail Images */}
       {contents.detailImages && contents.detailImages.length > 0 && (
-        <div className="flex w-full flex-col gap-16">
+        <div className="flex w-full flex-col gap-2 pb-[20vh] md:gap-16 md:pb-0">
           {contents.detailImages.map((detailImage, index) => {
             const position = detailImage.position || 'center';
 
@@ -172,16 +172,17 @@ export default function ProjectDetailContent({
 
             // position에 따른 padding 클래스 결정
             const getPaddingClasses = () => {
+              // 모바일에서는 모든 이미지에 패딩 적용
               switch (position) {
                 case 'full-cover':
-                  return 'px-0'; // padding 없음 (100vw, 전체 화면을 덮음)
+                  return 'px-5 md:px-0'; // 모바일에서는 padding 있음 (20px), 데스크톱에서는 padding 없음
                 case 'full-padding':
-                  return 'px-[10px] md:px-5'; // padding 있음 (div를 꽉 채우지만 좌우 padding 유지)
+                  return 'px-5 md:px-5'; // padding 있음 (div를 꽉 채우지만 좌우 padding 유지)
                 case 'left':
                 case 'right':
                 case 'center':
                 default:
-                  return 'px-[10px] md:px-5'; // 기본 padding
+                  return 'px-5 md:px-5'; // 기본 padding
               }
             };
 
@@ -189,12 +190,12 @@ export default function ProjectDetailContent({
             const getWidthClasses = () => {
               switch (position) {
                 case 'full-cover':
-                  return 'w-screen'; // 100vw (padding 없음, 전체 화면을 덮음)
+                  return 'w-full md:w-screen'; // 모바일에서는 w-full, 데스크톱에서는 w-screen
                 case 'full-padding':
                   return 'w-full'; // padding이 있는 전체 너비
                 default:
-                  // width를 제한하지 않음 - 이미지가 원본 비율에 맞게 자동 조정
-                  return 'max-w-full';
+                  // 모바일에서는 w-full, 데스크톱에서는 원본 크기 유지 (정렬을 위해)
+                  return 'w-full md:w-auto';
               }
             };
 
@@ -206,21 +207,37 @@ export default function ProjectDetailContent({
               return 'object-contain';
             };
 
-            // position에 따른 높이 클래스 결정 (full-cover와 full-padding 모두 h-full)
+            // position에 따른 높이 클래스 결정
             const getHeightClasses = () => {
               if (position === 'full-cover' || position === 'full-padding') {
-                return 'h-full';
+                // 모바일에서는 h-auto로 이미지 비율에 맞게, 데스크톱에서는 h-full
+                return 'h-auto md:h-full';
               }
               return 'h-auto';
             };
 
-            // 컨테이너 높이 설정 (full-cover와 full-padding 모두 고정 높이)
+            // 컨테이너 높이 설정
             // 참고: PROJECT_DETAIL_CONFIG.image.maxHeight = '90vh'
             const getContainerHeightClass = () => {
               if (position === 'full-cover' || position === 'full-padding') {
-                return 'h-[90vh]';
+                // 모바일에서는 높이를 이미지 비율에 맞게, 데스크톱에서는 고정 높이
+                return 'md:h-[90vh]';
               }
               return '';
+            };
+
+            // orientation에 따른 aspect ratio 클래스 결정 (데스크톱에서만 적용)
+            const getAspectRatioClasses = () => {
+              if (position === 'full-cover' || position === 'full-padding') {
+                return ''; // full-cover와 full-padding은 aspect ratio 적용 안함
+              }
+              const orientation = detailImage.orientation;
+              if (orientation === 'horizontal') {
+                return ''; // 가로형: 16:9 비율 (데스크톱에서만)
+              } else if (orientation === 'vertical') {
+                return ''; // 세로형: 9:16 비율 (데스크톱에서만)
+              }
+              return ''; // orientation이 없으면 기본 비율 유지
             };
 
             return (
@@ -235,35 +252,68 @@ export default function ProjectDetailContent({
                       : ''
                 }`}>
                 {position === 'full-cover' ? (
-                  <Image
-                    className={`${getHeightClasses()} ${getWidthClasses()} ${getObjectFitClasses()}`}
-                    src={detailImage.url}
-                    alt={`${contents.project || 'Project'} gallery image ${index + 1}`}
-                    fill
-                    unoptimized
-                    draggable={false}
-                  />
-                ) : position === 'full-padding' ? (
-                  <div className="relative h-full w-full overflow-hidden">
+                  <>
+                    {/* 모바일: relative 포지셔닝으로 패딩 적용, 높이는 이미지 비율에 맞게 */}
                     <Image
-                      className={`${getHeightClasses()} ${getWidthClasses()} ${getObjectFitClasses()}`}
+                      className={`${getHeightClasses()} ${getWidthClasses()} ${getObjectFitClasses()} md:hidden`}
+                      src={detailImage.url}
+                      alt={`${contents.project || 'Project'} gallery image ${index + 1}`}
+                      width={0}
+                      height={0}
+                      sizes="100vw"
+                      unoptimized
+                      draggable={false}
+                      style={{ width: '100%', height: 'auto', objectFit: 'cover' }}
+                    />
+                    {/* 데스크톱: absolute 포지셔닝 (fill 사용) */}
+                    <Image
+                      className={`${getHeightClasses()} ${getWidthClasses()} ${getObjectFitClasses()} hidden md:block`}
                       src={detailImage.url}
                       alt={`${contents.project || 'Project'} gallery image ${index + 1}`}
                       fill
                       unoptimized
                       draggable={false}
                     />
-                  </div>
+                  </>
+                ) : position === 'full-padding' ? (
+                  <>
+                    {/* 모바일: relative 포지셔닝으로 패딩 적용, 높이는 이미지 비율에 맞게 */}
+                    <Image
+                      className={`${getHeightClasses()} ${getWidthClasses()} ${getObjectFitClasses()} md:hidden`}
+                      src={detailImage.url}
+                      alt={`${contents.project || 'Project'} gallery image ${index + 1}`}
+                      width={0}
+                      height={0}
+                      sizes="100vw"
+                      unoptimized
+                      draggable={false}
+                      style={{ width: '100%', height: 'auto', objectFit: 'cover' }}
+                    />
+                    {/* 데스크톱: absolute 포지셔닝 (fill 사용) */}
+                    <div className="relative hidden h-full w-full overflow-hidden md:block">
+                      <Image
+                        className={`${getHeightClasses()} ${getWidthClasses()} ${getObjectFitClasses()}`}
+                        src={detailImage.url}
+                        alt={`${contents.project || 'Project'} gallery image ${index + 1}`}
+                        fill
+                        unoptimized
+                        draggable={false}
+                      />
+                    </div>
+                  </>
                 ) : (
                   <Image
-                    className={`${getHeightClasses()} ${getWidthClasses()} ${getObjectFitClasses()}`}
+                    className={`${getHeightClasses()} ${getWidthClasses()} ${getObjectFitClasses()} ${getAspectRatioClasses()}`}
                     src={detailImage.url}
                     alt={`${contents.project || 'Project'} gallery image ${index + 1}`}
                     width={0}
                     height={0}
                     sizes="100vw"
                     draggable={false}
-                    style={{ width: 'auto', height: 'auto', maxHeight: PROJECT_DETAIL_CONFIG.image.maxHeight }}
+                    style={{
+                      maxHeight: PROJECT_DETAIL_CONFIG.image.maxHeight,
+                      objectFit: 'contain',
+                    }}
                   />
                 )}
               </div>

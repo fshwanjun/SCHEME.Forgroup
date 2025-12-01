@@ -156,7 +156,6 @@ function SortableProjectLayoutItem({
                   const orientation = await detectImageOrientation(publicUrl);
                   onImageUpload(item.frameIndex, publicUrl, orientation);
                 } catch (error) {
-                  console.error('Upload error:', error);
                   alert('Failed to upload image');
                 }
               };
@@ -294,12 +293,12 @@ export default function ProjectLayoutManager() {
           .order('display_order', { ascending: true });
 
         if (error) {
-          console.error('프로젝트 로드 에러:', error);
+          // 에러 무시
         } else {
           setProjects(data || []);
         }
       } catch (error) {
-        console.error('프로젝트 로드 에러:', error);
+        // 에러 무시
       }
     };
 
@@ -349,7 +348,6 @@ export default function ProjectLayoutManager() {
         setLayoutItems(sortedItems);
         setOriginalLayoutItems(sortedItems);
       } catch (error) {
-        console.error('레이아웃 로드 에러:', error);
         // 에러 발생 시 기본 아이템 생성
         const totalFrames = PROJECT_LAYOUT_CONFIG.desktop.frameClasses.length;
         const items = Array.from({ length: totalFrames }, (_, index) => ({
@@ -531,7 +529,6 @@ export default function ProjectLayoutManager() {
         newItems.push(newItem);
         nextFrameIndex++;
       } catch (error) {
-        console.error('Upload error:', file.name, error);
         const message = error instanceof Error ? error.message : 'Unknown error';
         alert(`Failed to upload ${file.name}: ${message}`);
       } finally {
@@ -584,14 +581,12 @@ export default function ProjectLayoutManager() {
       });
 
       if (error) {
-        console.error('Save error:', error);
         alert('An error occurred while saving: ' + error.message);
       } else {
         setOriginalLayoutItems(itemsToSave);
         alert('Saved successfully.');
       }
     } catch (error) {
-      console.error('Save error:', error);
       alert('An error occurred while saving.');
     }
     setLoading(false);

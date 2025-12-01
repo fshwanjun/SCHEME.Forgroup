@@ -86,9 +86,9 @@ export interface UseZoomReturn {
   updateZoomStyle: (updater: (prev: ZoomStyle) => ZoomStyle) => void;
 }
 
-// 디버그 로그 유틸리티
+// 디버그 로그 유틸리티 (사용하지 않음)
 const debugLog = (debug: boolean, ...args: unknown[]) => {
-  if (debug) console.log(...args);
+  // 디버그 로그 비활성화
 };
 
 export function useZoom(options: UseZoomOptions = {}): UseZoomReturn {
@@ -234,17 +234,7 @@ export function useZoom(options: UseZoomOptions = {}): UseZoomReturn {
       const tx = screenCenterX - imageCenterX;
       const ty = screenCenterY - imageCenterY;
 
-      if (debug) {
-        console.log('[useZoom] 줌 계산', {
-          mode: targetMode,
-          rect: { left: rect.left, top: rect.top, width: rect.width, height: rect.height },
-          imageCenter: { x: imageCenterX, y: imageCenterY },
-          screenCenter: { x: screenCenterX, y: screenCenterY },
-          origin: { x: originX, y: originY },
-          scale,
-          translate: { x: tx, y: ty },
-        });
-      }
+      // 디버그 로그 제거
 
       setZoomStyle({ x: tx, y: ty, scale, originX, originY });
 
@@ -310,7 +300,7 @@ export function useZoom(options: UseZoomOptions = {}): UseZoomReturn {
         if (element) {
           image.rect = element.getBoundingClientRect();
         } else {
-          console.error('[useZoom] 이미지 요소를 찾을 수 없음', { projectId: image.projectId });
+          // 이미지 요소를 찾을 수 없음
           return;
         }
       }
@@ -328,7 +318,7 @@ export function useZoom(options: UseZoomOptions = {}): UseZoomReturn {
   const setMode = useCallback(
     (newMode: ZoomMode) => {
       if (!selected && newMode !== 'default') {
-        console.warn('[useZoom] 선택된 이미지가 없습니다. 먼저 이미지를 선택하세요.');
+        // 선택된 이미지가 없습니다
         return;
       }
 

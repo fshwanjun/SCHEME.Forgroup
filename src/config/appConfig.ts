@@ -25,11 +25,11 @@ export const INTRO_LOGO_CONFIG = {
 
 // ===== HoverDistortImage 설정 =====
 export const HOVER_DISTORT_CONFIG = {
-  defaultDistortionScale: 200,
+  defaultDistortionScale: 500,
   defaultRadiusPx: 400,
-  defaultBlurStd: 4,
-  defaultEasingFactor: 0.1,
-  scaleMultiplier: 500,
+  defaultBlurStd: 80,
+  defaultEasingFactor: 0.08,
+  scaleMultiplier: 400,
   mouseMoveTimer: 100, // ms
   animation: {
     nearPosThreshold: 0.2,
@@ -39,8 +39,8 @@ export const HOVER_DISTORT_CONFIG = {
   },
   canvas: {
     minSize: 64,
-    maxSize: 128,
-    minRadius: 6,
+    maxSize: 256,
+    minRadius: 12,
     devicePixelRatioLimit: 2,
   },
 } as const;
@@ -103,4 +103,3 @@ export const APP_CONFIG = {
     horizontal: '4 / 3',
   },
 } as const;
-

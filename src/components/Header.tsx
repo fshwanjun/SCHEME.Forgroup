@@ -69,7 +69,7 @@ export default function Header({
       suppressHydrationWarning>
       <div className="relative mx-auto flex items-start justify-between">
         {/* 참고: HEADER_CONFIG.logo = { mobileWidth: 160, desktopWidth: 300 } */}
-        <Link href="/" className="pointer-events-auto h-full w-[160px] select-none md:w-[300px]">
+        <Link href="/" className="pointer-events-auto h-full w-[120px] min-w-[120px] select-none md:w-[15vh]">
           <LogoInline
             playTrigger={pathname === '/' || isProjectOrStudio ? headerLogoTrigger : undefined}
             invert={true} // 헤더에서는 항상 인버트 적용

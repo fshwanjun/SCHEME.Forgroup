@@ -1,6 +1,6 @@
 'use client'; // 이 컴포넌트가 클라이언트 측에서 렌더링되어야 함을 나타냅니다. (React 18 이상)
 
-import { useEffect, useMemo, useState, memo } from 'react';
+import { useEffect, useMemo, useState, memo, useCallback } from 'react';
 import ImageCard from '@/components/ImageCard'; // 이미지 카드 렌더링을 위한 컴포넌트입니다.
 import useWindowSize from '@/hooks/useWindowSize';
 
@@ -11,6 +11,7 @@ type ProjectImage = {
   verticalSrc: string; // 세로 방향 이미지 소스 경로 (aspect-[3/4] 프레임용)
   horizontalSrc: string; // 가로 방향 이미지 소스 경로 (aspect-[4/3] 프레임용)
   orientation?: 'horizontal' | 'vertical'; // 이미지의 orientation (admin에서 설정한 값)
+  frameIndex?: number; // 프로젝트 레이아웃에서 사용하는 프레임 인덱스
 };
 
 export type GallerySelection = {
@@ -23,6 +24,7 @@ export type GallerySelection = {
 };
 
 import { HOME_LAYOUT_CONFIG } from '@/config/homeLayout';
+import { PROJECT_LAYOUT_CONFIG } from '@/config/projectLayout';
 
 // 갤러리에 표시될 실제 프로젝트 이미지 데이터 목록입니다.
 // Landing Page Manager에서 관리하는 이미지 데이터를 사용합니다.
@@ -82,17 +84,17 @@ function getRowGroups(frameClasses: readonly string[]): { rowFrames: number[][];
 }
 
 type LayoutConfig = {
-  desktop: {
-    frameClasses: readonly string[];
-    gridCols: number;
-    gap: number;
-    horizontalPadding: number;
+  readonly desktop: {
+    readonly frameClasses: readonly string[];
+    readonly gridCols: number;
+    readonly gap: number;
+    readonly horizontalPadding: number;
   };
-  mobile: {
-    frameClasses: readonly string[];
-    gridCols: number;
-    gap: number;
-    horizontalPadding: number;
+  readonly mobile: {
+    readonly frameClasses: readonly string[];
+    readonly gridCols: number;
+    readonly gap: number;
+    readonly horizontalPadding: number;
   };
 };
 
@@ -162,27 +164,20 @@ function HomeGallery({
   const projectCount = PROJECT_IMAGES.length;
   const totalFrames = currentFrameClasses.length;
 
+  // 프로젝트 레이아웃인지 확인 (안정적인 참조를 위해 useMemo 사용)
+  const isProjectLayout = useMemo(() => layoutConfig === PROJECT_LAYOUT_CONFIG, [layoutConfig]);
+
   // 🌟 수정: 컴포넌트가 처음 마운트될 때 건너뛸 '행'의 개수를 계산합니다.
-  // 배치 확인을 위해 프로젝트 페이지에서는 랜덤 행 건너뛰기 비활성화
+  // 프로젝트와 홈 모두 랜덤 행 건너뛰기 적용
   useEffect(() => {
-    // 프로젝트 레이아웃인지 확인 (PROJECT_LAYOUT_CONFIG 사용 시)
-    // layoutConfig의 desktop.gap 값이 50이면 프로젝트 레이아웃 (홈은 20)
-    const isProjectLayout = (layoutConfig.desktop.gap as number) === 50;
+    // 최대 건너뛸 행 개수: 전체 행의 절반 정도까지만 건너뛰도록 제한합니다.
+    const maxSkipRows = Math.max(0, Math.floor(totalRows / 2));
 
-    if (isProjectLayout) {
-      // 프로젝트 페이지에서는 건너뛰지 않음 (배치 확인용)
-      setSkipRows(0);
-    } else {
-      // 최대 건너뛸 행 개수: 전체 행의 1/3 (예시) 또는 원하는 임의의 최대값
-      // 여기서는 전체 행의 절반 정도까지만 건너뛰도록 제한합니다.
-      const maxSkipRows = Math.floor(totalRows / 2);
+    // 0부터 maxSkipRows 사이의 난수를 생성합니다.
+    const randomSkip = maxSkipRows > 0 ? Math.floor(Math.random() * (maxSkipRows + 1)) : 0;
 
-      // 0부터 maxSkipRows 사이의 난수를 생성합니다.
-      const randomSkip = Math.floor(Math.random() * maxSkipRows);
-
-      setSkipRows(randomSkip);
-    }
-  }, [totalRows, layoutConfig]); // totalRows와 layoutConfig가 변경되면 다시 계산합니다
+    setSkipRows(randomSkip);
+  }, [totalRows]); // totalRows가 변경되면 다시 계산합니다
 
   // 🌟 수정: 건너뛸 프레임의 인덱스 목록을 계산합니다.
   const framesToSkip = useMemo(() => {
@@ -196,45 +191,65 @@ function HomeGallery({
     return skipIndices;
   }, [skipRows, rowFrames]);
 
-  // 이미지의 orientation에 맞는 틀을 찾아 할당하는 로직
+  // 프로젝트 할당 로직
   const projectAssignments = useMemo(() => {
     if (projectCount === 0 || totalFrames === 0) return [];
-    const assignments: (ProjectImage | null)[] = new Array(totalFrames).fill(null);
+    
+    // 프로젝트 레이아웃이고 frameIndex가 있는 이미지가 있는 경우
+    const hasFrameIndex = PROJECT_IMAGES.some((img) => img.frameIndex !== undefined);
+    
+    if (isProjectLayout && hasFrameIndex) {
+      // frameIndex 기반 직접 매핑
+      const assignments: (ProjectImage | null)[] = new Array(totalFrames).fill(null);
+      
+      PROJECT_IMAGES.forEach((img) => {
+        if (img.frameIndex !== undefined && img.frameIndex >= 0) {
+          // frameIndex는 0부터 시작하거나 1부터 시작할 수 있으므로 확인
+          // frameIndex가 배열 인덱스 범위를 벗어나면 조정
+          let frameIdx = img.frameIndex;
+          if (frameIdx >= totalFrames) {
+            frameIdx = frameIdx - 1; // 1-based인 경우 0-based로 변환
+          }
+          if (frameIdx >= 0 && frameIdx < totalFrames) {
+            assignments[frameIdx] = img;
+          }
+        }
+      });
+      
+      return assignments;
+    }
+    
+    // 기본 순차 할당 로직 (홈 페이지용)
+    const assignments: (ProjectImage | null)[] = [];
     const shuffleCache: ProjectImage[][] = [];
 
-    // 틀의 orientation을 미리 계산
-    const frameOrientations: ('horizontal' | 'vertical')[] = currentFrameClasses.map((frameClass) =>
-      frameClass.includes('aspect-[3/4]') ? 'vertical' : 'horizontal',
-    );
-
-    // 각 틀에 대해 이미지 할당
-    for (let frameIndex = 0; frameIndex < totalFrames; frameIndex++) {
-      const frameOrientation = frameOrientations[frameIndex];
-      const cycle = Math.floor(frameIndex / projectCount);
-      const withinCycle = frameIndex % projectCount;
-
-      let img: ProjectImage | undefined;
+    // FRAME_CLASSES 배열의 길이에 맞춰 이미지를 할당합니다. (할당 순서는 건너뛰기와 무관하게 결정)
+    for (let index = 0; index < totalFrames; index++) {
+      const cycle = Math.floor(index / projectCount);
+      const withinCycle = index % projectCount;
 
       if (cycle === 0) {
-        img = PROJECT_IMAGES[withinCycle];
+        const img = PROJECT_IMAGES[withinCycle];
+        if (img && img.verticalSrc && img.horizontalSrc) {
+          assignments.push(img);
+        } else {
+          // 이미지가 없으면 빈 객체를 push하지 않고 null을 push하여 나중에 필터링
+          assignments.push(null as unknown as ProjectImage);
+        }
       } else {
         if (!shuffleCache[cycle]) {
           shuffleCache[cycle] = shuffleWithSeed(PROJECT_IMAGES, cycle);
         }
-        img = shuffleCache[cycle][withinCycle];
-      }
-
-      if (img && img.verticalSrc && img.horizontalSrc) {
-        // 이미지의 orientation이 설정되어 있고 틀의 orientation과 일치하는 경우에만 할당
-        // orientation이 없는 경우에는 모든 틀에 할당 가능
-        if (!img.orientation || img.orientation === frameOrientation) {
-          assignments[frameIndex] = img;
+        const img = shuffleCache[cycle][withinCycle];
+        if (img && img.verticalSrc && img.horizontalSrc) {
+          assignments.push(img);
+        } else {
+          assignments.push(null as unknown as ProjectImage);
         }
       }
     }
-
     return assignments;
-  }, [projectCount, totalFrames, PROJECT_IMAGES, currentFrameClasses]); // currentFrameClasses를 dependency로 추가
+  }, [projectCount, totalFrames, PROJECT_IMAGES, isProjectLayout]); // isProjectLayout 사용
 
   // 이미지가 없으면 빈 갤러리 렌더링
   if (projectCount === 0) {
@@ -311,13 +326,6 @@ function HomeGallery({
                 className="h-full w-full"
                 enableHoverEffect={!isSelected && !isOtherSelected}
                 onClickProject={(_pid, rect) => {
-                  console.log('[HomeGallery] onClickProject called', {
-                    projectId: assignment.projectId,
-                    isSelected,
-                    isOtherSelected,
-                    enableHoverEffect: !isSelected && !isOtherSelected,
-                    timestamp: Date.now(),
-                  });
                   onSelectImage?.({
                     projectId: assignment.projectId,
                     projectSlug: assignment.projectSlug,
