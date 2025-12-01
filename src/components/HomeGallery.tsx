@@ -167,6 +167,23 @@ function HomeGallery({
   // 프로젝트 레이아웃인지 확인 (안정적인 참조를 위해 useMemo 사용)
   const isProjectLayout = useMemo(() => layoutConfig === PROJECT_LAYOUT_CONFIG, [layoutConfig]);
 
+  // 이미지 로드 상태 추적 (프로젝트 레이아웃에서만)
+  const [imagesReady, setImagesReady] = useState(false);
+
+  // 프로젝트 레이아웃에서 이미지가 준비되면 애니메이션 트리거
+  useEffect(() => {
+    if (isProjectLayout && mounted && projectCount > 0) {
+      // DOM이 준비될 때까지 약간의 지연
+      const timer = setTimeout(() => {
+        setImagesReady(true);
+      }, 100);
+      return () => clearTimeout(timer);
+    } else if (!isProjectLayout) {
+      // 홈 레이아웃에서는 즉시 표시
+      setImagesReady(true);
+    }
+  }, [isProjectLayout, mounted, projectCount]);
+
   // 🌟 수정: 컴포넌트가 처음 마운트될 때 건너뛸 '행'의 개수를 계산합니다.
   // 프로젝트와 홈 모두 랜덤 행 건너뛰기 적용
   useEffect(() => {
@@ -194,14 +211,14 @@ function HomeGallery({
   // 프로젝트 할당 로직
   const projectAssignments = useMemo(() => {
     if (projectCount === 0 || totalFrames === 0) return [];
-    
+
     // 프로젝트 레이아웃이고 frameIndex가 있는 이미지가 있는 경우
     const hasFrameIndex = PROJECT_IMAGES.some((img) => img.frameIndex !== undefined);
-    
+
     if (isProjectLayout && hasFrameIndex) {
       // frameIndex 기반 직접 매핑
       const assignments: (ProjectImage | null)[] = new Array(totalFrames).fill(null);
-      
+
       PROJECT_IMAGES.forEach((img) => {
         if (img.frameIndex !== undefined && img.frameIndex >= 0) {
           // frameIndex는 0부터 시작하거나 1부터 시작할 수 있으므로 확인
@@ -215,10 +232,10 @@ function HomeGallery({
           }
         }
       });
-      
+
       return assignments;
     }
-    
+
     // 기본 순차 할당 로직 (홈 페이지용)
     const assignments: (ProjectImage | null)[] = [];
     const shuffleCache: ProjectImage[][] = [];
@@ -316,7 +333,15 @@ function HomeGallery({
                 (_, p1) => `row-start-${parseInt(p1, 10) - skipRows}`,
               )} relative transition-transform duration-500 ${isSelected ? 'z-50' : ''} ${
                 isOtherSelected ? 'pointer-events-none' : ''
-              }`}>
+              }`}
+              style={
+                isProjectLayout
+                  ? {
+                      opacity: imagesReady ? 1 : 0,
+                      transition: 'opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
+                    }
+                  : undefined
+              }>
               <ImageCard
                 projectId={assignment.projectId}
                 verticalSrc={assignment.verticalSrc}
