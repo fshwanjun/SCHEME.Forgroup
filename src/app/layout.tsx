@@ -10,6 +10,9 @@ const abcrom = localFont({
   ],
   display: 'swap',
   variable: '--font-abcrom',
+  fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+  adjustFontFallback: 'Arial', // 폰트 메트릭 조정으로 레이아웃 시프트 방지
+  preload: true, // 중요한 폰트 파일 자동 preload
 });
 
 export const metadata: Metadata = {

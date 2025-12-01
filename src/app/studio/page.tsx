@@ -116,7 +116,7 @@ export default function StudioPage() {
         animate={{ opacity: isLoading ? 0 : 1 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}>
         {/* [좌측] 데스크탑 이미지 영역 (40%) */}
-        <div className="relative hidden h-full min-h-0 w-fit overflow-hidden md:flex md:max-w-[40%] md:min-w-0">
+        <div className="relative hidden h-full min-h-0 w-fit overflow-hidden md:flex md:max-w-[50%] md:min-w-0">
           {data.imageUrl ? (
             <Image
               className="h-full w-auto max-w-full object-cover object-top"
@@ -136,9 +136,9 @@ export default function StudioPage() {
         </div>
 
         {/* [우측] 컨텐츠 영역 (60%) */}
-        <div className="flex w-full min-w-0 basis-full flex-col justify-between gap-5 md:max-w-[62%] md:min-w-0 md:overflow-hidden">
+        <div className="flex w-full min-w-0 flex-col justify-between gap-y-15 md:max-w-[50%] md:min-w-0 md:gap-5 md:gap-y-0 md:overflow-hidden">
           {/* 1. 메인 설명 (스크롤 가능 영역) */}
-          <div className="custom-scroll min-h-[20vh] overflow-hidden md:flex md:flex-col md:overflow-auto md:pr-3">
+          <div className="custom-scroll min-h-[20vh] overflow-hidden pb-12 md:flex md:flex-col md:overflow-auto md:pr-3 md:pb-0">
             <h3>{data.description}</h3>
           </div>
 
@@ -157,36 +157,42 @@ export default function StudioPage() {
           )}
 
           {/* 2. 하단 3열 그리드 정보 */}
-          <div className="grid w-full grid-cols-3 gap-x-4 gap-y-10">
-            <div className="flex flex-col gap-2">
-              <h5>Experience</h5>
-              <div className="flex flex-col">
+          <div className="grid w-full gap-x-4 gap-y-10 md:grid-cols-3">
+            <div className="grid grid-cols-5 flex-row md:flex md:flex-col md:gap-4">
+              <h5 className="col-span-2">Experience</h5>
+              <div className="col-span-3 flex flex-col">
                 <RenderList items={data.experience} />
               </div>
             </div>
-            <div className="flex flex-col gap-2">
-              <h5>Services</h5>
-              <div className="flex flex-col">
+            <div className="grid grid-cols-5 flex-row md:flex md:flex-col md:gap-4">
+              <h5 className="col-span-2">Services</h5>
+              <div className="col-span-3 flex flex-col">
                 <RenderList items={data.services} />
               </div>
             </div>
-            <div className="flex flex-col gap-2">
-              <h5>Clients</h5>
-              <div className="flex flex-col">
+            <div className="grid grid-cols-5 flex-row md:flex md:flex-col md:gap-4">
+              <h5 className="col-span-2">Clients</h5>
+              <div className="col-span-3 flex flex-col">
                 <RenderList items={data.clients} />
               </div>
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="hidden flex-col gap-4 md:flex">
               <h5>Address</h5>
               <span className="flex flex-col">{data.address}</span>
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="hidden flex-col gap-4 md:flex">
               <h5>Contact</h5>
               <span className="flex flex-col">{data.contact}</span>
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="hidden flex-col gap-4 md:flex">
               <h5>Social</h5>
               <span className="flex flex-col">{data.social}</span>
+            </div>
+
+            <div className="flex flex-col gap-8 py-16 md:hidden">
+              <h4 className="text-center leading-[130%] font-semibold">{data.contact}</h4>
+              <h4 className="text-center leading-[130%] font-semibold">{data.address}</h4>
+              <h4 className="text-center leading-[130%] font-semibold">{data.social}</h4>
             </div>
           </div>
         </div>

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import HomeGallery, { type GallerySelection } from '@/components/HomeGallery';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useZoom } from '@/hooks/useZoom';
@@ -48,6 +49,7 @@ interface Project {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [landingImages, setLandingImages] = useState<
     Array<{ projectId: string; projectSlug?: string; verticalSrc: string; horizontalSrc: string }>
   >([]);
@@ -117,7 +119,11 @@ export default function Home() {
       setImagesLoaded(false);
 
       // URL을 슬러그로 변경 (실제 페이지 이동 없이)
+      // replaceState를 사용하여 현재 history entry를 교체하면
+      // 뒤로가기를 눌렀을 때 자동으로 이전 페이지로 돌아감
       const newUrl = `/project/${selectedProjectData.slug}`;
+      window.history.replaceState({ zoomed: true, modal: true }, '', newUrl);
+      // replaceState 후 pushState를 한 번 더 호출하여 history stack에 추가
       window.history.pushState({ zoomed: true, modal: true }, '', newUrl);
     } else if (mode !== 'cover') {
       // cover 모드가 아니면 프로젝트 초기화 및 URL 복원
@@ -125,7 +131,7 @@ export default function Home() {
         setSelectedProject(null);
         setImagesLoaded(false);
         // URL을 /로 복원
-        window.history.pushState({ zoomed: false }, '', '/');
+        window.history.replaceState({ zoomed: false }, '', '/');
       }
     }
   }, [mode, selectedProjectData, selectedProject]);
@@ -156,9 +162,9 @@ export default function Home() {
 
           setLandingImages(projectImages);
         }
-        } catch (error) {
-          // 에러 무시
-        }
+      } catch (error) {
+        // 에러 무시
+      }
     };
 
     fetchLandingImages();
@@ -238,23 +244,52 @@ export default function Home() {
 
   // 뒤로가기 버튼 처리 - cover 모드에서 줌 아웃 및 URL 복원
   useEffect(() => {
+    let isHandlingPopState = false;
+
     const handlePopState = (e: PopStateEvent) => {
-      if (modeRef.current === 'cover') {
-        // 즉시 홈 URL로 pushState하여 새로고침 방지
-        // popstate 이벤트가 발생한 직후 pushState를 호출하면
-        // Next.js가 페이지를 새로고침하지 않고 클라이언트 사이드에서만 처리됨
-        window.history.pushState({ zoomed: false, preventRefresh: true }, '', '/');
+      // 중복 처리 방지
+      if (isHandlingPopState) return;
+
+      const currentPath = window.location.pathname;
+      const historyState = e.state;
+
+      // cover 모드이거나 프로젝트 상세 페이지에서 뒤로가기한 경우
+      // 또는 history state에 modal/zoomed 플래그가 있는 경우
+      if (
+        modeRef.current === 'cover' ||
+        (currentPath.startsWith('/project/') && currentPath !== '/project') ||
+        (historyState && (historyState.modal === true || historyState.zoomed === true))
+      ) {
+        isHandlingPopState = true;
+
+        // 즉시 홈 URL로 replaceState하여 새로고침 방지
+        // replaceState를 사용하면 현재 history entry를 교체하므로
+        // Next.js가 새로고침을 시도하지 않음
+        window.history.replaceState({ zoomed: false, preventRefresh: true }, '', '/');
 
         // 동기적으로 줌 아웃 실행
-        zoomOut();
-        setSelectedProject(null);
-        setImagesLoaded(false);
+        if (modeRef.current === 'cover') {
+          zoomOut();
+          setSelectedProject(null);
+          setImagesLoaded(false);
+        }
+
+        // router.replace를 사용하여 클라이언트 사이드 네비게이션 보장
+        // replaceState 후 약간의 지연을 두어 Next.js가 이를 감지하도록 함
+        requestAnimationFrame(() => {
+          router.replace('/');
+          // 다음 이벤트 루프에서 플래그 리셋
+          setTimeout(() => {
+            isHandlingPopState = false;
+          }, 100);
+        });
       }
     };
 
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [zoomOut]);
+    // capture phase에서 이벤트를 먼저 처리하여 다른 핸들러보다 우선순위를 높임
+    window.addEventListener('popstate', handlePopState, { capture: true });
+    return () => window.removeEventListener('popstate', handlePopState, { capture: true });
+  }, [zoomOut, router]);
 
   // 리사이즈 처리 - 상세 모달이 나온 상태에서 화면 사이즈 변경 시 해당 페이지로 이동
   useEffect(() => {

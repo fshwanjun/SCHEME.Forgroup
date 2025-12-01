@@ -55,14 +55,16 @@ export default function ProjectDetailClient({ project }: { project: ProjectDetai
     }
   }, []);
 
-  // 뒤로가기 처리 - 프로젝트 페이지에서 모달로 온 경우
+  // 뒤로가기 처리 - 프로젝트 페이지로 복귀
   useEffect(() => {
-    const handlePopState = (e: PopStateEvent) => {
+    const handlePopState = () => {
       // 중복 처리 방지
       if (isNavigatingRef.current) return;
 
-      // 프로젝트 페이지에서 모달로 온 경우
-      if (isFromModalRef.current || (e.state && e.state.fromModal)) {
+      const currentPath = window.location.pathname;
+
+      // 프로젝트 상세 페이지에서 뒤로가기를 누른 경우
+      if (currentPath.startsWith('/project/') && currentPath !== '/project') {
         isNavigatingRef.current = true;
 
         // 즉시 /project URL로 pushState하여 새로고침 방지

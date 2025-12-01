@@ -172,22 +172,31 @@ svg {
     xs 12px
     xxs 10px
   */
+  h1 {
+    @apply text-5xl leading-[130%] font-medium;
+  }
   h4 {
-    @apply text-xl font-medium;
+    @apply text-xl font-semibold;
+  }
+  h5 {
+    @apply text-base leading-[130%] font-semibold;
+  }
+  h6 {
+    @apply text-base leading-[130%] font-normal;
   }
 
   /* Studio page scoped typography */
   .studio-typography h3 {
-    @apply text-[30px] leading-[130%] font-medium;
+    @apply text-[28px] leading-[130%] font-medium;
   }
   .studio-typography h5 {
-    @apply text-[12px] leading-[100%] font-bold capitalize;
+    @apply text-[16px] leading-[100%] font-bold capitalize;
   }
   .studio-typography span {
-    @apply text-[12px] leading-[120%] font-normal tracking-[0] uppercase;
+    @apply text-[16px] leading-[120%] font-normal tracking-[0] uppercase;
   }
   .studio-typography li {
-    @apply !my-0 text-[12px] leading-[120%] font-normal tracking-[0] uppercase;
+    @apply !my-0 text-[16px] leading-[120%] font-normal tracking-[0] uppercase;
   }
   /* h1 {
     @apply text-5xl md:text-6xl;

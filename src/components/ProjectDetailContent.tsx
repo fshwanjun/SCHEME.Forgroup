@@ -64,8 +64,8 @@ export default function ProjectDetailContent({
         }}
         className="fixed bottom-0 left-0 z-10 flex w-full justify-between gap-4 px-5 pb-8 text-white mix-blend-difference md:px-5">
         <div className="flex flex-col gap-1">
-          <h6>Project</h6>
-          <h5>{contents.project || ''}</h5>
+          <h5>Project</h5>
+          <h6>{contents.project || ''}</h6>
         </div>
         {contents.year && (
           <div className="flex flex-col gap-1">
@@ -108,29 +108,31 @@ export default function ProjectDetailContent({
         </div>
       )}
 
-      <div className="mx-auto grid min-h-2/3 w-full grid-cols-2 gap-4 overflow-hidden px-5 py-16 md:px-5">
-        <h1 className="leading-[124%]">
+      <div className="mx-auto grid min-h-2/3 w-full gap-20 overflow-hidden px-5 py-16 md:grid-cols-2 md:gap-4 md:px-5">
+        <h1 className="text-4xl leading-[124%] md:text-5xl">
           {title || contents.project || 'Design Project'}
           <br />
           Design Project
           <br />
         </h1>
-        <div className="flex flex-col justify-between gap-4">
-          <div className="flex flex-row gap-12 pb-40">
+        <div className="flex flex-col justify-between gap-8 md:gap-4">
+          <div className="flex w-2/3 flex-row justify-end gap-8 self-end md:w-full md:justify-start md:gap-12 md:self-start md:pb-40">
             {contents.product && (
-              <div className="flex w-[20%] flex-col gap-2">
-                <h5>Product</h5>
+              <div className="flex flex-col gap-4 md:w-[20%]">
+                <h5 className="text-[14px] leading-[130%] font-bold md:text-[16px]">Product</h5>
                 <div className="flex flex-col">
-                  <span>{contents.product}</span>
+                  <span className="text-[14px] leading-[130%] font-semibold capitalize md:text-[16px]">
+                    {contents.product}
+                  </span>
                 </div>
               </div>
             )}
             {contents.keyword && contents.keyword.length > 0 && (
-              <div className="flex flex-col gap-2">
-                <h5>Design Keywords</h5>
+              <div className="flex flex-col gap-4">
+                <h5 className="text-[14px] leading-[130%] font-bold md:text-[16px]">Design Keywords</h5>
                 <div className="flex flex-col">
                   {contents.keyword.map((tag, idx) => (
-                    <span className="capitalize" key={idx}>
+                    <span className="text-[14px] leading-[130%] font-semibold capitalize md:text-[16px]" key={idx}>
                       {tag}
                     </span>
                   ))}
@@ -140,10 +142,10 @@ export default function ProjectDetailContent({
           </div>
           {/* 챌린지 */}
           {contents.challenge && (
-            <div className="flex flex-col gap-2">
-              <h5>Challenge</h5>
+            <div className="flex flex-col gap-4">
+              <h5 className="text-[14px] leading-[130%] font-bold md:text-[16px]">Challenge</h5>
               <div className="flex flex-col">
-                <h4>{contents.challenge}</h4>
+                <h4 className="leading-[122%] font-normal md:leading-[130%]">{contents.challenge}</h4>
               </div>
             </div>
           )}
