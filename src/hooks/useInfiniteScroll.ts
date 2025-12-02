@@ -21,9 +21,9 @@ export interface UseInfiniteScrollOptions {
    */
   maxSections?: number;
   /**
-   * 스크롤 컨테이너 ref (기본값: document)
+   * 스크롤 컨테이너 ref
    */
-  scrollContainerRef?: React.RefObject<HTMLElement>;
+  scrollContainerRef?: React.RefObject<HTMLElement | null>;
 }
 
 export interface UseInfiniteScrollReturn {
@@ -62,6 +62,37 @@ export function useInfiniteScroll(options: UseInfiniteScrollOptions = {}): UseIn
   const [triggerElement, setTriggerElement] = useState<HTMLElement | null>(null);
   const isLoadingRef = useRef(false);
   const lastLoadTimeRef = useRef(0);
+  // 스크롤 컨테이너를 state로 관리하여 변경 감지
+  const [scrollContainer, setScrollContainer] = useState<HTMLElement | null>(null);
+
+  // scrollContainerRef.current를 주기적으로 확인
+  useEffect(() => {
+    const checkContainer = () => {
+      const container = scrollContainerRef?.current ?? null;
+      setScrollContainer((prev) => {
+        if (prev !== container) {
+          return container;
+        }
+        return prev;
+      });
+    };
+
+    // 초기 체크
+    checkContainer();
+
+    // 100ms마다 체크 (컴포넌트 마운트 직후 ref가 설정되지 않을 수 있음)
+    const interval = setInterval(checkContainer, 100);
+
+    // 3초 후 interval 정리 (충분한 시간이 지나면 더 이상 체크 불필요)
+    const cleanup = setTimeout(() => {
+      clearInterval(interval);
+    }, 3000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(cleanup);
+    };
+  }, [scrollContainerRef]);
 
   // 다음 섹션 로드
   const loadNext = useCallback(() => {
@@ -98,19 +129,15 @@ export function useInfiniteScroll(options: UseInfiniteScrollOptions = {}): UseIn
 
   // 스크롤 이벤트로 트리거 감지
   useEffect(() => {
-    if (disabled) return;
-
-    const scrollContainer = scrollContainerRef?.current;
+    if (disabled || !scrollContainer) return;
 
     const handleScroll = () => {
       if (isLoadingRef.current || !triggerElement) return;
 
       const rect = triggerElement.getBoundingClientRect();
       
-      // 컨테이너 또는 뷰포트 높이
-      const containerHeight = scrollContainer 
-        ? scrollContainer.clientHeight 
-        : window.innerHeight;
+      // 컨테이너 높이
+      const containerHeight = scrollContainer.clientHeight;
 
       // 트리거 요소의 상단이 컨테이너 하단 + offset 이내에 있으면 로드
       if (rect.top <= containerHeight + triggerOffset) {
@@ -118,8 +145,8 @@ export function useInfiniteScroll(options: UseInfiniteScrollOptions = {}): UseIn
       }
     };
 
-    // 초기 체크
-    const initialCheck = setTimeout(handleScroll, 200);
+    // 초기 체크 (약간의 지연 후 실행)
+    const initialCheck = setTimeout(handleScroll, 300);
 
     // 스크롤 이벤트 (throttle 적용)
     let ticking = false;
@@ -134,16 +161,15 @@ export function useInfiniteScroll(options: UseInfiniteScrollOptions = {}): UseIn
     };
 
     // 스크롤 이벤트 리스너 등록
-    const target = scrollContainer || document;
-    target.addEventListener('scroll', throttledScroll, { passive: true });
+    scrollContainer.addEventListener('scroll', throttledScroll, { passive: true });
     window.addEventListener('resize', throttledScroll, { passive: true });
     
     return () => {
       clearTimeout(initialCheck);
-      target.removeEventListener('scroll', throttledScroll);
+      scrollContainer.removeEventListener('scroll', throttledScroll);
       window.removeEventListener('resize', throttledScroll);
     };
-  }, [disabled, triggerElement, triggerOffset, loadNext, scrollContainerRef]);
+  }, [disabled, triggerElement, triggerOffset, loadNext, scrollContainer]);
 
   // 섹션 리스트 렌더링 헬퍼
   const renderSections = useCallback(

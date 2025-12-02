@@ -246,17 +246,22 @@ function HomeGallery({
     const assignments: (ProjectImage | null)[] = new Array(totalFrames).fill(null);
     
     // 이미지를 orientation별로 분리
+    // orientation이 설정된 이미지는 해당 프레임에만 할당
+    // orientation이 없는 이미지는 양쪽 모두에 할당 (폴백)
     const verticalImages: ProjectImage[] = [];
     const horizontalImages: ProjectImage[] = [];
     
     PROJECT_IMAGES.forEach((img) => {
       if (img && img.verticalSrc && img.horizontalSrc) {
         if (img.orientation === 'vertical') {
+          // orientation이 'vertical'인 경우 vertical 프레임에만 할당
           verticalImages.push(img);
         } else if (img.orientation === 'horizontal') {
+          // orientation이 'horizontal'인 경우 horizontal 프레임에만 할당
           horizontalImages.push(img);
         } else {
-          // orientation이 없으면 둘 다에 추가 (하지만 실제로는 사용하지 않음)
+          // orientation이 없는 이미지는 양쪽 모두에 할당 (폴백)
+          // 이 경우 이미지는 cover로 표시됨
           verticalImages.push(img);
           horizontalImages.push(img);
         }
@@ -362,12 +367,13 @@ function HomeGallery({
           // 틀의 orientation 결정 (틀의 aspect 비율에 따라)
           const frameOrientation = frameClass.includes('aspect-[3/4]') ? 'vertical' : 'horizontal';
 
-          // 이미지의 orientation이 설정되어 있으면 그것을 사용, 없으면 틀의 orientation 사용
+          // 이미지의 orientation 결정
+          // orientation이 설정되어 있으면 그 값 사용, 없으면 프레임에 맞춤 (폴백)
           const imageOrientation = assignment.orientation || frameOrientation;
 
-          // 이미지의 orientation과 틀의 orientation이 일치하는지 확인
-          // 일치하지 않으면 렌더링하지 않음 (다른 틀에서 렌더링됨)
-          if (imageOrientation !== frameOrientation) {
+          // orientation이 설정된 이미지는 반드시 맞는 프레임에만 표시
+          // vertical 이미지는 3/4 프레임에만, horizontal 이미지는 4/3 프레임에만
+          if (assignment.orientation && imageOrientation !== frameOrientation) {
             return null;
           }
 

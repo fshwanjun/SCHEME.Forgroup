@@ -50,7 +50,7 @@ interface Project {
 
 export default function Home() {
   const [landingImages, setLandingImages] = useState<
-    Array<{ projectId: string; projectSlug?: string; verticalSrc: string; horizontalSrc: string }>
+    Array<{ projectId: string; projectSlug?: string; verticalSrc: string; horizontalSrc: string; orientation?: 'horizontal' | 'vertical' }>
   >([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -116,17 +116,15 @@ export default function Home() {
     return project || null;
   }, [selected, projects]);
 
-  // cover 모드로 진입할 때 프로젝트 설정 및 URL 변경
+  // cover 모드로 진입할 때 프로젝트 설정
   useEffect(() => {
     if (mode === 'cover' && selectedProjectData) {
       setSelectedProject(selectedProjectData);
       setImagesLoaded(false);
 
-      // URL을 프로젝트 상세 페이지로 변경
-      const newUrl = `/project/${selectedProjectData.slug}`;
-      if (window.location.pathname !== newUrl) {
-        window.history.pushState({ modal: true, returnUrl: '/' }, '', newUrl);
-      }
+      // 뒤로가기 감지를 위한 history entry 추가 (URL은 변경하지 않음)
+      // URL을 변경하면 Next.js가 페이지 전환을 시도하므로 새로고침 발생
+      window.history.pushState({ modal: true }, '', window.location.pathname);
     } else if (mode === 'default' && selectedProject) {
       // default 모드로 돌아갈 때 프로젝트 초기화
       setSelectedProject(null);
@@ -150,12 +148,13 @@ export default function Home() {
           // order 기준으로 정렬
           const sortedImages = [...images].sort((a, b) => (a.order || 0) - (b.order || 0));
 
-          // ProjectImage 형식으로 변환
+          // ProjectImage 형식으로 변환 (orientation 포함)
           const projectImages = sortedImages.map((img) => ({
             projectId: img.projectSlug || img.id,
             projectSlug: img.projectSlug,
             verticalSrc: img.url,
             horizontalSrc: img.url,
+            orientation: img.orientation, // orientation 필드 포함
           }));
 
           setLandingImages(projectImages);
@@ -253,23 +252,18 @@ export default function Home() {
 
   // 뒤로가기 버튼 처리 - cover/center 모드에서 줌 아웃 (새로고침 방지)
   useEffect(() => {
-    const handlePopState = (e: PopStateEvent) => {
+    const handlePopState = () => {
       const currentMode = modeRef.current;
       
       // 모달이 열려있는 상태에서 뒤로가기
       if (currentMode === 'cover' || currentMode === 'center') {
-        // 🔑 핵심: Next.js가 URL 변경을 감지하기 전에 즉시 URL 복원
-        // 이렇게 하면 Next.js 라우터가 페이지 전환을 시도하지 않음
-        window.history.replaceState({ modal: false }, '', '/');
-        
-        // 줌 아웃 실행
+        // URL이 변경되지 않았으므로 단순히 줌 아웃만 실행
         zoomOut();
       }
     };
 
-    // capture phase에서 먼저 처리하여 Next.js보다 우선 실행
-    window.addEventListener('popstate', handlePopState, { capture: true });
-    return () => window.removeEventListener('popstate', handlePopState, { capture: true });
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, [zoomOut]);
 
   // 리사이즈 처리 - 상세 모달이 나온 상태에서 화면 사이즈 변경 시 해당 페이지로 이동
@@ -380,17 +374,8 @@ export default function Home() {
     setHeaderLogoTrigger(trigger);
   }, []);
 
-  // 줌 모드일 때 body 스크롤 잠금
-  useEffect(() => {
-    if (mode === 'center' || mode === 'cover' || isAnimating) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [mode, isAnimating]);
+  // 줌 애니메이션 중이거나 center/cover 상태일 때 스크롤 잠금
+  const isScrollLocked = mode === 'center' || mode === 'cover' || isAnimating;
 
   return (
     <>
@@ -399,7 +384,11 @@ export default function Home() {
       <MobileMenu headerLogoTrigger={headerLogoTrigger} />
 
       <div
-        className="h-[100svh] overflow-y-auto overflow-x-hidden overscroll-none"
+        ref={scrollContainerRef}
+        className={cn(
+          'h-[100svh] overflow-x-hidden overscroll-none',
+          isScrollLocked ? 'overflow-y-hidden' : 'overflow-y-auto'
+        )}
         onClick={handleClickOutside}
         onTouchEnd={handleClickOutside}>
         <motion.main
