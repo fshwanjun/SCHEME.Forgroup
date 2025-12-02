@@ -21,6 +21,7 @@ export type GallerySelection = {
   orientation: 'vertical' | 'horizontal';
   aspectRatio: string;
   rect?: DOMRect;
+  uniqueId?: string; // 무한 스크롤에서 동일 이미지 구분을 위한 고유 ID
 };
 
 import { HOME_LAYOUT_CONFIG } from '@/config/homeLayout';
@@ -102,14 +103,18 @@ type HomeGalleryProps = {
   images?: ProjectImage[]; // Landing Page Manager에서 가져온 이미지 목록
   onSelectImage?: (image: GallerySelection) => void;
   selectedProjectId?: string | null;
+  selectedUniqueId?: string | null; // 선택된 이미지의 고유 ID (무한 스크롤용)
   layoutConfig?: LayoutConfig; // 레이아웃 설정 (기본값: HOME_LAYOUT_CONFIG)
+  sectionId?: number; // 무한 스크롤에서 섹션 구분을 위한 ID
 };
 
 function HomeGallery({
   images = [],
   onSelectImage,
   selectedProjectId,
+  selectedUniqueId,
   layoutConfig = HOME_LAYOUT_CONFIG,
+  sectionId = 0,
 }: HomeGalleryProps) {
   // console.log('[HomeGallery] render', {
   //   imagesCount: images.length,
@@ -369,8 +374,15 @@ function HomeGallery({
           const orientation = imageOrientation;
           const aspectRatio = orientation === 'vertical' ? '3 / 4' : '4 / 3';
           const src = orientation === 'vertical' ? assignment.verticalSrc : assignment.horizontalSrc;
-          const isSelected = selectedProjectId != null && assignment.projectId === selectedProjectId;
-          const isOtherSelected = selectedProjectId != null && !isSelected;
+          
+          // 고유 ID 생성: 섹션ID + 프로젝트ID + 프레임인덱스
+          const uniqueId = `section-${sectionId}-${assignment.projectId}-${index}`;
+          
+          // 선택 상태 확인: uniqueId가 있으면 우선 사용, 없으면 projectId로 비교
+          const isSelected = selectedUniqueId 
+            ? selectedUniqueId === uniqueId
+            : (selectedProjectId != null && assignment.projectId === selectedProjectId);
+          const isOtherSelected = (selectedProjectId != null || selectedUniqueId != null) && !isSelected;
 
           return (
             <div
@@ -392,7 +404,7 @@ function HomeGallery({
                   : undefined
               }>
               <ImageCard
-                projectId={assignment.projectId}
+                projectId={uniqueId}
                 verticalSrc={assignment.verticalSrc}
                 horizontalSrc={assignment.horizontalSrc}
                 orientation={orientation}
@@ -407,6 +419,7 @@ function HomeGallery({
                     orientation,
                     aspectRatio,
                     rect,
+                    uniqueId,
                   });
                 }}
               />

@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { useRouter } from 'next/navigation';
 import HomeGallery, { type GallerySelection } from '@/components/HomeGallery';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useZoom } from '@/hooks/useZoom';
+import useWindowSize from '@/hooks/useWindowSize';
 import Header from '@/components/Header';
 import MobileMenu from '@/components/MobileMenu';
 import IntroLogo from '@/components/IntroLogo';
@@ -49,7 +49,6 @@ interface Project {
 }
 
 export default function Home() {
-  const router = useRouter();
   const [landingImages, setLandingImages] = useState<
     Array<{ projectId: string; projectSlug?: string; verticalSrc: string; horizontalSrc: string }>
   >([]);
@@ -58,13 +57,17 @@ export default function Home() {
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [headerLogoTrigger, setHeaderLogoTrigger] = useState<number | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const modeRef = useRef<string>('default');
+  const windowSize = useWindowSize();
+  const isMobile = windowSize.isSm;
 
   // useZoom 훅 사용 - 초기 모드는 default
   // cover 모드일 때는 리사이즈 시 페이지 이동을 위해 zoomOutOnResize를 false로 설정
+  // 모바일에서는 centerPadding을 더 작게 설정하여 더 많이 확대
   const { selected, mode, zoomStyle, isAnimating, selectImage, setMode, zoomOut } = useZoom({
     initialMode: 'default',
-    centerPadding: 200,
+    centerPadding: isMobile ? 40 : 200, // 모바일: 40px, 데스크톱: 200px
     containerRef,
     animationDuration: 800,
     lockScroll: true,
@@ -75,9 +78,10 @@ export default function Home() {
   // 무한 스크롤 훅 사용
   const { setTriggerElement, renderSections } = useInfiniteScroll({
     initialSectionIds: [0, 1, 2],
-    triggerIndex: 1,
-    triggerOffset: 1000,
+    triggerOffset: 1500,
     disabled: mode !== 'default',
+    maxSections: 8,
+    scrollContainerRef,
   });
 
   // 프로젝트 목록 가져오기
@@ -118,21 +122,15 @@ export default function Home() {
       setSelectedProject(selectedProjectData);
       setImagesLoaded(false);
 
-      // URL을 슬러그로 변경 (실제 페이지 이동 없이)
-      // replaceState를 사용하여 현재 history entry를 교체하면
-      // 뒤로가기를 눌렀을 때 자동으로 이전 페이지로 돌아감
+      // URL을 프로젝트 상세 페이지로 변경
       const newUrl = `/project/${selectedProjectData.slug}`;
-      window.history.replaceState({ zoomed: true, modal: true }, '', newUrl);
-      // replaceState 후 pushState를 한 번 더 호출하여 history stack에 추가
-      window.history.pushState({ zoomed: true, modal: true }, '', newUrl);
-    } else if (mode !== 'cover') {
-      // cover 모드가 아니면 프로젝트 초기화 및 URL 복원
-      if (selectedProject) {
-        setSelectedProject(null);
-        setImagesLoaded(false);
-        // URL을 /로 복원
-        window.history.replaceState({ zoomed: false }, '', '/');
+      if (window.location.pathname !== newUrl) {
+        window.history.pushState({ modal: true, returnUrl: '/' }, '', newUrl);
       }
+    } else if (mode === 'default' && selectedProject) {
+      // default 모드로 돌아갈 때 프로젝트 초기화
+      setSelectedProject(null);
+      setImagesLoaded(false);
     }
   }, [mode, selectedProjectData, selectedProject]);
 
@@ -199,10 +197,16 @@ export default function Home() {
   // 이미지 선택 핸들러 - default에서는 center로, center에서는 cover로
   const handleSelectImage = useCallback(
     (image: GallerySelection) => {
+      // 애니메이션 중이면 모든 클릭 무시 (중복 클릭 방지)
+      if (isAnimating) {
+        return;
+      }
+
       // 같은 이미지를 클릭한 경우
       if (selected?.projectId === image.projectId) {
-        // center 상태면 cover로 전환
-        if (mode === 'center') {
+        // center 상태이고 애니메이션이 완료된 경우에만 cover로 전환
+        // mode가 'default'에서 'center'로 전환 중일 때는 cover로 전환하지 않음
+        if (mode === 'center' && !isAnimating) {
           setMode('cover');
         }
         // cover 상태면 아무 동작 안함
@@ -210,9 +214,12 @@ export default function Home() {
       }
 
       // 다른 이미지를 클릭한 경우: 새로운 이미지 선택하고 center 모드로
-      selectImage(image, 'center');
+      // 단, 현재 mode가 'default'일 때만 허용 (center나 cover에서 다른 이미지 클릭 방지)
+      if (mode === 'default') {
+        selectImage(image, 'center');
+      }
     },
-    [selected, mode, selectImage, setMode],
+    [selected, mode, selectImage, setMode, isAnimating],
   );
 
   // 섹션 리스트 생성
@@ -224,10 +231,12 @@ export default function Home() {
             images={landingImages}
             onSelectImage={handleSelectImage}
             selectedProjectId={selected?.projectId ?? null}
+            selectedUniqueId={selected?.uniqueId ?? null}
+            sectionId={id}
           />
         </div>
       )),
-    [renderSections, setTriggerElement, landingImages, handleSelectImage, selected?.projectId],
+    [renderSections, setTriggerElement, landingImages, handleSelectImage, selected?.projectId, selected?.uniqueId],
   );
 
   // ESC 키로 줌 아웃
@@ -242,69 +251,26 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleEscape);
   }, [mode, zoomOut]);
 
-  // 뒤로가기 버튼 처리 - cover 모드에서 줌 아웃 및 URL 복원
+  // 뒤로가기 버튼 처리 - cover/center 모드에서 줌 아웃 (새로고침 방지)
   useEffect(() => {
-    let isHandlingPopState = false;
-
     const handlePopState = (e: PopStateEvent) => {
-      // 중복 처리 방지
-      if (isHandlingPopState) return;
-
-      const currentPath = window.location.pathname;
-      const historyState = e.state;
-
-      // 홈 페이지에서 뒤로가기를 할 때 항상 새로고침 방지
-      if (currentPath === '/') {
-        // 홈 페이지에서 뒤로가기를 하면 새로고침을 방지하기 위해
-        // 히스토리 상태를 유지하고 preventDefault 효과를 주기 위해
-        // replaceState를 사용하여 현재 상태를 유지
-        window.history.replaceState({ zoomed: false, preventRefresh: true }, '', '/');
+      const currentMode = modeRef.current;
+      
+      // 모달이 열려있는 상태에서 뒤로가기
+      if (currentMode === 'cover' || currentMode === 'center') {
+        // 🔑 핵심: Next.js가 URL 변경을 감지하기 전에 즉시 URL 복원
+        // 이렇게 하면 Next.js 라우터가 페이지 전환을 시도하지 않음
+        window.history.replaceState({ modal: false }, '', '/');
         
-        // cover 모드인 경우에만 줌 아웃
-        if (modeRef.current === 'cover') {
-          zoomOut();
-          setSelectedProject(null);
-          setImagesLoaded(false);
-        }
-        
-        return; // router 호출 없이 종료
-      }
-
-      // cover 모드이거나 프로젝트 상세 페이지에서 뒤로가기한 경우
-      // 또는 history state에 modal/zoomed 플래그가 있는 경우
-      if (
-        modeRef.current === 'cover' ||
-        (currentPath.startsWith('/project/') && currentPath !== '/project') ||
-        (historyState && (historyState.modal === true || historyState.zoomed === true))
-      ) {
-        isHandlingPopState = true;
-
-        // 동기적으로 줌 아웃 실행
-        if (modeRef.current === 'cover') {
-          zoomOut();
-          setSelectedProject(null);
-          setImagesLoaded(false);
-        }
-
-        // 즉시 홈 URL로 replaceState하여 새로고침 방지
-        window.history.replaceState({ zoomed: false, preventRefresh: true }, '', '/');
-
-        // router.replace를 사용하여 클라이언트 사이드 네비게이션 보장
-        // replaceState 후 약간의 지연을 두어 Next.js가 이를 감지하도록 함
-        requestAnimationFrame(() => {
-          router.replace('/');
-          // 다음 이벤트 루프에서 플래그 리셋
-          setTimeout(() => {
-            isHandlingPopState = false;
-          }, 100);
-        });
+        // 줌 아웃 실행
+        zoomOut();
       }
     };
 
-    // capture phase에서 이벤트를 먼저 처리하여 다른 핸들러보다 우선순위를 높임
+    // capture phase에서 먼저 처리하여 Next.js보다 우선 실행
     window.addEventListener('popstate', handlePopState, { capture: true });
     return () => window.removeEventListener('popstate', handlePopState, { capture: true });
-  }, [zoomOut, router]);
+  }, [zoomOut]);
 
   // 리사이즈 처리 - 상세 모달이 나온 상태에서 화면 사이즈 변경 시 해당 페이지로 이동
   useEffect(() => {
@@ -352,7 +318,9 @@ export default function Home() {
       const target = e.target as HTMLElement;
 
       // 클릭된 요소가 선택된 이미지 요소인지 확인
-      const selectedImageElement = document.getElementById(`project-${selected.projectId}`);
+      // uniqueId가 있으면 우선 사용, 없으면 projectId 사용
+      const elementId = selected.uniqueId || selected.projectId;
+      const selectedImageElement = document.getElementById(`project-${elementId}`);
       if (!selectedImageElement) {
         // 이미지 요소를 찾을 수 없으면 줌 아웃
         zoomOut();
@@ -369,7 +337,7 @@ export default function Home() {
       // 타겟의 부모 요소들을 확인하여 이미지 요소인지 확인
       let currentElement: HTMLElement | null = target;
       while (currentElement && currentElement !== document.body) {
-        if (currentElement === selectedImageElement || currentElement.id === `project-${selected.projectId}`) {
+        if (currentElement === selectedImageElement || currentElement.id === `project-${elementId}`) {
           return; // 이미지 요소 내부를 클릭한 경우 무시
         }
         currentElement = currentElement.parentElement;
@@ -412,6 +380,18 @@ export default function Home() {
     setHeaderLogoTrigger(trigger);
   }, []);
 
+  // 줌 모드일 때 body 스크롤 잠금
+  useEffect(() => {
+    if (mode === 'center' || mode === 'cover' || isAnimating) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mode, isAnimating]);
+
   return (
     <>
       <IntroLogo onHeaderAnimationStart={handleHeaderAnimationStart} />
@@ -419,10 +399,7 @@ export default function Home() {
       <MobileMenu headerLogoTrigger={headerLogoTrigger} />
 
       <div
-        className={cn(
-          'h-screen overflow-y-scroll',
-          mode === 'center' || mode === 'cover' || isAnimating ? 'overflow-hidden' : '',
-        )}
+        className="h-[100svh] overflow-y-auto overflow-x-hidden overscroll-none"
         onClick={handleClickOutside}
         onTouchEnd={handleClickOutside}>
         <motion.main
@@ -435,15 +412,12 @@ export default function Home() {
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           style={{
             transformOrigin: `${zoomStyle.originX}px ${zoomStyle.originY}px`,
-            width: '100vw',
-            height: '100vh',
             pointerEvents: isAnimating ? 'none' : 'auto',
             position: 'relative',
           }}>
           <div
             className={cn(
               isAnimating ? 'pointer-events-none' : 'pointer-events-auto',
-              // center 모드일 때는 외부 클릭을 감지하기 위해 pointer-events를 유지
               mode === 'cover' ? 'pointer-events-none' : 'pointer-events-auto',
             )}>
             {list}

@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useIntersection } from '@/hooks/useIntersectionObserver';
 
 export interface UseInfiniteScrollOptions {
   /**
@@ -8,29 +7,23 @@ export interface UseInfiniteScrollOptions {
    */
   initialSectionIds?: number[];
   /**
-   * 트리거 인덱스 (몇 번째 섹션을 감시할지)
-   * @default 1 (두 번째 섹션)
-   */
-  triggerIndex?: number;
-  /**
    * 트리거 지점까지의 여유 공간 (픽셀)
    * @default 1000
    */
   triggerOffset?: number;
   /**
-   * IntersectionObserver의 rootMargin
-   * @default '0px 0px 500px 0px'
-   */
-  rootMargin?: string;
-  /**
-   * 스크롤 이벤트 백업 활성화 여부
-   * @default true
-   */
-  enableScrollBackup?: boolean;
-  /**
    * 무한 스크롤 비활성화 조건 (예: 줌 상태일 때)
    */
   disabled?: boolean;
+  /**
+   * 최대 섹션 개수 (메모리 관리용)
+   * @default 10
+   */
+  maxSections?: number;
+  /**
+   * 스크롤 컨테이너 ref (기본값: document)
+   */
+  scrollContainerRef?: React.RefObject<HTMLElement>;
 }
 
 export interface UseInfiniteScrollReturn {
@@ -59,93 +52,116 @@ export interface UseInfiniteScrollReturn {
 export function useInfiniteScroll(options: UseInfiniteScrollOptions = {}): UseInfiniteScrollReturn {
   const {
     initialSectionIds = [0, 1, 2],
-    triggerIndex = 1,
     triggerOffset = 1000,
-    rootMargin = '0px 0px 500px 0px',
-    enableScrollBackup = true,
     disabled = false,
+    maxSections = 10,
+    scrollContainerRef,
   } = options;
 
   const [sectionIds, setSectionIds] = useState<number[]>(initialSectionIds);
   const [triggerElement, setTriggerElement] = useState<HTMLElement | null>(null);
-  const triggeredRef = useRef(false);
-
-  // sectionIds가 변경되면 트리거 리셋
-  useEffect(() => {
-    triggeredRef.current = false;
-  }, [sectionIds]);
+  const isLoadingRef = useRef(false);
+  const lastLoadTimeRef = useRef(0);
 
   // 다음 섹션 로드
   const loadNext = useCallback(() => {
+    // 디바운싱: 300ms 내 중복 호출 방지
+    const now = Date.now();
+    if (now - lastLoadTimeRef.current < 300) {
+      return;
+    }
+    
+    if (isLoadingRef.current) {
+      return;
+    }
+    
+    isLoadingRef.current = true;
+    lastLoadTimeRef.current = now;
+
     setSectionIds((prev) => {
       const lastId = prev[prev.length - 1];
       const newId = lastId + 1;
-      const newIds = [...prev.slice(1), newId];
-      return newIds;
-    });
-  }, []);
-
-  // 트리거 지점에 도달했는지 감지 (IntersectionObserver) - 지정된 인덱스의 섹션을 감시
-  useIntersection(
-    triggerElement,
-    (entry: IntersectionObserverEntry) => {
-      if (disabled) return;
-
-      // 지정된 섹션의 바닥이 화면 중간쯤 왔을 때 미리 로딩
-      if (entry.isIntersecting) {
-        const rect = entry.boundingClientRect;
-        // 섹션의 바닥이 뷰포트 높이 + triggerOffset 보다 위에 있을 때
-        const isTriggerPoint = rect.bottom <= window.innerHeight + triggerOffset;
-
-        if (isTriggerPoint && !triggeredRef.current) {
-          triggeredRef.current = true;
-          loadNext();
-        }
+      
+      // 최대 섹션 개수 초과 시 오래된 섹션 제거
+      if (prev.length >= maxSections) {
+        return [...prev.slice(1), newId];
       }
-    },
-    { rootMargin, threshold: [0, 0.1, 0.5, 1] },
-  );
+      
+      return [...prev, newId];
+    });
 
-  // 스크롤 이벤트로도 감지 (백업) - 지정된 섹션 기준
+    // 로딩 플래그 리셋
+    setTimeout(() => {
+      isLoadingRef.current = false;
+    }, 100);
+  }, [maxSections]);
+
+  // 스크롤 이벤트로 트리거 감지
   useEffect(() => {
-    if (disabled || !enableScrollBackup) return;
+    if (disabled) return;
+
+    const scrollContainer = scrollContainerRef?.current;
 
     const handleScroll = () => {
-      if (!triggerElement || triggeredRef.current) return;
+      if (isLoadingRef.current || !triggerElement) return;
 
       const rect = triggerElement.getBoundingClientRect();
-      const windowHeight = window.innerHeight;
+      
+      // 컨테이너 또는 뷰포트 높이
+      const containerHeight = scrollContainer 
+        ? scrollContainer.clientHeight 
+        : window.innerHeight;
 
-      // 섹션의 바닥이 화면 하단 근처에 도달했는지 확인
-      const isTriggerPoint = rect.bottom <= windowHeight + triggerOffset;
-
-      if (isTriggerPoint) {
-        triggeredRef.current = true;
+      // 트리거 요소의 상단이 컨테이너 하단 + offset 이내에 있으면 로드
+      if (rect.top <= containerHeight + triggerOffset) {
         loadNext();
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
+    // 초기 체크
+    const initialCheck = setTimeout(handleScroll, 200);
+
+    // 스크롤 이벤트 (throttle 적용)
+    let ticking = false;
+    const throttledScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+      }
     };
-  }, [disabled, enableScrollBackup, triggerElement, triggerOffset, loadNext]);
+
+    // 스크롤 이벤트 리스너 등록
+    const target = scrollContainer || document;
+    target.addEventListener('scroll', throttledScroll, { passive: true });
+    window.addEventListener('resize', throttledScroll, { passive: true });
+    
+    return () => {
+      clearTimeout(initialCheck);
+      target.removeEventListener('scroll', throttledScroll);
+      window.removeEventListener('resize', throttledScroll);
+    };
+  }, [disabled, triggerElement, triggerOffset, loadNext, scrollContainerRef]);
 
   // 섹션 리스트 렌더링 헬퍼
   const renderSections = useCallback(
     <T>(renderItem: (id: number, index: number, isTrigger: boolean) => T): T[] => {
       return sectionIds.map((id, index) => {
-        const isTrigger = index === triggerIndex;
+        // 마지막에서 두 번째 섹션을 트리거로 사용
+        const isTrigger = index === sectionIds.length - 2;
         return renderItem(id, index, isTrigger);
       });
     },
-    [sectionIds, triggerIndex],
+    [sectionIds],
   );
 
   // 리셋
   const reset = useCallback(() => {
     setSectionIds(initialSectionIds);
-    triggeredRef.current = false;
+    isLoadingRef.current = false;
+    lastLoadTimeRef.current = 0;
   }, [initialSectionIds]);
 
   return {

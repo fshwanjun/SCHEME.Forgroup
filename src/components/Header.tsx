@@ -68,14 +68,15 @@ export default function Header({
         'w-full text-white mix-blend-difference',
         // 모든 페이지에서 mix-blend-difference 사용
         effectiveIsFixed
-          ? `pointer-events-none fixed top-0 ${zIndexClass} ${paddingClass}`
+          ? `pointer-events-none fixed left-0 right-0 top-0 ${zIndexClass} ${paddingClass}`
           : `relative ${zIndexClass} ${paddingClass}`,
       )}
       style={{
         // relative일 때도 명시적으로 position 설정
         position: effectiveIsFixed ? 'fixed' : 'relative',
-        // mix-blend-difference가 제대로 작동하려면 isolation을 사용하지 않아야 함
-        // transform은 모바일에서 블렌드 모드를 방해할 수 있으므로 제거
+        // 모바일에서 브라우저 UI 변경에 영향받지 않도록 transform 제거
+        // will-change를 사용하여 레이어 생성 (mix-blend-difference 호환)
+        willChange: 'auto',
       }}
       suppressHydrationWarning>
       <div className="relative mx-auto flex items-start justify-between">

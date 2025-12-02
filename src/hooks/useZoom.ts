@@ -169,23 +169,6 @@ export function useZoom(options: UseZoomOptions = {}): UseZoomReturn {
         return;
       }
 
-      // default 모드에서 cover 모드로 직접 전환하는 경우
-      // (center를 거치지 않고 바로 cover로 가는 경우)
-      // 이미지가 화면 밖에 있거나 부분적으로만 보일 수 있으므로
-      // 현재 이미지 요소의 실제 위치를 다시 가져와서 정확한 계산을 수행
-      if (prevMode === 'default' && targetMode === 'cover') {
-        const element = document.getElementById(`project-${selected.projectId}`);
-        if (element) {
-          const currentRect = element.getBoundingClientRect();
-          // 현재 rect가 유효한 경우에만 사용 (너비와 높이가 0보다 큰 경우)
-          if (currentRect.width > 0 && currentRect.height > 0) {
-            rect = currentRect;
-            // 원본 rect도 업데이트하여 일관성 유지
-            originalRectRef.current = rect;
-          }
-        }
-      }
-
       // 스케일 계산
       let scale: number;
       if (targetMode === 'cover') {
@@ -313,9 +296,17 @@ export function useZoom(options: UseZoomOptions = {}): UseZoomReturn {
         targetMode,
       });
 
+      // 애니메이션 중이면 새로운 선택 무시 (중복 클릭 방지)
+      if (isAnimating) {
+        debugLog(debug, '[useZoom] selectImage: 애니메이션 중이므로 무시');
+        return;
+      }
+
       // rect가 없으면 DOM에서 가져오기
+      // uniqueId가 있으면 우선 사용, 없으면 projectId 사용
       if (!image.rect) {
-        const element = document.getElementById(`project-${image.projectId}`);
+        const elementId = image.uniqueId || image.projectId;
+        const element = document.getElementById(`project-${elementId}`);
         if (element) {
           image.rect = element.getBoundingClientRect();
         } else {
@@ -330,7 +321,7 @@ export function useZoom(options: UseZoomOptions = {}): UseZoomReturn {
       setSelected(image);
       setModeState(targetMode);
     },
-    [debug],
+    [debug, isAnimating],
   );
 
   // 모드 변경
@@ -338,6 +329,13 @@ export function useZoom(options: UseZoomOptions = {}): UseZoomReturn {
     (newMode: ZoomMode) => {
       if (!selected && newMode !== 'default') {
         // 선택된 이미지가 없습니다
+        return;
+      }
+
+      // 애니메이션 중에는 모드 변경 제한
+      // 단, default로의 전환은 허용 (줌 아웃)
+      if (isAnimating && newMode !== 'default') {
+        debugLog(debug, '[useZoom] setMode: 애니메이션 중이므로 모드 변경 무시', { from: mode, to: newMode });
         return;
       }
 
@@ -350,7 +348,7 @@ export function useZoom(options: UseZoomOptions = {}): UseZoomReturn {
         originalRectRef.current = null;
       }
     },
-    [selected, mode, debug],
+    [selected, mode, debug, isAnimating],
   );
 
   // 줌 아웃

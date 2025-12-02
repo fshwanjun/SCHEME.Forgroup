@@ -33,6 +33,9 @@ export default function ImageCard({
   // 터치 이벤트 추적을 위한 ref
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const touchMovedRef = useRef<boolean>(false);
+  // 중복 클릭 방지를 위한 ref (마지막 클릭 시간 추적)
+  const lastClickTimeRef = useRef<number>(0);
+  const CLICK_DEBOUNCE_MS = 500; // 500ms 내 중복 클릭 방지
 
   const hasVertical = Boolean(verticalSrc);
   const hasHorizontal = Boolean(horizontalSrc);
@@ -51,6 +54,14 @@ export default function ImageCard({
     //   src,
     //   timestamp: Date.now(),
     // });
+    
+    // 중복 클릭 방지: 마지막 클릭으로부터 500ms 이내면 무시
+    const now = Date.now();
+    if (now - lastClickTimeRef.current < CLICK_DEBOUNCE_MS) {
+      return;
+    }
+    lastClickTimeRef.current = now;
+    
     e.stopPropagation(); // 이벤트 전파 중단 (window 클릭 리스너 실행 방지)
     if (onClickProject) {
       onClickProject(projectId, e.currentTarget.getBoundingClientRect());
@@ -98,6 +109,15 @@ export default function ImageCard({
       touchMovedRef.current = false;
       return;
     }
+
+    // 중복 클릭 방지: 마지막 클릭으로부터 500ms 이내면 무시
+    const now = Date.now();
+    if (now - lastClickTimeRef.current < CLICK_DEBOUNCE_MS) {
+      touchStartRef.current = null;
+      touchMovedRef.current = false;
+      return;
+    }
+    lastClickTimeRef.current = now;
 
     // 클릭으로 간주하고 처리
     if (onClickProject) {

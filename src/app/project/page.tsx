@@ -68,13 +68,12 @@ export default function ProjectPage() {
     debug: false,
   });
 
-  // 무한 스크롤 훅 사용 - 모바일에서는 더 빠른 트리거와 더 많은 초기 섹션
+  // 무한 스크롤 훅 사용
   const { setTriggerElement, renderSections } = useInfiniteScroll({
-    initialSectionIds: isMobile ? [0, 1, 2, 3] : [0, 1, 2],
-    triggerIndex: isMobile ? 1 : 1,
-    triggerOffset: isMobile ? 2000 : 1000, // 모바일에서는 더 일찍 트리거
-    rootMargin: isMobile ? '0px 0px 1500px 0px' : '0px 0px 500px 0px', // 모바일에서는 더 큰 rootMargin
+    initialSectionIds: [0, 1, 2],
+    triggerOffset: isMobile ? 2000 : 1500,
     disabled: mode !== 'default',
+    maxSections: 8,
   });
 
   // 선택된 프로젝트 찾기
@@ -99,17 +98,15 @@ export default function ProjectPage() {
       setSelectedProject(selectedProjectData);
       setImagesLoaded(false);
 
-      // URL을 슬러그로 변경 (실제 페이지 이동 없이)
+      // URL을 프로젝트 상세 페이지로 변경
       const newUrl = `/project/${selectedProjectData.slug}`;
-      window.history.pushState({ zoomed: true, modal: true }, '', newUrl);
-    } else if (mode !== 'cover') {
-      // cover 모드가 아니면 프로젝트 초기화 및 URL 복원
-      if (selectedProject) {
-        setSelectedProject(null);
-        setImagesLoaded(false);
-        // URL을 /project로 복원
-        window.history.pushState({ zoomed: false }, '', '/project');
+      if (window.location.pathname !== newUrl) {
+        window.history.pushState({ modal: true, returnUrl: '/project' }, '', newUrl);
       }
+    } else if (mode === 'default' && selectedProject) {
+      // default 모드로 돌아갈 때 프로젝트 초기화
+      setSelectedProject(null);
+      setImagesLoaded(false);
     }
   }, [mode, selectedProjectData, selectedProject]);
 
@@ -237,25 +234,28 @@ export default function ProjectPage() {
       .filter((img): img is NonNullable<typeof img> => img !== null);
   }, [layoutItems]);
 
-  // 이미지 선택 핸들러 - 모바일에서는 center를 거쳐야 함, 데스크톱에서는 바로 cover로
+  // 이미지 선택 핸들러 - 프로젝트 페이지에서는 바로 cover로 진입
   const handleSelectImage = useCallback(
     (image: GallerySelection) => {
+      // 애니메이션 중이면 모든 클릭 무시 (중복 클릭 방지)
+      if (isAnimating) {
+        return;
+      }
+
       // 같은 이미지를 클릭한 경우
       if (selected?.projectId === image.projectId) {
-        // center 상태면 cover로 전환
-        if (mode === 'center') {
-          setMode('cover');
-        }
         // cover 상태면 아무 동작 안함
         return;
       }
 
       // 다른 이미지를 클릭한 경우
-      // 모바일에서는 center 모드로, 데스크톱에서는 바로 cover 모드로
-      const targetMode = isMobile ? 'center' : 'cover';
-      selectImage(image, targetMode);
+      // 현재 mode가 'default'일 때만 허용
+      if (mode === 'default') {
+        // 프로젝트 페이지에서는 모바일/데스크톱 모두 바로 cover 모드로 진입
+        selectImage(image, 'cover');
+      }
     },
-    [selected, mode, selectImage, setMode, isMobile],
+    [selected, mode, selectImage, isAnimating],
   );
 
   // 섹션 리스트 생성
@@ -267,11 +267,13 @@ export default function ProjectPage() {
             images={projectImages}
             onSelectImage={handleSelectImage}
             selectedProjectId={selected?.projectId ?? null}
+            selectedUniqueId={selected?.uniqueId ?? null}
             layoutConfig={PROJECT_LAYOUT_CONFIG}
+            sectionId={id}
           />
         </div>
       )),
-    [renderSections, setTriggerElement, handleSelectImage, selected?.projectId, projectImages],
+    [renderSections, setTriggerElement, handleSelectImage, selected?.projectId, selected?.uniqueId, projectImages],
   );
 
   // ESC 키로 줌 아웃
@@ -286,44 +288,25 @@ export default function ProjectPage() {
     return () => window.removeEventListener('keydown', handleEscape);
   }, [mode, zoomOut]);
 
-  // 뒤로가기 버튼 처리 - cover 모드에서 줌 아웃 및 URL 복원
+  // 뒤로가기 버튼 처리 - cover 모드에서 줌 아웃 (새로고침 방지)
   useEffect(() => {
-    let isHandlingPopState = false;
-
     const handlePopState = (e: PopStateEvent) => {
-      // 중복 처리 방지
-      if (isHandlingPopState) return;
-
-      const currentPath = window.location.pathname;
-
-      // cover 모드이거나 프로젝트 상세 페이지에서 뒤로가기한 경우
-      if (modeRef.current === 'cover' || (currentPath.startsWith('/project/') && currentPath !== '/project')) {
-        isHandlingPopState = true;
-
-        // 현재 경로가 이미 /project가 아닌 경우에만 pushState
-        if (currentPath !== '/project') {
-          // 즉시 /project URL로 pushState하여 새로고침 방지
-          // popstate 이벤트가 발생한 직후 pushState를 호출하면
-          // Next.js가 페이지를 새로고침하지 않고 클라이언트 사이드에서만 처리됨
-          window.history.pushState({ zoomed: false, preventRefresh: true }, '', '/project');
-        }
-
-        // 동기적으로 줌 아웃 실행
-        if (modeRef.current === 'cover') {
-          zoomOut();
-          setSelectedProject(null);
-          setImagesLoaded(false);
-        }
-
-        // 다음 이벤트 루프에서 플래그 리셋
-        setTimeout(() => {
-          isHandlingPopState = false;
-        }, 100);
+      const currentMode = modeRef.current;
+      
+      // 모달이 열려있는 상태에서 뒤로가기
+      if (currentMode === 'cover') {
+        // 🔑 핵심: Next.js가 URL 변경을 감지하기 전에 즉시 URL 복원
+        // 이렇게 하면 Next.js 라우터가 페이지 전환을 시도하지 않음
+        window.history.replaceState({ modal: false }, '', '/project');
+        
+        // 줌 아웃 실행
+        zoomOut();
       }
     };
 
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    // capture phase에서 먼저 처리하여 Next.js보다 우선 실행
+    window.addEventListener('popstate', handlePopState, { capture: true });
+    return () => window.removeEventListener('popstate', handlePopState, { capture: true });
   }, [zoomOut]);
 
   // 리사이즈 처리 - 상세 모달이 나온 상태에서 화면 사이즈 변경 시 해당 페이지로 이동
@@ -363,16 +346,24 @@ export default function ProjectPage() {
     };
   }, [mode, selectedProject, selected, zoomOut]);
 
+  // 줌 모드일 때 body 스크롤 잠금
+  useEffect(() => {
+    if (mode === 'cover' || isAnimating) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mode, isAnimating]);
+
   return (
     <>
       <Header isFixed={true} headerLogoTrigger={headerLogoTrigger} />
       <MobileMenu headerLogoTrigger={headerLogoTrigger} />
 
-      <div
-        className={cn(
-          'h-screen overflow-y-scroll',
-          mode === 'cover' || isAnimating ? 'pointer-events-none overflow-hidden' : 'pointer-events-auto',
-        )}>
+      <div className="h-[100svh] overflow-y-auto overflow-x-hidden overscroll-none">
         <motion.main
           ref={containerRef}
           animate={{
@@ -383,15 +374,12 @@ export default function ProjectPage() {
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           style={{
             transformOrigin: `${zoomStyle.originX}px ${zoomStyle.originY}px`,
-            width: '100vw',
-            height: '100vh',
             pointerEvents: isAnimating ? 'none' : 'auto',
             position: 'relative',
           }}>
           <div
             className={cn(
-              'overflow-y-scroll',
-              isAnimating ? 'pointer-events-none overflow-hidden' : 'pointer-events-auto',
+              isAnimating ? 'pointer-events-none' : 'pointer-events-auto',
               mode === 'cover' ? 'pointer-events-none' : 'pointer-events-auto',
             )}>
             {list}

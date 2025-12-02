@@ -131,9 +131,29 @@
 }
 
 html,
-body,
+body {
+  @apply w-full bg-white break-keep text-black;
+  /* 모바일에서 브라우저 UI가 변하지 않도록 fixed + svh 사용 */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 100svh;
+  height: 100vh; /* svh 미지원 브라우저 폴백 */
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+@supports (height: 100svh) {
+  html,
+  body {
+    height: 100svh;
+  }
+}
+
 #root {
-  @apply h-screen w-full bg-white break-keep text-black overflow-hidden overscroll-none;
+  @apply w-full bg-white break-keep text-black;
 }
 
 img {

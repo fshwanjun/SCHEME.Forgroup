@@ -79,12 +79,16 @@ export default function MobileMenu({
 
   return (
     <>
-      {/* 햄버거 메뉴 버튼 - 헤더 우측 네비게이션 위치와 동일하게 정렬 */}
+      {/* 햄버거 메뉴 버튼 - 헤더 로고와 동일한 높이에 배치 (pt-5 = 20px) */}
       {/* 참고: MOBILE_MENU_CONFIG.zIndex.button = 400 */}
       <button
         onClick={() => setIsMenuOpen(!isMenuOpen)}
-        className="pointer-events-auto fixed top-6 right-4 z-[400] flex h-8 w-8 items-center justify-center select-none"
-        style={{ mixBlendMode: 'normal' }}
+        className="pointer-events-auto fixed right-4 z-[400] flex h-8 w-8 items-center justify-center select-none"
+        style={{ 
+          mixBlendMode: 'normal',
+          position: 'fixed',
+          top: '20px', // 헤더 pt-5와 동일
+        }}
         aria-label={isMenuOpen ? '메뉴 닫기' : '메뉴 열기'}>
         <div className="relative flex h-3 w-6 items-center justify-center">
           <span
