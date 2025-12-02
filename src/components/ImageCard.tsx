@@ -54,14 +54,14 @@ export default function ImageCard({
     //   src,
     //   timestamp: Date.now(),
     // });
-    
+
     // 중복 클릭 방지: 마지막 클릭으로부터 500ms 이내면 무시
     const now = Date.now();
     if (now - lastClickTimeRef.current < CLICK_DEBOUNCE_MS) {
       return;
     }
     lastClickTimeRef.current = now;
-    
+
     e.stopPropagation(); // 이벤트 전파 중단 (window 클릭 리스너 실행 방지)
     if (onClickProject) {
       onClickProject(projectId, e.currentTarget.getBoundingClientRect());

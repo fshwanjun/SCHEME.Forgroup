@@ -101,23 +101,23 @@ export function useInfiniteScroll(options: UseInfiniteScrollOptions = {}): UseIn
     if (now - lastLoadTimeRef.current < 300) {
       return;
     }
-    
+
     if (isLoadingRef.current) {
       return;
     }
-    
+
     isLoadingRef.current = true;
     lastLoadTimeRef.current = now;
 
     setSectionIds((prev) => {
       const lastId = prev[prev.length - 1];
       const newId = lastId + 1;
-      
+
       // 최대 섹션 개수 초과 시 오래된 섹션 제거
       if (prev.length >= maxSections) {
         return [...prev.slice(1), newId];
       }
-      
+
       return [...prev, newId];
     });
 
@@ -135,7 +135,7 @@ export function useInfiniteScroll(options: UseInfiniteScrollOptions = {}): UseIn
       if (isLoadingRef.current || !triggerElement) return;
 
       const rect = triggerElement.getBoundingClientRect();
-      
+
       // 컨테이너 높이
       const containerHeight = scrollContainer.clientHeight;
 
@@ -163,7 +163,7 @@ export function useInfiniteScroll(options: UseInfiniteScrollOptions = {}): UseIn
     // 스크롤 이벤트 리스너 등록
     scrollContainer.addEventListener('scroll', throttledScroll, { passive: true });
     window.addEventListener('resize', throttledScroll, { passive: true });
-    
+
     return () => {
       clearTimeout(initialCheck);
       scrollContainer.removeEventListener('scroll', throttledScroll);

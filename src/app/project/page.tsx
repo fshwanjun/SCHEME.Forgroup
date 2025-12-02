@@ -94,26 +94,31 @@ export default function ProjectPage() {
     return project || null;
   }, [selected, projects]);
 
-  // cover 모드로 진입할 때 프로젝트 설정
+  // 모드 변경 시 history 및 프로젝트 상태 관리
+  const prevModeRef = useRef<string>('default');
+
   useEffect(() => {
+    const prevMode = prevModeRef.current;
+
+    // default → cover 전환 시 history entry 추가
+    if (prevMode === 'default' && mode === 'cover') {
+      window.history.pushState({ modal: true }, '', window.location.pathname);
+    }
+
+    // cover 모드로 진입할 때 프로젝트 설정
     if (mode === 'cover' && selectedProjectData) {
       setSelectedProject(selectedProjectData);
       setImagesLoaded(false);
-
-      // 뒤로가기 감지를 위한 history entry 추가 (URL은 변경하지 않음)
-      // URL을 변경하면 Next.js가 페이지 전환을 시도하므로 새로고침 발생
-      window.history.pushState({ modal: true }, '', window.location.pathname);
     } else if (mode === 'default' && selectedProject) {
       // default 모드로 돌아갈 때 프로젝트 초기화
       setSelectedProject(null);
       setImagesLoaded(false);
     }
-  }, [mode, selectedProjectData, selectedProject]);
 
-  // mode가 변경될 때 ref 업데이트
-  useEffect(() => {
+    // modeRef와 prevModeRef 모두 업데이트
     modeRef.current = mode;
-  }, [mode]);
+    prevModeRef.current = mode;
+  }, [mode, selectedProjectData, selectedProject]);
 
   // 프로젝트 목록 가져오기
   useEffect(() => {
@@ -292,7 +297,7 @@ export default function ProjectPage() {
   useEffect(() => {
     const handlePopState = () => {
       const currentMode = modeRef.current;
-      
+
       // 모달이 열려있는 상태에서 뒤로가기
       if (currentMode === 'cover') {
         // URL이 변경되지 않았으므로 단순히 줌 아웃만 실행
@@ -361,7 +366,7 @@ export default function ProjectPage() {
         ref={scrollContainerRef}
         className={cn(
           'h-[100svh] overflow-x-hidden overscroll-none',
-          isScrollLocked ? 'overflow-y-hidden' : 'overflow-y-auto'
+          isScrollLocked ? 'overflow-y-hidden' : 'overflow-y-auto',
         )}>
         <motion.main
           ref={containerRef}

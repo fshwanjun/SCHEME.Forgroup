@@ -84,7 +84,7 @@ export default function MobileMenu({
       <button
         onClick={() => setIsMenuOpen(!isMenuOpen)}
         className="pointer-events-auto fixed right-4 z-[400] flex h-8 w-8 items-center justify-center select-none"
-        style={{ 
+        style={{
           mixBlendMode: 'normal',
           position: 'fixed',
           top: '20px', // 헤더 pt-5와 동일

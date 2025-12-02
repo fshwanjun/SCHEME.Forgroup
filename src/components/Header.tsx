@@ -68,7 +68,7 @@ export default function Header({
         'w-full text-white mix-blend-difference',
         // 모든 페이지에서 mix-blend-difference 사용
         effectiveIsFixed
-          ? `pointer-events-none fixed left-0 right-0 top-0 ${zIndexClass} ${paddingClass}`
+          ? `pointer-events-none fixed top-0 right-0 left-0 ${zIndexClass} ${paddingClass}`
           : `relative ${zIndexClass} ${paddingClass}`,
       )}
       style={{

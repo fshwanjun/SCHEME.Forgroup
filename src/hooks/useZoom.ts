@@ -163,7 +163,7 @@ export function useZoom(options: UseZoomOptions = {}): UseZoomReturn {
       }
 
       // 저장된 원본 rect 사용
-      let rect = originalRectRef.current;
+      const rect = originalRectRef.current;
       if (!rect) {
         debugLog(debug, '[useZoom] 원본 rect가 없음');
         return;

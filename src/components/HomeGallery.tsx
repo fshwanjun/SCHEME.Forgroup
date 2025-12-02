@@ -244,13 +244,13 @@ function HomeGallery({
     // 기본 순차 할당 로직 (홈 페이지용)
     // 홈 페이지에서는 orientation에 맞는 이미지만 해당 프레임에 할당
     const assignments: (ProjectImage | null)[] = new Array(totalFrames).fill(null);
-    
+
     // 이미지를 orientation별로 분리
     // orientation이 설정된 이미지는 해당 프레임에만 할당
     // orientation이 없는 이미지는 양쪽 모두에 할당 (폴백)
     const verticalImages: ProjectImage[] = [];
     const horizontalImages: ProjectImage[] = [];
-    
+
     PROJECT_IMAGES.forEach((img) => {
       if (img && img.verticalSrc && img.horizontalSrc) {
         if (img.orientation === 'vertical') {
@@ -380,14 +380,14 @@ function HomeGallery({
           const orientation = imageOrientation;
           const aspectRatio = orientation === 'vertical' ? '3 / 4' : '4 / 3';
           const src = orientation === 'vertical' ? assignment.verticalSrc : assignment.horizontalSrc;
-          
+
           // 고유 ID 생성: 섹션ID + 프로젝트ID + 프레임인덱스
           const uniqueId = `section-${sectionId}-${assignment.projectId}-${index}`;
-          
+
           // 선택 상태 확인: uniqueId가 있으면 우선 사용, 없으면 projectId로 비교
-          const isSelected = selectedUniqueId 
+          const isSelected = selectedUniqueId
             ? selectedUniqueId === uniqueId
-            : (selectedProjectId != null && assignment.projectId === selectedProjectId);
+            : selectedProjectId != null && assignment.projectId === selectedProjectId;
           const isOtherSelected = (selectedProjectId != null || selectedUniqueId != null) && !isSelected;
 
           return (
