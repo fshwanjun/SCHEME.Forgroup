@@ -345,10 +345,17 @@ export default function ProjectPage() {
   // 줌 애니메이션 중이거나 cover 상태일 때 스크롤 잠금
   const isScrollLocked = mode === 'cover' || isAnimating;
 
+  // 프로젝트 링크 클릭 핸들러 - cover 상태에서 default로 돌아가기
+  const handleProjectClick = useCallback(() => {
+    if (mode === 'cover') {
+      zoomOut();
+    }
+  }, [mode, zoomOut]);
+
   return (
     <>
-      <Header isFixed={true} headerLogoTrigger={headerLogoTrigger} />
-      <MobileMenu headerLogoTrigger={headerLogoTrigger} />
+      <Header isFixed={true} headerLogoTrigger={headerLogoTrigger} onProjectClick={handleProjectClick} />
+      <MobileMenu headerLogoTrigger={headerLogoTrigger} onProjectClick={handleProjectClick} />
 
       <div
         ref={scrollContainerRef}
