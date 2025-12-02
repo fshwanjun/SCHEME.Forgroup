@@ -1,0 +1,36 @@
+/**
+ * src/index.css에서 폰트파일의 상대경로를 다루기 어렵기 떄문에
+ * 폰트 관련 스타일 파일은 이렇게, public 하위 스타일시트 파일을 이용한다.
+*/
+
+@font-face {
+  font-family: 'abcrom';
+  src: url('./fonts/ABCROM-NormalBold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'abcrom';
+  src: url('./fonts/ABCROM-NormalMedium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'abcrom';
+  src: url('./fonts/ABCROM-NormalBook.woff2') format('woff2');
+  font-weight: 450;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'abcrom';
+  src: url('./fonts/ABCROM-NormalRegular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
