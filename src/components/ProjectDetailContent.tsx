@@ -90,7 +90,7 @@ export default function ProjectDetailContent({
         <div className="relative h-full w-full overflow-hidden">
           {/* 실제 Hero 이미지 - 배경 이미지로 확대된 썸네일이 이미 표시되고 있음 */}
           <Image
-            className={`h-full w-full object-cover transition-opacity duration-700 ease-out ${
+            className={`pointer-events-none h-full w-full object-cover transition-opacity duration-700 ease-out ${
               heroImageLoaded || heroImageSrc === heroImage ? 'opacity-100' : 'opacity-0'
             }`}
             src={heroImage}
@@ -246,7 +246,7 @@ export default function ProjectDetailContent({
               <div
                 key={detailImage.id || index}
                 // 참고: max-h-[90vh] = PROJECT_DETAIL_CONFIG.image.maxHeight
-                className={`flex max-h-[90vh] w-full ${getPositionClasses()} ${getPaddingClasses()} md:shrink-0 ${getContainerHeightClass()} ${
+                className={`pointer-events-none flex max-h-[90vh] w-full select-none ${getPositionClasses()} ${getPaddingClasses()} md:shrink-0 ${getContainerHeightClass()} ${
                   position === 'full-cover'
                     ? 'relative overflow-hidden'
                     : position === 'full-padding'
@@ -292,7 +292,7 @@ export default function ProjectDetailContent({
                       style={{ width: '100%', height: 'auto', objectFit: 'cover' }}
                     />
                     {/* 데스크톱: absolute 포지셔닝 (fill 사용) */}
-                    <div className="relative hidden h-full w-full overflow-hidden md:block">
+                    <div className="relative hidden h-full w-full overflow-hidden select-none md:block">
                       <Image
                         className={`${getHeightClasses()} ${getWidthClasses()} ${getObjectFitClasses()}`}
                         src={detailImage.url}
@@ -305,7 +305,7 @@ export default function ProjectDetailContent({
                   </>
                 ) : (
                   <Image
-                    className={`${getHeightClasses()} ${getWidthClasses()} ${getObjectFitClasses()} ${getAspectRatioClasses()}`}
+                    className={`${getHeightClasses()} ${getWidthClasses()} ${getObjectFitClasses()} ${getAspectRatioClasses()} select-none`}
                     src={detailImage.url}
                     alt={`${contents.project || 'Project'} gallery image ${index + 1}`}
                     width={0}

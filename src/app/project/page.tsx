@@ -9,6 +9,7 @@ import MobileMenu from '@/components/MobileMenu';
 import ProjectDetailContent from '@/components/ProjectDetailContent';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useZoom } from '@/hooks/useZoom';
+import useWindowSize from '@/hooks/useWindowSize';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 
@@ -45,10 +46,19 @@ export default function ProjectPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [headerLogoTrigger, setHeaderLogoTrigger] = useState<number | undefined>(undefined);
   const modeRef = useRef<string>('default');
+  const windowSize = useWindowSize();
+  const [mounted, setMounted] = useState(false);
+
+  // 클라이언트 사이드에서만 모바일 여부 업데이트
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isMobile = mounted && windowSize.isSm;
 
   // useZoom 훅 사용 - 초기 모드는 default
   // cover 모드일 때는 리사이즈 시 페이지 이동을 위해 zoomOutOnResize를 false로 설정
-  const { selected, mode, zoomStyle, isAnimating, selectImage, zoomOut } = useZoom({
+  const { selected, mode, zoomStyle, isAnimating, selectImage, setMode, zoomOut } = useZoom({
     initialMode: 'default',
     centerPadding: 200,
     containerRef,
@@ -58,11 +68,12 @@ export default function ProjectPage() {
     debug: false,
   });
 
-  // 무한 스크롤 훅 사용
+  // 무한 스크롤 훅 사용 - 모바일에서는 더 빠른 트리거와 더 많은 초기 섹션
   const { setTriggerElement, renderSections } = useInfiniteScroll({
-    initialSectionIds: [0, 1, 2],
-    triggerIndex: 1,
-    triggerOffset: 1000,
+    initialSectionIds: isMobile ? [0, 1, 2, 3] : [0, 1, 2],
+    triggerIndex: isMobile ? 1 : 1,
+    triggerOffset: isMobile ? 2000 : 1000, // 모바일에서는 더 일찍 트리거
+    rootMargin: isMobile ? '0px 0px 1500px 0px' : '0px 0px 500px 0px', // 모바일에서는 더 큰 rootMargin
     disabled: mode !== 'default',
   });
 
@@ -70,8 +81,15 @@ export default function ProjectPage() {
   const selectedProjectData = useMemo(() => {
     if (!selected) return null;
 
-    // projectId가 slug인지 확인하고 프로젝트 찾기
-    const project = projects.find((p) => p.slug === selected.projectId || p.id.toString() === selected.projectId);
+    // projectSlug가 있으면 우선적으로 사용, 없으면 projectId 사용
+    const searchId = selected.projectSlug || selected.projectId;
+    const project = projects.find(
+      (p) =>
+        p.slug === searchId ||
+        p.id.toString() === searchId ||
+        p.slug === selected.projectId ||
+        p.id.toString() === selected.projectId,
+    );
     return project || null;
   }, [selected, projects]);
 
@@ -219,18 +237,25 @@ export default function ProjectPage() {
       .filter((img): img is NonNullable<typeof img> => img !== null);
   }, [layoutItems]);
 
-  // 이미지 선택 핸들러 - center를 건너뛰고 바로 cover로
+  // 이미지 선택 핸들러 - 모바일에서는 center를 거쳐야 함, 데스크톱에서는 바로 cover로
   const handleSelectImage = useCallback(
     (image: GallerySelection) => {
-      // 같은 이미지를 클릭한 경우: 이미 cover 상태이므로 아무 동작 안함
+      // 같은 이미지를 클릭한 경우
       if (selected?.projectId === image.projectId) {
+        // center 상태면 cover로 전환
+        if (mode === 'center') {
+          setMode('cover');
+        }
+        // cover 상태면 아무 동작 안함
         return;
       }
 
-      // 다른 이미지를 클릭한 경우: 새로운 이미지 선택하고 바로 cover 모드로
-      selectImage(image, 'cover');
+      // 다른 이미지를 클릭한 경우
+      // 모바일에서는 center 모드로, 데스크톱에서는 바로 cover 모드로
+      const targetMode = isMobile ? 'center' : 'cover';
+      selectImage(image, targetMode);
     },
-    [selected, mode, selectImage],
+    [selected, mode, selectImage, setMode, isMobile],
   );
 
   // 섹션 리스트 생성
@@ -386,6 +411,9 @@ export default function ProjectPage() {
           )}
           style={{
             backgroundColor: 'white',
+            overscrollBehavior: 'none',
+            overscrollBehaviorY: 'none',
+            WebkitOverflowScrolling: 'touch',
             ...(selected?.src && !imagesLoaded
               ? {
                   backgroundImage: `url(${selected.src})`,

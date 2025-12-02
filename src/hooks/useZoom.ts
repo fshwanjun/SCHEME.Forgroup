@@ -163,10 +163,27 @@ export function useZoom(options: UseZoomOptions = {}): UseZoomReturn {
       }
 
       // 저장된 원본 rect 사용
-      const rect = originalRectRef.current;
+      let rect = originalRectRef.current;
       if (!rect) {
         debugLog(debug, '[useZoom] 원본 rect가 없음');
         return;
+      }
+
+      // default 모드에서 cover 모드로 직접 전환하는 경우
+      // (center를 거치지 않고 바로 cover로 가는 경우)
+      // 이미지가 화면 밖에 있거나 부분적으로만 보일 수 있으므로
+      // 현재 이미지 요소의 실제 위치를 다시 가져와서 정확한 계산을 수행
+      if (prevMode === 'default' && targetMode === 'cover') {
+        const element = document.getElementById(`project-${selected.projectId}`);
+        if (element) {
+          const currentRect = element.getBoundingClientRect();
+          // 현재 rect가 유효한 경우에만 사용 (너비와 높이가 0보다 큰 경우)
+          if (currentRect.width > 0 && currentRect.height > 0) {
+            rect = currentRect;
+            // 원본 rect도 업데이트하여 일관성 유지
+            originalRectRef.current = rect;
+          }
+        }
       }
 
       // 스케일 계산
@@ -210,6 +227,7 @@ export function useZoom(options: UseZoomOptions = {}): UseZoomReturn {
       prevModeRef.current = targetMode;
 
       // 클릭한 이미지의 화면상 중심 좌표를 origin으로 사용
+      // getBoundingClientRect()는 뷰포트 기준이므로 스크롤 위치를 고려할 필요 없음
       const imageCenterX = rect.left + rect.width / 2;
       const imageCenterY = rect.top + rect.height / 2;
 
@@ -220,6 +238,7 @@ export function useZoom(options: UseZoomOptions = {}): UseZoomReturn {
       if (actualContainerRef.current) {
         const containerRect = actualContainerRef.current.getBoundingClientRect();
         // 컨테이너 내에서의 상대 좌표
+        // 컨테이너가 이미 transform되어 있을 수 있으므로 현재 뷰포트 기준으로 계산
         originX = imageCenterX - containerRect.left;
         originY = imageCenterY - containerRect.top;
       }

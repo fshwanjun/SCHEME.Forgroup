@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useCallback, useEffect, useId, useRef } from 'react';
+import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { HOVER_DISTORT_CONFIG } from '@/config/appConfig';
+import useWindowSize from '@/hooks/useWindowSize';
 
 export default function HoverDistortImage({
   src,
@@ -45,6 +46,17 @@ export default function HoverDistortImage({
   distortionEnabled?: boolean;
   easingFactor?: number;
 }) {
+  const windowSize = useWindowSize();
+  const [mounted, setMounted] = useState(false);
+
+  // 모바일에서는 distortion 효과 비활성화
+  const isMobile = mounted && windowSize.isSm;
+  const actualDistortionEnabled = distortionEnabled && !isMobile;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const id = useId().replace(/:/g, '-');
   const filterId = `hover-distort-${id}`;
   const maskFilterId = `hover-distort-mask-filter-${id}`;
@@ -70,7 +82,7 @@ export default function HoverDistortImage({
 
   // distortionEnabled가 false에서 true로 변경될 때 모든 상태 리셋
   useEffect(() => {
-    if (!distortionEnabled) {
+    if (!actualDistortionEnabled) {
       // distortion이 비활성화될 때 타이머 정리
       if (mouseMoveTimerRef.current) {
         clearTimeout(mouseMoveTimerRef.current);
@@ -95,11 +107,11 @@ export default function HoverDistortImage({
         animRafRef.current = null;
       }
     };
-  }, [distortionEnabled]);
+  }, [actualDistortionEnabled]);
 
   // distortion이 활성화될 때 모든 상태를 초기값으로 리셋 (별도 useEffect로 분리)
   useEffect(() => {
-    if (!distortionEnabled) return;
+    if (!actualDistortionEnabled) return;
 
     // 약간의 지연을 두어 DOM이 완전히 렌더링되도록 함
     const timeoutId = setTimeout(() => {
@@ -159,20 +171,20 @@ export default function HoverDistortImage({
     return () => {
       clearTimeout(timeoutId);
     };
-  }, [distortionEnabled]);
+  }, [actualDistortionEnabled]);
 
   useEffect(() => {
-    if (!distortionEnabled) return;
+    if (!actualDistortionEnabled) return;
     if (!canvasRef.current) {
       const c = document.createElement('canvas');
       c.width = HOVER_DISTORT_CONFIG.canvas.minSize;
       c.height = HOVER_DISTORT_CONFIG.canvas.minSize;
       canvasRef.current = c;
     }
-  }, [distortionEnabled]); // Track element size and adjust canvas resolution
+  }, [actualDistortionEnabled]); // Track element size and adjust canvas resolution
 
   useEffect(() => {
-    if (!distortionEnabled) return;
+    if (!actualDistortionEnabled) return;
     if (!wrapperRef.current) return;
     if (!canvasRef.current) return;
 
@@ -229,11 +241,11 @@ export default function HoverDistortImage({
       clearTimeout(timeoutId);
       ro.disconnect();
     };
-  }, [distortionEnabled]);
+  }, [actualDistortionEnabled]);
 
   const updateDisplacementMap = useCallback(
     (xPct: number, yPct: number) => {
-      if (!distortionEnabled) return;
+      if (!actualDistortionEnabled) return;
       const c = canvasRef.current;
       const imgEl = feImageRef.current;
       if (!c || !imgEl) return;
@@ -282,11 +294,11 @@ export default function HoverDistortImage({
         maskFeImageRef.current.setAttribute('href', url);
       }
     },
-    [radiusPx, distortionEnabled],
+    [radiusPx, actualDistortionEnabled],
   );
 
   const startAnimIfNeeded = useCallback(() => {
-    if (!distortionEnabled) return;
+    if (!actualDistortionEnabled) return;
     if (!canvasRef.current || !feImageRef.current || !feDispRef.current) return;
     if (!maskFeImageRef.current || !maskFeDispRef.current) return;
     if (animatingRef.current) return;
@@ -332,11 +344,11 @@ export default function HoverDistortImage({
       animRafRef.current = requestAnimationFrame(step);
     };
     animRafRef.current = requestAnimationFrame(step);
-  }, [distortionEnabled, easingFactor, updateDisplacementMap]);
+  }, [actualDistortionEnabled, easingFactor, updateDisplacementMap]);
 
   const handleEnter = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!distortionEnabled) return;
+      if (!actualDistortionEnabled) return;
       if (!wrapperRef.current) return;
       if (!canvasRef.current || !feImageRef.current || !feDispRef.current) return;
 
@@ -352,12 +364,12 @@ export default function HoverDistortImage({
 
       startAnimIfNeeded();
     },
-    [startAnimIfNeeded, distortionEnabled],
+    [startAnimIfNeeded, actualDistortionEnabled],
   );
 
   const handleMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!distortionEnabled) return;
+      if (!actualDistortionEnabled) return;
       if (!wrapperRef.current) return;
       if (!canvasRef.current || !feImageRef.current || !feDispRef.current) return;
 
@@ -397,11 +409,11 @@ export default function HoverDistortImage({
         startAnimIfNeeded();
       }
     },
-    [distortionScale, startAnimIfNeeded, distortionEnabled],
+    [distortionScale, startAnimIfNeeded, actualDistortionEnabled],
   );
 
   const handleLeave = useCallback(() => {
-    if (!distortionEnabled) return;
+    if (!actualDistortionEnabled) return;
     targetScaleRef.current = 0;
     prevMousePosRef.current = null;
     if (mouseMoveTimerRef.current) {
@@ -409,9 +421,9 @@ export default function HoverDistortImage({
       mouseMoveTimerRef.current = null;
     }
     startAnimIfNeeded();
-  }, [startAnimIfNeeded, distortionEnabled]);
+  }, [startAnimIfNeeded, actualDistortionEnabled]);
 
-  const eventHandlers = distortionEnabled
+  const eventHandlers = actualDistortionEnabled
     ? {
         onMouseEnter: handleEnter,
         onMouseMove: handleMove,
@@ -434,7 +446,7 @@ export default function HoverDistortImage({
         } as React.CSSProperties
       }>
       <svg className="block h-full w-full" xmlns="http://www.w3.org/2000/svg" style={{ imageRendering: 'auto' }}>
-        {distortionEnabled ? (
+        {actualDistortionEnabled ? (
           <defs>
             {/* 메인 이미지용 필터 */}
             <filter
@@ -500,12 +512,12 @@ export default function HoverDistortImage({
                 width="100%"
                 height="100%"
                 fill="white"
-                filter={distortionEnabled ? `url(#${maskFilterId})` : undefined}
+                filter={actualDistortionEnabled ? `url(#${maskFilterId})` : undefined}
               />
             </mask>
           </defs>
         ) : null}
-        <g mask={distortionEnabled ? `url(#${maskId})` : undefined}>
+        <g mask={actualDistortionEnabled ? `url(#${maskId})` : undefined}>
           <image
             href={src}
             x="0"
@@ -513,7 +525,7 @@ export default function HoverDistortImage({
             width="100%"
             height="100%"
             preserveAspectRatio={preserveAspect}
-            filter={distortionEnabled ? `url(#${filterId})` : undefined}
+            filter={actualDistortionEnabled ? `url(#${filterId})` : undefined}
             imageRendering="optimizeQuality"
           />
         </g>

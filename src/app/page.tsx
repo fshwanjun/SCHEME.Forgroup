@@ -253,6 +253,23 @@ export default function Home() {
       const currentPath = window.location.pathname;
       const historyState = e.state;
 
+      // 홈 페이지에서 뒤로가기를 할 때 항상 새로고침 방지
+      if (currentPath === '/') {
+        // 홈 페이지에서 뒤로가기를 하면 새로고침을 방지하기 위해
+        // 히스토리 상태를 유지하고 preventDefault 효과를 주기 위해
+        // replaceState를 사용하여 현재 상태를 유지
+        window.history.replaceState({ zoomed: false, preventRefresh: true }, '', '/');
+        
+        // cover 모드인 경우에만 줌 아웃
+        if (modeRef.current === 'cover') {
+          zoomOut();
+          setSelectedProject(null);
+          setImagesLoaded(false);
+        }
+        
+        return; // router 호출 없이 종료
+      }
+
       // cover 모드이거나 프로젝트 상세 페이지에서 뒤로가기한 경우
       // 또는 history state에 modal/zoomed 플래그가 있는 경우
       if (
@@ -262,17 +279,15 @@ export default function Home() {
       ) {
         isHandlingPopState = true;
 
-        // 즉시 홈 URL로 replaceState하여 새로고침 방지
-        // replaceState를 사용하면 현재 history entry를 교체하므로
-        // Next.js가 새로고침을 시도하지 않음
-        window.history.replaceState({ zoomed: false, preventRefresh: true }, '', '/');
-
         // 동기적으로 줌 아웃 실행
         if (modeRef.current === 'cover') {
           zoomOut();
           setSelectedProject(null);
           setImagesLoaded(false);
         }
+
+        // 즉시 홈 URL로 replaceState하여 새로고침 방지
+        window.history.replaceState({ zoomed: false, preventRefresh: true }, '', '/');
 
         // router.replace를 사용하여 클라이언트 사이드 네비게이션 보장
         // replaceState 후 약간의 지연을 두어 Next.js가 이를 감지하도록 함
@@ -346,8 +361,18 @@ export default function Home() {
 
       // ImageCard에서 stopPropagation을 사용하므로, 이 핸들러가 호출되면 외부 클릭으로 간주
       // 하지만 transform으로 인해 이동한 이미지의 실제 화면상 위치도 확인
-      if (selectedImageElement.contains(target)) {
+      // 타겟이 이미지 요소나 그 자식 요소인지 확인
+      if (selectedImageElement.contains(target) || selectedImageElement === target) {
         return; // 선택된 이미지를 클릭한 경우 무시
+      }
+
+      // 타겟의 부모 요소들을 확인하여 이미지 요소인지 확인
+      let currentElement: HTMLElement | null = target;
+      while (currentElement && currentElement !== document.body) {
+        if (currentElement === selectedImageElement || currentElement.id === `project-${selected.projectId}`) {
+          return; // 이미지 요소 내부를 클릭한 경우 무시
+        }
+        currentElement = currentElement.parentElement;
       }
 
       // 클릭 위치가 선택된 이미지의 실제 화면상 위치와 겹치는지 확인
@@ -365,6 +390,9 @@ export default function Home() {
         if (touch) {
           clickX = touch.clientX;
           clickY = touch.clientY;
+        } else {
+          // 터치 정보가 없으면 무시
+          return;
         }
       }
 
@@ -435,6 +463,9 @@ export default function Home() {
           )}
           style={{
             backgroundColor: 'white',
+            overscrollBehavior: 'none',
+            overscrollBehaviorY: 'none',
+            WebkitOverflowScrolling: 'touch',
             ...(selected?.src && !imagesLoaded
               ? {
                   backgroundImage: `url(${selected.src})`,

@@ -133,7 +133,7 @@
 html,
 body,
 #root {
-  @apply h-screen w-full break-keep text-black;
+  @apply h-screen w-full bg-white break-keep text-black overflow-hidden overscroll-none;
 }
 
 img {
@@ -145,7 +145,6 @@ img {
   user-select: none;
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
-  user-select: none;
 }
 
 * {

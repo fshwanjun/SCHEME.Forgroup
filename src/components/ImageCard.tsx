@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useRef } from 'react';
 import HoverDistortImage from './HoverDistortImage';
 import Image from 'next/image';
 import { IMAGE_CARD_CONFIG, APP_CONFIG } from '@/config/appConfig';
+import useWindowSize from '@/hooks/useWindowSize';
 
 export default function ImageCard({
   projectId,
@@ -24,6 +25,15 @@ export default function ImageCard({
   onClickProject?: (projectId?: string | number, rect?: DOMRect) => void;
   enableHoverEffect?: boolean;
 }) {
+  const windowSize = useWindowSize();
+  // 모바일에서는 distortion 효과 비활성화
+  const isMobile = windowSize.isSm;
+  const shouldEnableDistortion = enableHoverEffect && !isMobile;
+
+  // 터치 이벤트 추적을 위한 ref
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const touchMovedRef = useRef<boolean>(false);
+
   const hasVertical = Boolean(verticalSrc);
   const hasHorizontal = Boolean(horizontalSrc);
   const resolvedOrientation = orientation ?? (hasVertical ? 'vertical' : hasHorizontal ? 'horizontal' : 'vertical');
@@ -53,6 +63,58 @@ export default function ImageCard({
     }
   };
 
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    // 터치 시작 위치 저장
+    const touch = e.touches[0];
+    if (touch) {
+      touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+      touchMovedRef.current = false;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    // 터치 이동 거리 계산
+    if (!touchStartRef.current) return;
+
+    const touch = e.touches[0];
+    if (touch) {
+      const deltaX = Math.abs(touch.clientX - touchStartRef.current.x);
+      const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
+      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+      // 10px 이상 이동하면 스크롤로 간주
+      if (distance > 10) {
+        touchMovedRef.current = true;
+      }
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    e.stopPropagation(); // 터치 이벤트 전파 중단
+
+    // 스크롤이었다면 클릭 처리 안 함
+    if (touchMovedRef.current) {
+      touchStartRef.current = null;
+      touchMovedRef.current = false;
+      return;
+    }
+
+    // 클릭으로 간주하고 처리
+    if (onClickProject) {
+      onClickProject(projectId, e.currentTarget.getBoundingClientRect());
+    } else {
+      window.dispatchEvent(
+        new CustomEvent('image-card-click', {
+          detail: { projectId, rect: e.currentTarget.getBoundingClientRect() },
+        }),
+      );
+    }
+
+    // 리셋
+    touchStartRef.current = null;
+    touchMovedRef.current = false;
+  };
+
   if (!src) return null;
 
   const altText = projectId ? `Project ${projectId} preview` : 'Project preview';
@@ -70,6 +132,7 @@ export default function ImageCard({
   // });
 
   // 깜빡임 방지: enableHoverEffect가 변경되어도 HoverDistortImage를 유지하고 distortionEnabled만 제어
+  // 모바일에서는 distortion 효과 비활성화
   const imageContent = (
     <HoverDistortImage
       src={src}
@@ -77,7 +140,7 @@ export default function ImageCard({
       aspectRatio={computedAspect}
       className="h-full w-full object-cover"
       preserveAspect="xMidYMid slice"
-      distortionEnabled={enableHoverEffect}
+      distortionEnabled={shouldEnableDistortion}
     />
   );
 
@@ -85,6 +148,9 @@ export default function ImageCard({
     <div
       id={projectId ? `project-${projectId}` : undefined}
       onClick={handleClick}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       className={`relative block ${className ?? ''}`}
       style={{ aspectRatio: computedAspect, lineHeight: 0, cursor: 'pointer' }}
       aria-label={projectId ? `Open project ${projectId}` : 'Open project'}>

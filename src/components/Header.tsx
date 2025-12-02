@@ -46,25 +46,36 @@ export default function Header({
   // 프로젝트와 studio 페이지에서 z-index 조정
   // 참고: HEADER_CONFIG.zIndex = { detailPage: 400, projectOrStudio: 50, default: 350 }
   const isProjectOrStudio = pathname.startsWith('/project') || pathname === '/studio';
+  const isStudio = pathname === '/studio';
   // 상세 페이지는 z-index를 더 높게 설정하여 모달 위에 표시
   const isDetailPage = pathname.startsWith('/project/') && pathname !== '/project';
+  // 모바일에서는 모바일 메뉴 버튼(z-[400])보다 위에 오도록 z-index 설정
   const zIndexClass = isDetailPage
     ? 'z-[400]' // HEADER_CONFIG.zIndex.detailPage
     : isProjectOrStudio
-      ? 'z-50' // HEADER_CONFIG.zIndex.projectOrStudio
+      ? 'z-[450]' // 모바일 메뉴 버튼(z-[400])보다 위에 오도록 조정
       : 'z-[350]'; // HEADER_CONFIG.zIndex.default
+
+  // 모바일에서는 항상 fixed, 데스크톱에서만 isFixed prop에 따라 결정
+  const effectiveIsFixed = mounted ? (isMobile ? true : isFixed) : isFixed;
+
+  // studio 모바일에서는 px를 제거
+  const paddingClass = isStudio && isMobile ? 'px-4 pt-5 md:px-5' : 'px-4 pt-5 md:px-5';
 
   return (
     <header
       className={cn(
         'w-full text-white mix-blend-difference',
-        isFixed ? `pointer-events-none fixed top-0 ${zIndexClass} px-4 pt-5 md:px-5` : `relative ${zIndexClass}`,
+        // 모든 페이지에서 mix-blend-difference 사용
+        effectiveIsFixed
+          ? `pointer-events-none fixed top-0 ${zIndexClass} ${paddingClass}`
+          : `relative ${zIndexClass} ${paddingClass}`,
       )}
       style={{
-        // mix-blend-difference가 transform된 요소와 올바르게 작동하도록
-        // transform을 사용하여 새로운 stacking context를 만들되,
-        // 헤더가 transform된 요소의 배경과 blend되도록 함
-        transform: 'translateZ(0)',
+        // relative일 때도 명시적으로 position 설정
+        position: effectiveIsFixed ? 'fixed' : 'relative',
+        // mix-blend-difference가 제대로 작동하려면 isolation을 사용하지 않아야 함
+        // transform은 모바일에서 블렌드 모드를 방해할 수 있으므로 제거
       }}
       suppressHydrationWarning>
       <div className="relative mx-auto flex items-start justify-between">
@@ -72,7 +83,7 @@ export default function Header({
         <Link href="/" className="pointer-events-auto h-full w-[120px] min-w-[120px] select-none md:w-[15vh]">
           <LogoInline
             playTrigger={pathname === '/' || isProjectOrStudio ? headerLogoTrigger : undefined}
-            invert={true} // 헤더에서는 항상 인버트 적용
+            invert={true} // 모든 페이지에서 인버트 적용 (mix-blend-difference와 함께 사용)
             // key prop 제거: 재마운트 방지 (playTrigger로 애니메이션 제어)
           />
         </Link>

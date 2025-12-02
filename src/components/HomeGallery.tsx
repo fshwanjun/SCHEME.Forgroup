@@ -237,36 +237,85 @@ function HomeGallery({
     }
 
     // 기본 순차 할당 로직 (홈 페이지용)
-    const assignments: (ProjectImage | null)[] = [];
-    const shuffleCache: ProjectImage[][] = [];
+    // 홈 페이지에서는 orientation에 맞는 이미지만 해당 프레임에 할당
+    const assignments: (ProjectImage | null)[] = new Array(totalFrames).fill(null);
+    
+    // 이미지를 orientation별로 분리
+    const verticalImages: ProjectImage[] = [];
+    const horizontalImages: ProjectImage[] = [];
+    
+    PROJECT_IMAGES.forEach((img) => {
+      if (img && img.verticalSrc && img.horizontalSrc) {
+        if (img.orientation === 'vertical') {
+          verticalImages.push(img);
+        } else if (img.orientation === 'horizontal') {
+          horizontalImages.push(img);
+        } else {
+          // orientation이 없으면 둘 다에 추가 (하지만 실제로는 사용하지 않음)
+          verticalImages.push(img);
+          horizontalImages.push(img);
+        }
+      }
+    });
 
-    // FRAME_CLASSES 배열의 길이에 맞춰 이미지를 할당합니다. (할당 순서는 건너뛰기와 무관하게 결정)
+    // 각 프레임에 맞는 orientation의 이미지 할당
+    let verticalIndex = 0;
+    let horizontalIndex = 0;
+    const verticalShuffleCache: ProjectImage[][] = [];
+    const horizontalShuffleCache: ProjectImage[][] = [];
+
     for (let index = 0; index < totalFrames; index++) {
-      const cycle = Math.floor(index / projectCount);
-      const withinCycle = index % projectCount;
+      // 건너뛸 프레임은 null로 할당하고 건너뛰기
+      if (framesToSkip.has(index)) {
+        assignments[index] = null;
+        continue;
+      }
 
-      if (cycle === 0) {
-        const img = PROJECT_IMAGES[withinCycle];
-        if (img && img.verticalSrc && img.horizontalSrc) {
-          assignments.push(img);
-        } else {
-          // 이미지가 없으면 빈 객체를 push하지 않고 null을 push하여 나중에 필터링
-          assignments.push(null as unknown as ProjectImage);
+      const frameClass = currentFrameClasses[index];
+      const frameOrientation = frameClass.includes('aspect-[3/4]') ? 'vertical' : 'horizontal';
+
+      if (frameOrientation === 'vertical') {
+        // 세로형 프레임에는 세로형 이미지만 할당
+        if (verticalImages.length === 0) {
+          assignments[index] = null; // 세로형 이미지가 없으면 null
+          continue;
         }
+
+        const cycle = Math.floor(verticalIndex / verticalImages.length);
+        const withinCycle = verticalIndex % verticalImages.length;
+
+        if (cycle === 0) {
+          assignments[index] = verticalImages[withinCycle];
+        } else {
+          if (!verticalShuffleCache[cycle]) {
+            verticalShuffleCache[cycle] = shuffleWithSeed(verticalImages, cycle);
+          }
+          assignments[index] = verticalShuffleCache[cycle][withinCycle];
+        }
+        verticalIndex++;
       } else {
-        if (!shuffleCache[cycle]) {
-          shuffleCache[cycle] = shuffleWithSeed(PROJECT_IMAGES, cycle);
+        // 가로형 프레임에는 가로형 이미지만 할당
+        if (horizontalImages.length === 0) {
+          assignments[index] = null; // 가로형 이미지가 없으면 null
+          continue;
         }
-        const img = shuffleCache[cycle][withinCycle];
-        if (img && img.verticalSrc && img.horizontalSrc) {
-          assignments.push(img);
+
+        const cycle = Math.floor(horizontalIndex / horizontalImages.length);
+        const withinCycle = horizontalIndex % horizontalImages.length;
+
+        if (cycle === 0) {
+          assignments[index] = horizontalImages[withinCycle];
         } else {
-          assignments.push(null as unknown as ProjectImage);
+          if (!horizontalShuffleCache[cycle]) {
+            horizontalShuffleCache[cycle] = shuffleWithSeed(horizontalImages, cycle);
+          }
+          assignments[index] = horizontalShuffleCache[cycle][withinCycle];
         }
+        horizontalIndex++;
       }
     }
     return assignments;
-  }, [projectCount, totalFrames, PROJECT_IMAGES, isProjectLayout]); // isProjectLayout 사용
+  }, [projectCount, totalFrames, PROJECT_IMAGES, isProjectLayout, currentFrameClasses, framesToSkip]); // currentFrameClasses와 framesToSkip 추가
 
   // 이미지가 없으면 빈 갤러리 렌더링
   if (projectCount === 0) {
