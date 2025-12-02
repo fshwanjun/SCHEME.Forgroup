@@ -1,139 +1,204 @@
 'use client';
 
-import Homecontainer from '@/components/Homecontainer';
-import useWindowSize from '@/util/useWindowSize';
 import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { supabase } from '@/lib/supabase';
+
+import Header from '@/components/Header';
+import MobileMenu from '@/components/MobileMenu';
+import HomeContainer from '@/components/HomeContainer';
+import Image from 'next/image';
+
+// 리스트 아이템 타입 정의
+interface ListItem {
+  id: string;
+  text: string;
+}
+
+// 데이터 타입 정의
+interface AboutData {
+  imageUrl: string;
+  description: string;
+  experience: ListItem[] | string; // 호환성 유지 (string일 경우도 처리)
+  services: ListItem[] | string;
+  clients: ListItem[] | string;
+  address: string;
+  contact: string;
+  social: string;
+}
+
+// 기본값
+const defaultData: AboutData = {
+  imageUrl: '/images/dummy/studio.jpg',
+  description: '',
+  experience: [],
+  services: [],
+  clients: [],
+  address: '',
+  contact: '',
+  social: '',
+};
+
+// 리스트 렌더링 헬퍼 컴포넌트
+function RenderList({ items }: { items: ListItem[] | string }) {
+  // 1. 문자열인 경우 (구버전 호환)
+  if (typeof items === 'string') {
+    return <span>{items}</span>;
+  }
+
+  // 2. 배열이지만 비어있는 경우
+  if (!Array.isArray(items) || items.length === 0) {
+    return null;
+  }
+
+  // 3. 리스트 아이템 렌더링
+  return (
+    <ul className="flex flex-col space-y-1">
+      {items.map((item) => (
+        <li key={item.id}>{item.text}</li>
+      ))}
+    </ul>
+  );
+}
 
 export default function StudioPage() {
-  const { height } = useWindowSize();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  const isShort = mounted && height < 880;
+  const [data, setData] = useState<AboutData>(defaultData);
+  const [headerLogoTrigger, setHeaderLogoTrigger] = useState<number | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const { data: configData, error } = await supabase.from('config').select('content').eq('id', 'about').single();
+
+        if (error) {
+          setIsLoading(false);
+          return;
+        }
+
+        let parsedData: AboutData = defaultData;
+
+        if (configData?.content) {
+          try {
+            // jsonb 타입이므로 이미 객체로 반환됨 (또는 string일 수도 있음)
+            const content = configData.content;
+            const parsed = typeof content === 'string' ? JSON.parse(content) : content;
+            parsedData = { ...defaultData, ...parsed };
+          } catch {
+            // 파싱 실패 시 description으로 간주 (구버전 호환)
+            if (typeof configData.content === 'string') {
+              parsedData.description = configData.content;
+            }
+          }
+        }
+
+        setData(parsedData);
+        // 헤더 로고 애니메이션 트리거
+        setHeaderLogoTrigger(Date.now());
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   return (
-    <Homecontainer addClassName="studio-typography flex md:flex-row flex-col gap-[var(--x-padding)] md:h-full h-fit overflow-x-hidden">
-      <div className="h-full md:block hidden md:shrink-0 overflow-hidden">
-        <img
-          className="lg:h-full h-auto lg:w-auto w-[40vw] object-contain max-w-none"
-          src="/images/dummy/studio.jpg"
-          alt="studio"
-          draggable={false}
-        />
-      </div>
-      <div className="flex flex-col justify-between">
-        <h3>
-          FOR is a creative collaboration between Moon Kim and Phan Thao Dang. The Korean-German duo strives to create
-          distinctive perspectives and attitudes that deliver ideas through in-depth analysis and open dialogue.
-          Adapting flexibly and practically to the unique context and challenges of each project, their work spans
-          industrial, spatial, and experimental design, grounded in in-depth research, creative experimentation, and
-          fluid collaboration. With expertise spanning diverse fields, FOR identifies what collaborators genuinely seek
-          and creates outcomes that are both insightful and original. By combining their diverse backgrounds and
-          expertise, FOR pushes the boundaries of method and expression.
-        </h3>
-        <img className="w-full h-auto md:hidden block" src="/images/dummy/studio.jpg" alt="studio" draggable={false} />
-        <div className="w-full grid grid-cols-3 gap-y-10 gap-x-4">
-          <div className="flex flex-col gap-2">
-            <h5>Experience</h5>
-            <div className="flex flex-col">
-              <span>
-                Lorem ipsum dolor <br />
-                sit amet, consectetur <br />
-                adipiscing elit, <br />
-                sed do eiusmod tempor <br />
-                dolore magna aliqua. <br />
-                Nisl tincidunt eget nullam
-                <br />
-                magna eget est lorem <br />
-                ipsum dolor sit. <br />
-                Volutpat odio facilisis mauris <br />
-                sit amet massa.{' '}
-              </span>
+    <div className="flex h-screen flex-col md:gap-4">
+      <Header isFixed={false} headerLogoTrigger={headerLogoTrigger} />
+      <MobileMenu headerLogoTrigger={headerLogoTrigger} />
+      <HomeContainer
+        isFixed={false}
+        addClassName="studio-typography p-5 flex-1 flex flex-col gap-5 overflow-y-auto md:overflow-y-hidden pt-20 md:pt-0">
+        <motion.div
+          className="page-studio"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isLoading ? 0 : 1 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}>
+          {/* [좌측] 데스크탑 이미지 영역 (40%) */}
+          <div className="pointer-events-none relative hidden h-full min-h-0 w-fit overflow-hidden select-none md:flex md:max-w-[50%] md:min-w-0">
+            {data.imageUrl ? (
+              <Image
+                className="h-full w-auto max-w-full object-cover object-top"
+                src={data.imageUrl}
+                alt="Studio preview"
+                width={1200}
+                height={1600}
+                sizes="40vw"
+                priority
+                quality={85}
+                draggable={false}
+              />
+            ) : (
+              // 이미지가 없을 때도 같은 영역 차지, 빈 공간 유지
+              <div className="h-full w-full bg-transparent" />
+            )}
+          </div>
+
+          {/* [우측] 컨텐츠 영역 (60%) */}
+          <div className="flex w-full min-w-0 flex-col justify-between gap-y-15 md:max-w-[50%] md:min-w-0 md:gap-5 md:gap-y-0 md:overflow-hidden">
+            {/* 1. 메인 설명 (스크롤 가능 영역) */}
+            <div className="custom-scroll min-h-[20vh] overflow-hidden pb-12 md:flex md:flex-col md:overflow-auto md:pr-3 md:pb-0">
+              <h3>{data.description}</h3>
+            </div>
+
+            {/* [모바일 전용] 이미지 */}
+            {data.imageUrl && (
+              <Image
+                className="pointer-events-none block h-auto w-full md:hidden"
+                src={data.imageUrl}
+                alt="Studio preview mobile"
+                width={1200}
+                height={1600}
+                sizes="100vw"
+                priority
+                draggable={false}
+              />
+            )}
+
+            {/* 2. 하단 3열 그리드 정보 */}
+            <div className="grid w-full gap-x-4 gap-y-10 md:grid-cols-3">
+              <div className="grid grid-cols-5 flex-row md:flex md:flex-col md:gap-4">
+                <h5 className="col-span-2">Experience</h5>
+                <div className="col-span-3 flex flex-col">
+                  <RenderList items={data.experience} />
+                </div>
+              </div>
+              <div className="grid grid-cols-5 flex-row md:flex md:flex-col md:gap-4">
+                <h5 className="col-span-2">Services</h5>
+                <div className="col-span-3 flex flex-col">
+                  <RenderList items={data.services} />
+                </div>
+              </div>
+              <div className="grid grid-cols-5 flex-row md:flex md:flex-col md:gap-4">
+                <h5 className="col-span-2">Clients</h5>
+                <div className="col-span-3 flex flex-col">
+                  <RenderList items={data.clients} />
+                </div>
+              </div>
+              <div className="hidden flex-col gap-4 md:flex">
+                <h5>Address</h5>
+                <span className="flex flex-col">{data.address}</span>
+              </div>
+              <div className="hidden flex-col gap-4 md:flex">
+                <h5>Contact</h5>
+                <span className="flex flex-col">{data.contact}</span>
+              </div>
+              <div className="hidden flex-col gap-4 md:flex">
+                <h5>Social</h5>
+                <span className="flex flex-col">{data.social}</span>
+              </div>
+
+              <div className="flex flex-col gap-8 py-16 md:hidden">
+                <h4 className="text-center leading-[130%] font-semibold">{data.contact}</h4>
+                <h4 className="text-center leading-[130%] font-semibold">{data.address}</h4>
+                <h4 className="text-center leading-[130%] font-semibold">{data.social}</h4>
+              </div>
             </div>
           </div>
-          <div className="flex flex-col gap-2">
-            <h5>Services</h5>
-            <div className="flex flex-col">
-              <span>
-                Brand identitly
-                <br />
-                Art direction
-                <br />
-                Product design
-                <br />
-                Brand identitly
-                <br />
-                Art direction
-                <br />
-                Product design
-                <br />
-                Brand identitly
-                <br />
-                Art direction
-                <br />
-                Product design
-                <br />
-              </span>
-            </div>
-          </div>
-          <div className="flex flex-col gap-2">
-            <h5>Clients</h5>
-            <div className="flex flex-col">
-              <span>
-                Google
-                <br />
-                Apple
-                <br />
-                Acne Studios
-                <br />
-                Scheme
-                <br />
-                Adidas
-                <br />
-                Nike
-                <br />
-                Cos
-                <br />
-                Cocacola
-                <br />
-                032C
-                <br />
-                Arcteryx
-                <br />
-                Stussy
-              </span>
-            </div>
-          </div>
-          <div className="flex flex-col gap-2">
-            <h5>Address</h5>
-            <div className="flex flex-col">
-              <span>
-                55, Dosan-daero 26-gil, Gangnam-gu,
-                <br />
-                Seoul, Republic of Korea
-              </span>
-            </div>
-          </div>
-          <div className="flex flex-col gap-2">
-            <h5>Contact</h5>
-            <div className="flex flex-col">
-              <span>
-                for@abcdefghijk.com
-                <br />
-                +00 (0)00 000 00000
-              </span>
-            </div>
-          </div>
-          <div className="flex flex-col gap-2">
-            <h5>Social</h5>
-            <div className="flex flex-col">
-              <span>
-                @FORFORFOR
-                <br />
-                @FORFORFORfor
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Homecontainer>
+        </motion.div>
+      </HomeContainer>
+    </div>
   );
 }

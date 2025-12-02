@@ -1,58 +1,29 @@
 import type { Metadata } from 'next';
-// import { Geist, Geist_Mono } from "next/font/google";
+import localFont from 'next/font/local';
 import './globals.css';
-import Header from '@/components/Header';
-import Homecontainer from '@/components/Homecontainer';
-import { cn } from '@/util/cn';
-
-// const geistSans = Geist({
-//   variable: "--font-geist-sans",
-//   subsets: ["latin"],
-// });
-
-// const geistMono = Geist_Mono({
-//   variable: "--font-geist-mono",
-//   subsets: ["latin"],
-// });
+const abcrom = localFont({
+  src: [
+    { path: '../../public/fonts/ABCROM-NormalRegular.woff2', weight: '400', style: 'normal' },
+    { path: '../../public/fonts/ABCROM-NormalMedium.woff2', weight: '500', style: 'normal' },
+    { path: '../../public/fonts/ABCROM-NormalBook.woff2', weight: '600', style: 'normal' },
+    { path: '../../public/fonts/ABCROM-NormalBold.woff2', weight: '700', style: 'normal' },
+  ],
+  display: 'swap',
+  variable: '--font-abcrom',
+  fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+  adjustFontFallback: 'Arial', // 폰트 메트릭 조정으로 레이아웃 시프트 방지
+  preload: true, // 중요한 폰트 파일 자동 preload
+});
 
 export const metadata: Metadata = {
   title: 'SCHEME.Forgroup',
   description: 'SCHEME.Forgroup',
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko">
-      <head>
-        <link rel="stylesheet" href="/fonts.css" />
-        <link rel="preload" href="/fonts/ABCROM-NormalBold.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
-        <link rel="preload" href="/fonts/ABCROM-NormalBook.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
-        <link
-          rel="preload"
-          href="/fonts/ABCROM-NormalMedium.woff2"
-          as="font"
-          type="font/woff2"
-          crossOrigin="anonymous"
-        />
-        <link
-          rel="preload"
-          href="/fonts/ABCROM-NormalRegular.woff2"
-          as="font"
-          type="font/woff2"
-          crossOrigin="anonymous"
-        />
-      </head>
-      <body
-        className="overflow-x-hidden overflow-y-auto"
-        // className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <Header />
-        {children}
-      </body>
+    <html lang="ko" className={abcrom.variable}>
+      <body className={abcrom.className}>{children}</body>
     </html>
   );
 }

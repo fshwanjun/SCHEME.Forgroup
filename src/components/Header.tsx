@@ -1,105 +1,112 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import LogoInline from './LogoInline';
+import { cn } from '@/lib/utils';
+import useWindowSize from '@/hooks/useWindowSize';
 
 const navItems = [
   { href: '/project', label: 'Project' },
   { href: '/studio', label: 'Studio' },
 ];
 
-export default function Header() {
+export default function Header({
+  isFixed = true,
+  onProjectClick,
+  headerLogoTrigger,
+}: {
+  isFixed?: boolean;
+  onProjectClick?: () => void;
+  headerLogoTrigger?: number;
+}) {
   const pathname = usePathname();
-  const segments = pathname.split('/').filter(Boolean);
-  const isProjectSlug = segments[0] === 'project' && segments.length >= 2;
-  const [isPastHero, setIsPastHero] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const windowSize = useWindowSize();
 
+  // 클라이언트 사이드에서만 모바일 여부 업데이트 (hydration 불일치 방지)
   useEffect(() => {
-    if (!isProjectSlug) {
-      setIsPastHero(false);
-      return;
+    setMounted(true);
+    setIsMobile(windowSize.isSm);
+  }, [windowSize.isSm]);
+
+  const isVisible = pathname === '/' || pathname === '/studio' || pathname.startsWith('/project');
+
+  if (!isVisible) return null;
+
+  const handleProjectClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (onProjectClick) {
+      e.preventDefault();
+      onProjectClick();
     }
+  };
 
-    const handleScroll = () => {
-      const threshold = window.innerHeight || 0;
-      setIsPastHero(window.scrollY + 88 >= threshold);
-    };
+  // 프로젝트와 studio 페이지에서 z-index 조정
+  // 참고: HEADER_CONFIG.zIndex = { detailPage: 400, projectOrStudio: 50, default: 350 }
+  const isProjectOrStudio = pathname.startsWith('/project') || pathname === '/studio';
+  const isStudio = pathname === '/studio';
+  // 상세 페이지는 z-index를 더 높게 설정하여 모달 위에 표시
+  const isDetailPage = pathname.startsWith('/project/') && pathname !== '/project';
+  // 모바일에서는 모바일 메뉴 버튼(z-[400])보다 위에 오도록 z-index 설정
+  const zIndexClass = isDetailPage
+    ? 'z-[400]' // HEADER_CONFIG.zIndex.detailPage
+    : isProjectOrStudio
+      ? 'z-[450]' // 모바일 메뉴 버튼(z-[400])보다 위에 오도록 조정
+      : 'z-[350]'; // HEADER_CONFIG.zIndex.default
 
-    handleScroll();
-    window.addEventListener('scroll', handleScroll, { passive: true });
+  // 모바일에서는 항상 fixed, 데스크톱에서만 isFixed prop에 따라 결정
+  const effectiveIsFixed = mounted ? (isMobile ? true : isFixed) : isFixed;
 
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [isProjectSlug]);
-
-  const baseTextClass = 'text-white';
-  const blendClass =
-    'mix-blend-exclusion supports-[mix-blend-mode:mix-blend-exclusion]:mix-blend-exclusion supports-[mix-blend-mode:exclusion]:text-white';
-  const layoutClass = 'mx-auto px-(--x-padding) pt-6 flex items-start justify-between';
-  const [logoPlayNonce, setLogoPlayNonce] = useState(0);
-
-  useEffect(() => {
-    const handler = () => setLogoPlayNonce((n) => n + 1);
-    window.addEventListener('header-logo-play', handler as EventListener);
-    return () => window.removeEventListener('header-logo-play', handler as EventListener);
-  }, []);
+  // studio 모바일에서는 px를 제거
+  const paddingClass = isStudio && isMobile ? 'px-4 pt-5 md:px-5' : 'px-4 pt-5 md:px-5';
 
   return (
-    <>
-    <header className={`fixed w-full top-0 z-100 h-(--header-height) isolate mix-blend-exclusion`}>
-      <div className="relative w-full">
-        <div className={`${layoutClass} relative z-10 ${blendClass} ${baseTextClass}`}>
-          <Link
-            href="/"
-            className={`font-semibold text-[64px] leading-[64px] transition-colors duration-300 ${blendClass} ${baseTextClass}`}>
-            <LogoInline
-              className={`transition-colors duration-300 ${blendClass} ${baseTextClass}`}
-              width={200}
-              height={65}
-              playTrigger={logoPlayNonce}
-            />
-          </Link>
-          <nav className={`flex items-center gap-6 ${blendClass} ${baseTextClass}`}>
+    <header
+      className={cn(
+        'w-full text-white mix-blend-difference',
+        // 모든 페이지에서 mix-blend-difference 사용
+        effectiveIsFixed
+          ? `pointer-events-none fixed top-0 ${zIndexClass} ${paddingClass}`
+          : `relative ${zIndexClass} ${paddingClass}`,
+      )}
+      style={{
+        // relative일 때도 명시적으로 position 설정
+        position: effectiveIsFixed ? 'fixed' : 'relative',
+        // mix-blend-difference가 제대로 작동하려면 isolation을 사용하지 않아야 함
+        // transform은 모바일에서 블렌드 모드를 방해할 수 있으므로 제거
+      }}
+      suppressHydrationWarning>
+      <div className="relative mx-auto flex items-start justify-between">
+        {/* 참고: HEADER_CONFIG.logo = { mobileWidth: 160, desktopWidth: 300 } */}
+        <Link href="/" className="pointer-events-auto h-full w-[120px] min-w-[120px] select-none md:w-[15vh]">
+          <LogoInline
+            playTrigger={pathname === '/' || isProjectOrStudio ? headerLogoTrigger : undefined}
+            invert={true} // 모든 페이지에서 인버트 적용 (mix-blend-difference와 함께 사용)
+            // key prop 제거: 재마운트 방지 (playTrigger로 애니메이션 제어)
+          />
+        </Link>
+        {/* 데스크톱 네비게이션 - Hydration 불일치 방지를 위해 마운트 후에만 조건부 렌더링 */}
+        {mounted && !isMobile && (
+          <nav className="flex gap-5">
             {navItems.map(({ href, label }) => {
               const active = pathname === href || (href !== '/' && pathname.startsWith(href));
+              const isProjectLink = href === '/project';
               return (
-                <Link key={href} href={href} aria-current={active ? 'page' : undefined}>
-                  <h4 className={`text-[20px] font-bold transition-colors duration-300 ${blendClass} ${baseTextClass}`}>
-                    {label}
-                  </h4>
+                <Link
+                  key={href}
+                  href={href}
+                  aria-current={active ? 'page' : undefined}
+                  className="pointer-events-auto select-none"
+                  onClick={isProjectLink ? handleProjectClick : undefined}>
+                  <h4>{label}</h4>
                 </Link>
               );
             })}
           </nav>
-        </div>
-
+        )}
       </div>
     </header>
-    
-    <div className={`fixed w-full top-0 z-0 h-(--header-height) isolate text-white`}>
-      <div
-          className={`${layoutClass} absolute inset-0 text-white pointer-events-none select-none`}
-          aria-hidden>
-          <div className="font-semibold text-[64px] leading-[64px]">
-            <LogoInline
-              width={200}
-              height={65}
-              playTrigger={logoPlayNonce}
-              className="pointer-events-none opacity-100"
-            />
-          </div>
-          <nav className="flex items-center gap-6">
-            {navItems.map(({ label }) => (
-              <span key={`ghost-${label}`} className="text-[20px] font-bold whitespace-nowrap">
-                {label}
-              </span>
-            ))}
-          </nav>
-      </div>
-    </div>
-    </>
   );
 }
