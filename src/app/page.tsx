@@ -124,13 +124,17 @@ export default function Home() {
 
   // 모드 변경 시 history 및 프로젝트 상태 관리
   const prevModeRef = useRef<string>('default');
+  const historyPushedRef = useRef<boolean>(false);
 
   useEffect(() => {
     const prevMode = prevModeRef.current;
 
     // default → center 또는 default → cover 전환 시 history entry 추가
     if (prevMode === 'default' && (mode === 'center' || mode === 'cover')) {
-      window.history.pushState({ modal: true }, '', window.location.pathname);
+      // 히스토리에 2개의 상태를 push하여 뒤로가기 시 중간 상태로 이동하도록 함
+      window.history.pushState({ modal: true, step: 1 }, '', '/');
+      window.history.pushState({ modal: true, step: 2 }, '', '/');
+      historyPushedRef.current = true;
     }
 
     // cover 모드로 진입할 때 프로젝트 설정
@@ -141,6 +145,7 @@ export default function Home() {
       // default 모드로 돌아갈 때 프로젝트 초기화
       setSelectedProject(null);
       setImagesLoaded(false);
+      historyPushedRef.current = false;
     }
 
     // modeRef와 prevModeRef 모두 업데이트
@@ -263,18 +268,42 @@ export default function Home() {
 
   // 뒤로가기 버튼 처리 - cover/center 모드에서 줌 아웃 (새로고침 방지)
   useEffect(() => {
-    const handlePopState = () => {
+    const handlePopState = (e: PopStateEvent) => {
       const currentMode = modeRef.current;
+      const state = e.state;
 
       // 모달이 열려있는 상태에서 뒤로가기
       if (currentMode === 'cover' || currentMode === 'center') {
-        // URL이 변경되지 않았으므로 단순히 줌 아웃만 실행
-        zoomOut();
+        // 이벤트 전파 완전 중단
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        // step: 1 상태로 돌아왔다면 (첫 번째 뒤로가기)
+        if (state?.modal && state?.step === 1) {
+          // 다시 앞으로 가서 step: 2 상태 유지하면서 줌아웃
+          window.history.forward();
+
+          // 약간의 딜레이 후 줌아웃 실행
+          setTimeout(() => {
+            zoomOut();
+          }, 10);
+        } else {
+          // 그 외의 경우 (step이 없는 경우 등)
+          // 히스토리 복원 후 줌아웃
+          window.history.pushState({ modal: false }, '', '/');
+          zoomOut();
+        }
+
+        return false;
       }
     };
 
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    // capture: true로 가장 먼저 실행
+    window.addEventListener('popstate', handlePopState, { capture: true });
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState, { capture: true });
+    };
   }, [zoomOut]);
 
   // 리사이즈 처리 - 상세 모달이 나온 상태에서 화면 사이즈 변경 시 해당 페이지로 이동

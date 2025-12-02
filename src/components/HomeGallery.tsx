@@ -1,6 +1,7 @@
 'use client'; // 이 컴포넌트가 클라이언트 측에서 렌더링되어야 함을 나타냅니다. (React 18 이상)
 
-import { useEffect, useMemo, useState, memo, useCallback } from 'react';
+import { useEffect, useMemo, useState, memo, useCallback, useRef } from 'react';
+import gsap from 'gsap';
 import ImageCard from '@/components/ImageCard'; // 이미지 카드 렌더링을 위한 컴포넌트입니다.
 import useWindowSize from '@/hooks/useWindowSize';
 
@@ -174,20 +175,153 @@ function HomeGallery({
 
   // 이미지 로드 상태 추적 (프로젝트 레이아웃에서만)
   const [imagesReady, setImagesReady] = useState(false);
+  // GSAP 애니메이션 완료 상태
+  const gsapAnimationRef = useRef<gsap.core.Timeline | null>(null);
 
-  // 프로젝트 레이아웃에서 이미지가 준비되면 애니메이션 트리거
+  // 첫 번째 섹션인지 확인 (애니메이션은 첫 섹션에서만)
+  const isFirstSection = sectionId === 0;
+
+  // 각 카드의 ref를 저장
+  const cardRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
+  const sectionRef = useRef<HTMLElement | null>(null);
+
+  // 카드 ref 설정 콜백
+  const setCardRef = useCallback((index: number, el: HTMLDivElement | null) => {
+    cardRefs.current.set(index, el);
+  }, []);
+
+  // 프로젝트 레이아웃의 첫 번째 섹션에서 GSAP 애니메이션 실행
   useEffect(() => {
-    if (isProjectLayout && mounted && projectCount > 0) {
-      // DOM이 준비될 때까지 약간의 지연
-      const timer = setTimeout(() => {
+    if (!isProjectLayout || !mounted || !isFirstSection) {
+      // 프로젝트 레이아웃이 아니거나 첫 번째 섹션이 아니면 즉시 표시
+      if (!isProjectLayout || !isFirstSection) {
         setImagesReady(true);
-      }, 100);
-      return () => clearTimeout(timer);
-    } else if (!isProjectLayout) {
-      // 홈 레이아웃에서는 즉시 표시
+      }
+      return;
+    }
+
+    // 카드 요소들이 준비될 때까지 대기
+    const initAnimation = () => {
+      const cards = Array.from(cardRefs.current.entries())
+        .filter(([, el]) => el !== null)
+        .map(([index, el]) => ({ index, el: el as HTMLDivElement }));
+
+      if (cards.length === 0) return;
+
+      // 스크롤 컨테이너를 최상단으로 이동
+      const scrollContainer = sectionRef.current?.closest('[class*="overflow-y"]') as HTMLElement | null;
+      if (scrollContainer) {
+        scrollContainer.scrollTop = 0;
+      }
+
+      const windowCenterX = window.innerWidth / 2;
+      const windowCenterY = window.innerHeight / 2;
+
+      // 각 카드의 초기 위치 계산 및 설정
+      const cardData = cards.map(({ index, el }) => {
+        const rect = el.getBoundingClientRect();
+        const cardCenterX = rect.left + rect.width / 2;
+        const cardCenterY = rect.top + rect.height / 2;
+
+        // 윈도우 중앙에서 카드까지의 거리
+        const distance = Math.sqrt(Math.pow(windowCenterX - cardCenterX, 2) + Math.pow(windowCenterY - cardCenterY, 2));
+
+        return { index, el, rect, distance, cardCenterX, cardCenterY };
+      });
+
+      // 최대 거리 찾기 (정규화용)
+      const maxDistance = Math.max(...cardData.map((c) => c.distance), 1);
+
+      // 각 카드의 데이터 확장 (이동량, 중간 scale 계산)
+      const extendedCardData = cardData.map(({ el, distance, cardCenterX, cardCenterY, ...rest }) => {
+        const dirX = windowCenterX - cardCenterX;
+        const dirY = windowCenterY - cardCenterY;
+
+        // 거리에 비례하여 이동량 증가
+        const distanceMultiplier = 1 + (distance / maxDistance) * 0.5;
+
+        const translateX = dirX * distanceMultiplier;
+        const translateY = dirY * distanceMultiplier;
+
+        // 중간 scale (1단계 완료 시): 멀리 있는 카드는 더 작게 (0.6 ~ 0.8)
+        const midScale = 0.6 + (1 - distance / maxDistance) * 0.2;
+
+        return { el, distance, cardCenterX, cardCenterY, translateX, translateY, midScale, ...rest };
+      });
+
+      // 초기 상태 설정: 모든 카드가 윈도우 중앙에서 scale: 0으로 시작
+      extendedCardData.forEach(({ el, translateX, translateY }) => {
+        gsap.set(el, {
+          x: translateX,
+          y: translateY,
+          scale: 0,
+          opacity: 0,
+          visibility: 'visible',
+        });
+      });
+
+      // GSAP 타임라인 생성
+      const tl = gsap.timeline();
+      gsapAnimationRef.current = tl;
+
+      // 1단계: 중앙에서 카드들이 하나씩 부드럽게 나타남 (scale: 0 → midScale, opacity: 0 → 1)
+      extendedCardData.forEach(({ el, midScale }, i) => {
+        tl.to(
+          el,
+          {
+            scale: midScale,
+            opacity: 1,
+            duration: 0.8, // 0.4 → 0.8초로 더 천천히
+            ease: 'power2.out', // back.out → power2.out으로 더 부드럽게
+          },
+          0.3 + i * 0.08, // 0.08초 간격으로 더 여유롭게 순차적 등장
+        );
+      });
+
+      // 2단계: 카드들이 원래 자리로 흩어지며 커짐 (약간의 딜레이 후)
+      const scatterStartTime = 0.3 + extendedCardData.length * 0.08 + 0.5; // 1단계 완료 후 0.5초 대기
+
+      tl.to(
+        extendedCardData.map((c) => c.el),
+        {
+          x: 0,
+          y: 0,
+          scale: 1,
+          duration: 1.5,
+          ease: 'power3.out',
+          stagger: {
+            amount: 0.4, // 전체 stagger 시간
+            from: 'center', // 중앙에서 시작
+          },
+        },
+        scatterStartTime,
+      );
+
+      // 애니메이션 완료 후 상태 업데이트
+      tl.call(() => {
+        setImagesReady(true);
+      });
+    };
+
+    // DOM이 완전히 렌더링된 후 애니메이션 초기화
+    const timer = setTimeout(initAnimation, 100);
+
+    return () => {
+      clearTimeout(timer);
+      // 컴포넌트 언마운트 시 애니메이션 정리
+      if (gsapAnimationRef.current) {
+        gsapAnimationRef.current.kill();
+        gsapAnimationRef.current = null;
+      }
+    };
+  }, [isProjectLayout, mounted, projectCount, currentFrameClasses, isFirstSection]);
+
+  // 첫 번째 섹션이 아닌 경우 즉시 표시
+  useEffect(() => {
+    if (isProjectLayout && mounted && projectCount > 0 && !isFirstSection) {
       setImagesReady(true);
     }
-  }, [isProjectLayout, mounted, projectCount]);
+  }, [isProjectLayout, mounted, projectCount, isFirstSection]);
 
   // 🌟 수정: 컴포넌트가 처음 마운트될 때 건너뛸 '행'의 개수를 계산합니다.
   // 프로젝트와 홈 모두 랜덤 행 건너뛰기 적용
@@ -342,6 +476,7 @@ function HomeGallery({
 
   return (
     <section
+      ref={sectionRef}
       className="HomeGallery relative mb-[20px] w-full"
       style={{ paddingLeft: horizontalPadding, paddingRight: horizontalPadding }}>
       <div
@@ -394,18 +529,24 @@ function HomeGallery({
             <div
               // 🌟 중요: 건너뛴 행의 개수만큼 row-start 값을 조정하여
               // 갤러리가 시작 행에서부터 자연스럽게 이어지도록 합니다.
+              ref={(el) => {
+                if (isProjectLayout && isFirstSection) setCardRef(index, el);
+              }}
               key={`${frameClass}-${index}`}
               className={`${frameClass.replace(
                 /row-start-(\d+)/,
                 (_, p1) => `row-start-${parseInt(p1, 10) - skipRows}`,
-              )} relative transition-transform duration-500 ${isSelected ? 'z-50' : ''} ${
-                isOtherSelected ? 'pointer-events-none' : ''
-              }`}
+              )} relative ${isSelected ? 'z-50' : ''} ${isOtherSelected ? 'pointer-events-none' : ''}`}
               style={
                 isProjectLayout
                   ? {
-                      opacity: imagesReady ? 1 : 0,
-                      transition: 'opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
+                      // 첫 번째 섹션: 초기에 숨김 (GSAP이 제어)
+                      // 다른 섹션: CSS transition으로 페이드인
+                      opacity: isFirstSection ? 0 : imagesReady ? 1 : 0,
+                      transition: isFirstSection ? 'none' : 'opacity 0.5s ease-out',
+                      willChange: isFirstSection ? 'transform, opacity' : 'opacity',
+                      // 첫 번째 섹션: visibility로 초기 렌더링 방지
+                      visibility: isFirstSection && !imagesReady ? 'hidden' : 'visible',
                     }
                   : undefined
               }>
