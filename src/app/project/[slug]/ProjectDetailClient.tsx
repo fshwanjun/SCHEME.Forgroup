@@ -91,12 +91,12 @@ export default function ProjectDetailClient({ project }: { project: ProjectDetai
   const { contents } = project;
 
   return (
-    <>
+    <div className="h-svh w-full overflow-x-hidden overflow-y-auto">
       <Header headerLogoTrigger={headerLogoTrigger} />
       <MobileMenu headerLogoTrigger={headerLogoTrigger} />
-      <main className="w-ful relative h-full">
+      <main className="relative w-full">
         {contents && <ProjectDetailContent contents={contents} title={project.title} heroImageSrc={heroImageSrc} />}
       </main>
-    </>
+    </div>
   );
 }

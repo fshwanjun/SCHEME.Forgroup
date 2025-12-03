@@ -87,7 +87,7 @@ export default function ProjectDetailContent({
         )}
       </motion.div>
       {heroImage && (
-        <div className="relative h-full w-full overflow-hidden">
+        <div className="relative h-svh w-full overflow-hidden">
           {/* 실제 Hero 이미지 - 배경 이미지로 확대된 썸네일이 이미 표시되고 있음 */}
           <Image
             className={`pointer-events-none h-full w-full object-cover transition-opacity duration-700 ease-out ${

@@ -132,8 +132,11 @@ export default function Home() {
     // default → center 또는 default → cover 전환 시 history entry 추가
     if (prevMode === 'default' && (mode === 'center' || mode === 'cover')) {
       // 히스토리에 2개의 상태를 push하여 뒤로가기 시 중간 상태로 이동하도록 함
-      window.history.pushState({ modal: true, step: 1 }, '', '/');
-      window.history.pushState({ modal: true, step: 2 }, '', '/');
+      // URL은 프로젝트 slug를 사용하여 변경
+      const projectSlug = selected?.projectSlug || selected?.projectId;
+      const newUrl = projectSlug ? `/project/${projectSlug}` : '/';
+      window.history.pushState({ modal: true, step: 1, originalPath: '/' }, '', '/');
+      window.history.pushState({ modal: true, step: 2, originalPath: '/' }, '', newUrl);
       historyPushedRef.current = true;
     }
 
@@ -146,12 +149,14 @@ export default function Home() {
       setSelectedProject(null);
       setImagesLoaded(false);
       historyPushedRef.current = false;
+      // URL을 원래대로 복원
+      window.history.replaceState({ zoomed: false }, '', '/');
     }
 
     // modeRef와 prevModeRef 모두 업데이트
     modeRef.current = mode;
     prevModeRef.current = mode;
-  }, [mode, selectedProjectData, selectedProject]);
+  }, [mode, selectedProjectData, selectedProject, selected]);
 
   // Landing Page 이미지 불러오기
   useEffect(() => {

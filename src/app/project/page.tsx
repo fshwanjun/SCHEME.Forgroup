@@ -49,10 +49,16 @@ export default function ProjectPage() {
   const modeRef = useRef<string>('default');
   const windowSize = useWindowSize();
   const [mounted, setMounted] = useState(false);
+  const [introAnimating, setIntroAnimating] = useState(true); // 인트로 애니메이션 상태
 
   // 클라이언트 사이드에서만 모바일 여부 업데이트
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  // 인트로 애니메이션 완료 핸들러
+  const handleIntroAnimationComplete = useCallback(() => {
+    setIntroAnimating(false);
   }, []);
 
   const isMobile = mounted && windowSize.isSm;
@@ -104,8 +110,11 @@ export default function ProjectPage() {
     // default → cover 전환 시 history entry 추가
     if (prevMode === 'default' && mode === 'cover') {
       // 히스토리에 2개의 상태를 push하여 뒤로가기 시 중간 상태로 이동하도록 함
-      window.history.pushState({ modal: true, step: 1 }, '', '/project');
-      window.history.pushState({ modal: true, step: 2 }, '', '/project');
+      // URL은 프로젝트 slug를 사용하여 변경 (selectedProjectData에서 가져옴)
+      const projectSlug = selectedProjectData?.slug || selected?.projectSlug;
+      const newUrl = projectSlug ? `/project/${projectSlug}` : '/project';
+      window.history.pushState({ modal: true, step: 1, originalPath: '/project' }, '', '/project');
+      window.history.pushState({ modal: true, step: 2, originalPath: '/project' }, '', newUrl);
       historyPushedRef.current = true;
     }
 
@@ -118,12 +127,14 @@ export default function ProjectPage() {
       setSelectedProject(null);
       setImagesLoaded(false);
       historyPushedRef.current = false;
+      // URL을 원래대로 복원
+      window.history.replaceState({ zoomed: false }, '', '/project');
     }
 
     // modeRef와 prevModeRef 모두 업데이트
     modeRef.current = mode;
     prevModeRef.current = mode;
-  }, [mode, selectedProjectData, selectedProject]);
+  }, [mode, selectedProjectData, selectedProject, selected]);
 
   // 프로젝트 목록 가져오기
   useEffect(() => {
@@ -247,8 +258,8 @@ export default function ProjectPage() {
   // 이미지 선택 핸들러 - 프로젝트 페이지에서는 바로 cover로 진입
   const handleSelectImage = useCallback(
     (image: GallerySelection) => {
-      // 애니메이션 중이면 모든 클릭 무시 (중복 클릭 방지)
-      if (isAnimating) {
+      // 인트로 애니메이션 중이거나 줌 애니메이션 중이면 모든 클릭 무시
+      if (introAnimating || isAnimating) {
         return;
       }
 
@@ -265,7 +276,7 @@ export default function ProjectPage() {
         selectImage(image, 'cover');
       }
     },
-    [selected, mode, selectImage, isAnimating],
+    [selected, mode, selectImage, isAnimating, introAnimating],
   );
 
   // 섹션 리스트 생성
@@ -280,10 +291,19 @@ export default function ProjectPage() {
             selectedUniqueId={selected?.uniqueId ?? null}
             layoutConfig={PROJECT_LAYOUT_CONFIG}
             sectionId={id}
+            onIntroAnimationComplete={id === 0 ? handleIntroAnimationComplete : undefined}
           />
         </div>
       )),
-    [renderSections, setTriggerElement, handleSelectImage, selected?.projectId, selected?.uniqueId, projectImages],
+    [
+      renderSections,
+      setTriggerElement,
+      handleSelectImage,
+      selected?.projectId,
+      selected?.uniqueId,
+      projectImages,
+      handleIntroAnimationComplete,
+    ],
   );
 
   // ESC 키로 줌 아웃
@@ -376,8 +396,8 @@ export default function ProjectPage() {
   }, [mode, selectedProject, selected, zoomOut]);
 
   // 줌 모드일 때 body 스크롤 잠금
-  // 줌 애니메이션 중이거나 cover 상태일 때 스크롤 잠금
-  const isScrollLocked = mode === 'cover' || isAnimating;
+  // 인트로 애니메이션 중이거나 줌 애니메이션 중이거나 cover 상태일 때 스크롤 잠금
+  const isScrollLocked = introAnimating || mode === 'cover' || isAnimating;
 
   // 프로젝트 링크 클릭 핸들러 - cover 상태에서 default로 돌아가기
   const handleProjectClick = useCallback(() => {
@@ -390,6 +410,9 @@ export default function ProjectPage() {
     <>
       <Header isFixed={true} headerLogoTrigger={headerLogoTrigger} onProjectClick={handleProjectClick} />
       <MobileMenu headerLogoTrigger={headerLogoTrigger} onProjectClick={handleProjectClick} />
+
+      {/* 인트로 애니메이션 중 모든 인터랙션 차단용 오버레이 */}
+      {introAnimating && <div className="fixed inset-0 z-[100]" />}
 
       <div
         ref={scrollContainerRef}

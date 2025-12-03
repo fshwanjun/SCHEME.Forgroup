@@ -107,6 +107,7 @@ type HomeGalleryProps = {
   selectedUniqueId?: string | null; // 선택된 이미지의 고유 ID (무한 스크롤용)
   layoutConfig?: LayoutConfig; // 레이아웃 설정 (기본값: HOME_LAYOUT_CONFIG)
   sectionId?: number; // 무한 스크롤에서 섹션 구분을 위한 ID
+  onIntroAnimationComplete?: () => void; // 인트로 애니메이션 완료 콜백
 };
 
 function HomeGallery({
@@ -116,6 +117,7 @@ function HomeGallery({
   selectedUniqueId,
   layoutConfig = HOME_LAYOUT_CONFIG,
   sectionId = 0,
+  onIntroAnimationComplete,
 }: HomeGalleryProps) {
   // console.log('[HomeGallery] render', {
   //   imagesCount: images.length,
@@ -300,6 +302,8 @@ function HomeGallery({
       // 애니메이션 완료 후 상태 업데이트
       tl.call(() => {
         setImagesReady(true);
+        // 인트로 애니메이션 완료 콜백 호출
+        onIntroAnimationComplete?.();
       });
     };
 
@@ -314,7 +318,7 @@ function HomeGallery({
         gsapAnimationRef.current = null;
       }
     };
-  }, [isProjectLayout, mounted, projectCount, currentFrameClasses, isFirstSection]);
+  }, [isProjectLayout, mounted, projectCount, currentFrameClasses, isFirstSection, onIntroAnimationComplete]);
 
   // 첫 번째 섹션이 아닌 경우 즉시 표시
   useEffect(() => {
