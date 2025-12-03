@@ -330,7 +330,9 @@ export default function Home() {
           window.location.href = newUrl;
         }
       } else if (mode !== 'cover' && selected) {
-        // cover 모드가 아닐 때는 줌아웃 (기본 동작)
+        // cover 모드가 아닐 때 (center 모드 등)는 줌아웃하고 URL 초기화
+        // URL을 홈으로 복원 (새로고침 없이)
+        window.history.replaceState({ zoomed: false }, '', '/');
         zoomOut();
       }
     };
