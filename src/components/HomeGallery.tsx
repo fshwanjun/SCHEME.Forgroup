@@ -235,20 +235,61 @@ function HomeGallery({
       const maxDistance = Math.max(...cardData.map((c) => c.distance), 1);
 
       // 각 카드의 데이터 확장 (이동량, 중간 scale 계산)
-      const extendedCardData = cardData.map(({ el, distance, cardCenterX, cardCenterY, ...rest }) => {
+      const extendedCardData = cardData.map(({ el, distance, cardCenterX, cardCenterY, rect, ...rest }) => {
         const dirX = windowCenterX - cardCenterX;
         const dirY = windowCenterY - cardCenterY;
 
-        // 거리에 비례하여 이동량 증가
-        const distanceMultiplier = 1 + (distance / maxDistance) * 0.5;
+        // 거리에 비례하여 이동량 증가 (더 부드럽게)
+        const distanceMultiplier = 1 + (distance / maxDistance) * 0.6;
 
-        const translateX = dirX * distanceMultiplier;
-        const translateY = dirY * distanceMultiplier;
+        let translateX = dirX * distanceMultiplier;
+        let translateY = dirY * distanceMultiplier;
 
-        // 중간 scale (1단계 완료 시): 멀리 있는 카드는 더 작게 (0.6 ~ 0.8)
-        const midScale = 0.6 + (1 - distance / maxDistance) * 0.2;
+        // 화면 밖으로 나가지 않도록 시작 위치 제한
+        // 카드의 시작 위치 = 현재 위치 + translate
+        const startLeft = rect.left + translateX;
+        const startTop = rect.top + translateY;
+        const startRight = startLeft + rect.width;
+        const startBottom = startTop + rect.height;
 
-        return { el, distance, cardCenterX, cardCenterY, translateX, translateY, midScale, ...rest };
+        // 화면 경계에서의 여백
+        const margin = 20;
+
+        // 화면 위쪽으로 나가는 경우 제한
+        if (startTop < margin) {
+          translateY = margin - rect.top;
+        }
+        // 화면 왼쪽으로 나가는 경우 제한
+        if (startLeft < margin) {
+          translateX = margin - rect.left;
+        }
+        // 화면 오른쪽으로 나가는 경우 제한
+        if (startRight > window.innerWidth - margin) {
+          translateX = window.innerWidth - margin - rect.width - rect.left;
+        }
+        // 화면 아래쪽으로 나가는 경우 제한
+        if (startBottom > window.innerHeight - margin) {
+          translateY = window.innerHeight - margin - rect.height - rect.top;
+        }
+
+        // 중간 scale (1단계 완료 시): 멀리 있는 카드는 더 작게 (0.5 ~ 0.75)
+        const midScale = 0.5 + (1 - distance / maxDistance) * 0.25;
+
+        // 개별 카드의 흩어지는 duration (거리가 먼 카드는 조금 더 오래)
+        const scatterDuration = 1.8 + (distance / maxDistance) * 0.6;
+
+        return {
+          el,
+          distance,
+          cardCenterX,
+          cardCenterY,
+          rect,
+          translateX,
+          translateY,
+          midScale,
+          scatterDuration,
+          ...rest,
+        };
       });
 
       // 초기 상태 설정: 모든 카드가 윈도우 중앙에서 scale: 0으로 시작
@@ -273,31 +314,34 @@ function HomeGallery({
           {
             scale: midScale,
             opacity: 1,
-            duration: 0.8, // 0.4 → 0.8초로 더 천천히
-            ease: 'power2.out', // back.out → power2.out으로 더 부드럽게
+            duration: 1.0, // 더 천천히 나타남
+            ease: 'expo.out', // 더 부드러운 감속
           },
-          0.3 + i * 0.08, // 0.08초 간격으로 더 여유롭게 순차적 등장
+          0.2 + i * 0.06, // 0.06초 간격으로 더 자연스럽게 순차 등장
         );
       });
 
-      // 2단계: 카드들이 원래 자리로 흩어지며 커짐 (약간의 딜레이 후)
-      const scatterStartTime = 0.3 + extendedCardData.length * 0.08 + 0.5; // 1단계 완료 후 0.5초 대기
+      // 2단계: 카드들이 원래 자리로 흩어지며 커짐 (더 자연스러운 타이밍)
+      const scatterStartTime = 0.2 + extendedCardData.length * 0.06 + 0.3; // 1단계 중 일부 겹침
 
-      tl.to(
-        extendedCardData.map((c) => c.el),
-        {
-          x: 0,
-          y: 0,
-          scale: 1,
-          duration: 1.5,
-          ease: 'power3.out',
-          stagger: {
-            amount: 0.4, // 전체 stagger 시간
-            from: 'center', // 중앙에서 시작
+      // 각 카드가 개별적으로 자연스럽게 흩어지도록 애니메이션
+      extendedCardData.forEach(({ el, scatterDuration, distance }) => {
+        // 거리에 따른 stagger delay (가까운 카드가 먼저)
+        const normalizedDistance = distance / maxDistance;
+        const staggerDelay = normalizedDistance * 0.3;
+
+        tl.to(
+          el,
+          {
+            x: 0,
+            y: 0,
+            scale: 1,
+            duration: scatterDuration,
+            ease: 'expo.out', // 매우 부드러운 감속 곡선
           },
-        },
-        scatterStartTime,
-      );
+          scatterStartTime + staggerDelay,
+        );
+      });
 
       // 애니메이션 완료 후 상태 업데이트
       tl.call(() => {
@@ -330,14 +374,36 @@ function HomeGallery({
   // 🌟 수정: 컴포넌트가 처음 마운트될 때 건너뛸 '행'의 개수를 계산합니다.
   // 프로젝트와 홈 모두 랜덤 행 건너뛰기 적용
   useEffect(() => {
+    // 최소 표시할 이미지 개수
+    const MIN_VISIBLE_IMAGES = 5;
+
+    // 각 행까지 건너뛸 경우의 프레임 수 계산
+    const getSkippedFrameCount = (skipRowCount: number): number => {
+      let count = 0;
+      for (let i = 0; i < skipRowCount; i++) {
+        count += rowFrames[i]?.length || 0;
+      }
+      return count;
+    };
+
     // 최대 건너뛸 행 개수: 전체 행의 절반 정도까지만 건너뛰도록 제한합니다.
-    const maxSkipRows = Math.max(0, Math.floor(totalRows / 2));
+    let maxSkipRows = Math.max(0, Math.floor(totalRows / 2));
+
+    // 남은 프레임이 최소 MIN_VISIBLE_IMAGES개 이상이 되도록 maxSkipRows 조정
+    while (maxSkipRows > 0) {
+      const skippedFrames = getSkippedFrameCount(maxSkipRows);
+      const remainingFrames = totalFrames - skippedFrames;
+      if (remainingFrames >= MIN_VISIBLE_IMAGES) {
+        break;
+      }
+      maxSkipRows--;
+    }
 
     // 0부터 maxSkipRows 사이의 난수를 생성합니다.
     const randomSkip = maxSkipRows > 0 ? Math.floor(Math.random() * (maxSkipRows + 1)) : 0;
 
     setSkipRows(randomSkip);
-  }, [totalRows]); // totalRows가 변경되면 다시 계산합니다
+  }, [totalRows, totalFrames, rowFrames]); // totalRows, totalFrames, rowFrames가 변경되면 다시 계산합니다
 
   // 🌟 수정: 건너뛸 프레임의 인덱스 목록을 계산합니다.
   const framesToSkip = useMemo(() => {
@@ -465,6 +531,37 @@ function HomeGallery({
     return assignments;
   }, [projectCount, totalFrames, PROJECT_IMAGES, isProjectLayout, currentFrameClasses, framesToSkip]); // currentFrameClasses와 framesToSkip 추가
 
+  // 🌟 추가: 실제로 렌더링될 프레임들의 최소 row-start를 계산하여 상단 gap 방지
+  const rowStartOffset = useMemo(() => {
+    let minRowStart = Infinity;
+
+    currentFrameClasses.forEach((frameClass, index) => {
+      // 건너뛸 프레임은 제외
+      if (framesToSkip.has(index)) return;
+
+      // assignment 확인
+      const assignment = projectAssignments[index];
+      if (!assignment || !assignment.verticalSrc || !assignment.horizontalSrc) return;
+
+      // orientation 필터 확인
+      const frameOrientation = frameClass.includes('aspect-[3/4]') ? 'vertical' : 'horizontal';
+      const imageOrientation = assignment.orientation || frameOrientation;
+      if (assignment.orientation && imageOrientation !== frameOrientation) return;
+
+      // row-start 추출
+      const match = frameClass.match(/row-start-(\d+)/);
+      if (match) {
+        const rowStart = parseInt(match[1], 10) - skipRows;
+        if (rowStart < minRowStart) {
+          minRowStart = rowStart;
+        }
+      }
+    });
+
+    // 첫 번째 렌더링되는 프레임의 row-start가 1이 되도록 오프셋 계산
+    return minRowStart === Infinity ? 0 : minRowStart - 1;
+  }, [currentFrameClasses, framesToSkip, projectAssignments, skipRows]);
+
   // 이미지가 없으면 빈 갤러리 렌더링
   if (projectCount === 0) {
     return (
@@ -487,6 +584,7 @@ function HomeGallery({
         className="grid w-full"
         style={{
           gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
+          gridAutoRows: 'min-content', // 빈 행의 높이를 0으로 만들어 상단 gap 방지
           columnGap: gap,
           rowGap: gap,
         }}>
@@ -539,7 +637,7 @@ function HomeGallery({
               key={`${frameClass}-${index}`}
               className={`${frameClass.replace(
                 /row-start-(\d+)/,
-                (_, p1) => `row-start-${parseInt(p1, 10) - skipRows}`,
+                (_, p1) => `row-start-${parseInt(p1, 10) - skipRows - rowStartOffset}`,
               )} relative ${isSelected ? 'z-50' : ''} ${isOtherSelected ? 'pointer-events-none' : ''}`}
               style={
                 isProjectLayout

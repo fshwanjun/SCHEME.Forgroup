@@ -12,19 +12,19 @@
 // 프로젝트 페이지 전용 배치 - 홈 페이지와 다른 레이아웃
 export const PROJECT_FRAME_CLASSES: string[] = [
   'frame-card aspect-[3/4] row-start-1 col-span-8 col-start-9',
-  'frame-card aspect-[4/3] row-start-1 col-span-7 col-start-1 self-end mb-[100px]',
+  'frame-card aspect-[4/3] row-start-1 col-span-7 col-start-1 self-end mb-[20%]',
   'frame-card aspect-[4/3] row-start-2 col-span-11 col-start-2',
-  'frame-card aspect-[3/4] row-start-3 col-span-5 col-start-1 mt-[20%] ml-[8%]',
+  'frame-card aspect-[3/4] row-start-3 col-span-5 col-start-1 ml-[8%]',
   'frame-card aspect-[3/4] row-start-3 col-span-8 col-start-8',
-  'frame-card aspect-[3/4] row-start-4 col-span-6 col-start-2 self-end mt-[-30%]',
-  'frame-card aspect-[4/3] row-start-5 col-span-7 col-start-10 mt-[-20%]',
-  'frame-card aspect-[3/4] row-start-5 col-span-8 col-start-1 mt-[20%]',
+  'frame-card aspect-[3/4] row-start-4 col-span-6 col-start-2 self-end ',
+  'frame-card aspect-[4/3] row-start-5 col-span-7 col-start-10 ',
+  'frame-card aspect-[3/4] row-start-5 col-span-8 col-start-1 ',
   'frame-card aspect-[4/3] row-start-6 col-span-13 col-start-4',
   'frame-card aspect-[3/4] row-start-7 col-span-7 col-start-2',
-  'frame-card aspect-[3/4] row-start-8 col-span-6 col-start-9 mt-[-40%]',
+  'frame-card aspect-[3/4] row-start-8 col-span-6 col-start-9 ',
   'frame-card aspect-[4/3] row-start-9 col-span-12 col-start-1',
-  'frame-card aspect-[4/3] row-start-10 col-span-7 col-start-10 mt-[10%]',
-  'frame-card aspect-[3/4] row-start-11 col-span-9 col-start-1 mt-[-20%]',
+  'frame-card aspect-[4/3] row-start-10 col-span-7 col-start-10',
+  'frame-card aspect-[3/4] row-start-11 col-span-9 col-start-1',
 ];
 
 // 모바일 화면용 프레임 클래스 배열 (11열 그리드 시스템)
