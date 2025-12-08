@@ -89,7 +89,7 @@ export default function Header({
         </Link>
         {/* 데스크톱 네비게이션 - Hydration 불일치 방지를 위해 마운트 후에만 조건부 렌더링 */}
         {mounted && !isMobile && (
-          <nav className="flex gap-5">
+          <nav className="flex gap-8">
             {navItems.map(({ href, label }) => {
               const active = pathname === href || (href !== '/' && pathname.startsWith(href));
               const isProjectLink = href === '/project';

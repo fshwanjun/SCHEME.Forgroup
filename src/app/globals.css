@@ -206,7 +206,7 @@ svg {
 
   /* Studio page scoped typography */
   .studio-typography h3 {
-    @apply text-[28px] leading-[130%] font-medium;
+    @apply text-[28px] leading-[130%] font-semibold;
   }
   .studio-typography h5 {
     @apply text-[16px] leading-[100%] font-bold capitalize;

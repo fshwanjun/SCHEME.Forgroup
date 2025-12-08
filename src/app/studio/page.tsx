@@ -127,7 +127,6 @@ export default function StudioPage() {
                 height={1600}
                 sizes="40vw"
                 priority
-                quality={85}
                 draggable={false}
               />
             ) : (
@@ -137,9 +136,11 @@ export default function StudioPage() {
           </div>
 
           {/* [우측] 컨텐츠 영역 - flex의 나머지 공간을 채움 */}
-          <div className="flex w-full min-w-0 flex-1 flex-col justify-between gap-y-15 md:min-w-0 md:gap-5 md:gap-y-0 md:overflow-hidden">
-            {/* 1. 메인 설명 (스크롤 가능 영역) */}
-            <div className="custom-scroll min-h-[20vh] overflow-hidden pb-12 md:flex md:flex-col md:overflow-auto md:pr-3 md:pb-0">
+          {/* md~xl: 전체 스크롤 (순차 배치), xl이상: overflow hidden (메인설명만 스크롤) */}
+          <div className="flex w-full min-w-0 flex-1 flex-col justify-between gap-y-15 md:min-w-0 md:justify-start md:gap-10 md:overflow-y-auto xl:justify-between xl:gap-0 xl:overflow-hidden">
+            {/* 1. 메인 설명 */}
+            {/* md~xl: 크롭 없음/스크롤 없음, xl이상: 내부 스크롤 가능 */}
+            <div className="custom-scroll min-h-[20vh] overflow-hidden pb-12 md:flex md:h-auto md:min-h-0 md:shrink-0 md:flex-col md:overflow-visible md:pr-3 md:pb-0 xl:shrink xl:overflow-auto">
               <h3>{data.description}</h3>
             </div>
 
@@ -157,35 +158,36 @@ export default function StudioPage() {
               />
             )}
 
-            {/* 2. 하단 3열 그리드 정보 */}
-            <div className="grid w-full gap-x-4 gap-y-10 md:grid-cols-3">
-              <div className="grid grid-cols-5 flex-row md:flex md:flex-col md:gap-4">
+            {/* 2. 하단 그리드 정보 */}
+            {/* md~xl: 1열, xl이상: 3열 */}
+            <div className="grid w-full gap-x-4 gap-y-10 xl:grid-cols-3">
+              <div className="grid grid-cols-5 flex-row md:flex md:flex-col md:gap-2 xl:gap-4">
                 <h5 className="col-span-2">Experience</h5>
                 <div className="col-span-3 flex flex-col">
                   <RenderList items={data.experience} />
                 </div>
               </div>
-              <div className="grid grid-cols-5 flex-row md:flex md:flex-col md:gap-4">
+              <div className="grid grid-cols-5 flex-row md:flex md:flex-col md:gap-2 xl:gap-4">
                 <h5 className="col-span-2">Services</h5>
                 <div className="col-span-3 flex flex-col">
                   <RenderList items={data.services} />
                 </div>
               </div>
-              <div className="grid grid-cols-5 flex-row md:flex md:flex-col md:gap-4">
+              <div className="grid grid-cols-5 flex-row md:flex md:flex-col md:gap-2 xl:gap-4">
                 <h5 className="col-span-2">Clients</h5>
                 <div className="col-span-3 flex flex-col">
                   <RenderList items={data.clients} />
                 </div>
               </div>
-              <div className="hidden flex-col gap-4 md:flex">
+              <div className="hidden flex-col md:flex md:gap-2 xl:gap-4">
                 <h5>Address</h5>
                 <span className="flex flex-col">{data.address}</span>
               </div>
-              <div className="hidden flex-col gap-4 md:flex">
+              <div className="hidden flex-col md:flex md:gap-2 xl:gap-4">
                 <h5>Contact</h5>
                 <span className="flex flex-col">{data.contact}</span>
               </div>
-              <div className="hidden flex-col gap-4 md:flex">
+              <div className="hidden flex-col md:flex md:gap-2 xl:gap-4">
                 <h5>Social</h5>
                 <span className="flex flex-col">{data.social}</span>
               </div>

@@ -2,8 +2,134 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { PROJECT_DETAIL_CONFIG } from '@/config/appConfig';
+
+// 커스텀 스크롤 인디케이터 컴포넌트
+function ScrollIndicator() {
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [hasScrollableContent, setHasScrollableContent] = useState(true);
+  const [isReady, setIsReady] = useState(false);
+  const indicatorRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLElement | null>(null);
+  const rafRef = useRef<number | null>(null);
+
+  // 스크롤 가능한 부모 요소 찾기
+  const findScrollParent = useCallback((element: HTMLElement | null): HTMLElement | null => {
+    if (!element) return null;
+
+    let parent = element.parentElement;
+    while (parent) {
+      const style = getComputedStyle(parent);
+      const overflowY = style.overflowY;
+      if (overflowY === 'auto' || overflowY === 'scroll') {
+        return parent;
+      }
+      parent = parent.parentElement;
+    }
+    return null;
+  }, []);
+
+  // 스크롤 위치 계산 함수
+  const calculateScroll = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const scrollTop = container.scrollTop;
+    const scrollHeight = container.scrollHeight;
+    const clientHeight = container.clientHeight;
+
+    const maxScroll = scrollHeight - clientHeight;
+    if (maxScroll > 0) {
+      const progress = Math.min(Math.max(scrollTop / maxScroll, 0), 1);
+      setScrollProgress(progress);
+      setHasScrollableContent(true);
+    } else {
+      setHasScrollableContent(false);
+    }
+  }, []);
+
+  // requestAnimationFrame을 사용한 실시간 스크롤 추적
+  useEffect(() => {
+    const indicator = indicatorRef.current;
+    if (!indicator) return;
+
+    // 스크롤 컨테이너 찾기 (약간의 딜레이로 DOM 렌더링 대기)
+    const initTimeout = setTimeout(() => {
+      const container = findScrollParent(indicator);
+      scrollContainerRef.current = container;
+
+      if (container) {
+        setIsReady(true);
+        calculateScroll();
+      }
+    }, 50);
+
+    return () => {
+      clearTimeout(initTimeout);
+    };
+  }, [findScrollParent, calculateScroll]);
+
+  // 스크롤 이벤트 리스너 (실시간 업데이트)
+  useEffect(() => {
+    if (!isReady) return;
+
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      // requestAnimationFrame으로 프레임마다 업데이트
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+      rafRef.current = requestAnimationFrame(() => {
+        calculateScroll();
+      });
+    };
+
+    // 초기 계산
+    calculateScroll();
+
+    // 스크롤 이벤트 리스너 등록
+    container.addEventListener('scroll', handleScroll, { passive: true });
+
+    // 리사이즈 시에도 재계산
+    window.addEventListener('resize', handleScroll, { passive: true });
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, [isReady, calculateScroll]);
+
+  // 트랙 높이: 10vh ~ 20vh (clamp), 썸 높이: 트랙의 30%
+  const thumbPercent = 0.3; // 썸 높이 비율 (30%)
+
+  return (
+    <div
+      ref={indicatorRef}
+      className="pointer-events-none fixed top-1/2 right-8 z-[500] -translate-y-1/2 mix-blend-difference transition-opacity duration-300"
+      style={{
+        width: 2,
+        height: 'clamp(10vh, 15vh, 20vh)', // 최소 10vh, 기본 15vh, 최대 20vh
+        opacity: hasScrollableContent && isReady ? 1 : 0,
+      }}>
+      {/* 트랙 (투명 배경) */}
+      <div className="absolute inset-0 rounded-full bg-white/30" />
+      {/* 썸 (스크롤 위치 표시) */}
+      <div
+        className="absolute left-0 w-full rounded-full bg-white"
+        style={{
+          height: `${thumbPercent * 100}%`, // 트랙의 30%
+          top: `${scrollProgress * (1 - thumbPercent) * 100}%`, // 스크롤 위치에 따라 이동
+        }}
+      />
+    </div>
+  );
+}
 
 interface DetailImage {
   id: string;
@@ -54,6 +180,9 @@ export default function ProjectDetailContent({
 
   return (
     <>
+      {/* 커스텀 스크롤 인디케이터 */}
+      <ScrollIndicator />
+
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
