@@ -307,29 +307,25 @@ function HomeGallery({
       const tl = gsap.timeline();
       gsapAnimationRef.current = tl;
 
-      // 1단계: 중앙에서 카드들이 하나씩 부드럽게 나타남 (scale: 0 → midScale, opacity: 0 → 1)
-      extendedCardData.forEach(({ el, midScale }, i) => {
+      // 1단계: 중앙에서 모든 카드가 동시에 나타남 (scale: 0 → midScale, opacity: 0 → 1)
+      extendedCardData.forEach(({ el, midScale }) => {
         tl.to(
           el,
           {
             scale: midScale,
             opacity: 1,
-            duration: 1.0, // 더 천천히 나타남
-            ease: 'expo.out', // 더 부드러운 감속
+            duration: 1.0,
+            ease: 'expo.out',
           },
-          0.2 + i * 0.06, // 0.06초 간격으로 더 자연스럽게 순차 등장
+          0.2, // 모든 카드가 동시에 시작
         );
       });
 
-      // 2단계: 카드들이 원래 자리로 흩어지며 커짐 (더 자연스러운 타이밍)
-      const scatterStartTime = 0.2 + extendedCardData.length * 0.06 + 0.3; // 1단계 중 일부 겹침
+      // 2단계: 모든 카드가 동시에 원래 자리로 흩어지며 커짐
+      const scatterStartTime = 0.8; // 1단계 완료 후 시작
 
-      // 각 카드가 개별적으로 자연스럽게 흩어지도록 애니메이션
-      extendedCardData.forEach(({ el, scatterDuration, distance }) => {
-        // 거리에 따른 stagger delay (가까운 카드가 먼저)
-        const normalizedDistance = distance / maxDistance;
-        const staggerDelay = normalizedDistance * 0.3;
-
+      // 모든 카드가 동시에 자연스럽게 흩어지도록 애니메이션
+      extendedCardData.forEach(({ el, scatterDuration }) => {
         tl.to(
           el,
           {
@@ -337,9 +333,9 @@ function HomeGallery({
             y: 0,
             scale: 1,
             duration: scatterDuration,
-            ease: 'expo.out', // 매우 부드러운 감속 곡선
+            ease: 'expo.out',
           },
-          scatterStartTime + staggerDelay,
+          scatterStartTime, // 모든 카드가 동시에 시작
         );
       });
 

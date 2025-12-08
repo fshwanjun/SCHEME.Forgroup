@@ -190,7 +190,7 @@ export default function StudioPage() {
                 <span className="flex flex-col">{data.social}</span>
               </div>
 
-              <div className="flex flex-col gap-8 py-16 md:hidden">
+              <div className="flex flex-col gap-8 py-16 pb-40 md:hidden">
                 <h4 className="text-center leading-[130%] font-semibold">{data.contact}</h4>
                 <h4 className="text-center leading-[130%] font-semibold">{data.address}</h4>
                 <h4 className="text-center leading-[130%] font-semibold">{data.social}</h4>

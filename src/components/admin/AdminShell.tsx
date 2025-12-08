@@ -72,11 +72,11 @@ export default function AdminShell({ children, activeTab, onTabChange }: AdminSh
   }
 
   return (
-    <div className="min-h-screen bg-black font-sans text-stone-200">
+    <div className="fixed inset-0 overflow-y-auto bg-black font-sans text-stone-200">
       {/* Mobile Header */}
       <div className="sticky top-0 z-30 flex items-center justify-between border-b border-stone-800 bg-stone-950 p-4 md:hidden">
         <div className="flex items-center gap-2 text-stone-100">
-          <span className="text-lg font-bold tracking-tight">HJ.supacms</span>
+          <span className="text-lg font-bold tracking-tight">For</span>
         </div>
         <Button
           variant="ghost"
@@ -195,7 +195,7 @@ export default function AdminShell({ children, activeTab, onTabChange }: AdminSh
       </aside>
 
       {/* Main Content - Added left padding to account for fixed sidebar */}
-      <div className="flex min-h-screen flex-col bg-stone-950/50 transition-all duration-300 md:pl-64">
+      <div className="min-h-full bg-stone-950/50 pb-8 transition-all duration-300 md:ml-64">
         <header className="sticky top-0 z-10 hidden h-16 items-center justify-between border-b border-stone-800 bg-stone-950/50 px-8 backdrop-blur-sm md:flex">
           <h2 className="text-lg font-semibold text-stone-100">
             {activeTab === 'studio'
@@ -209,7 +209,7 @@ export default function AdminShell({ children, activeTab, onTabChange }: AdminSh
           {/* Optional: Add header actions here */}
         </header>
 
-        <main className="flex-1 p-4 md:p-8">
+        <main className="p-4 md:p-8">
           <div className="mx-auto max-w-5xl">{children}</div>
         </main>
       </div>
