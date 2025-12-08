@@ -136,8 +136,8 @@ export default function StudioPage() {
             )}
           </div>
 
-          {/* [우측] 컨텐츠 영역 (60%) */}
-          <div className="flex w-full min-w-0 flex-col justify-between gap-y-15 md:max-w-[50%] md:min-w-0 md:gap-5 md:gap-y-0 md:overflow-hidden">
+          {/* [우측] 컨텐츠 영역 - flex의 나머지 공간을 채움 */}
+          <div className="flex w-full min-w-0 flex-1 flex-col justify-between gap-y-15 md:min-w-0 md:gap-5 md:gap-y-0 md:overflow-hidden">
             {/* 1. 메인 설명 (스크롤 가능 영역) */}
             <div className="custom-scroll min-h-[20vh] overflow-hidden pb-12 md:flex md:flex-col md:overflow-auto md:pr-3 md:pb-0">
               <h3>{data.description}</h3>

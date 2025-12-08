@@ -46,7 +46,6 @@ export default function Header({
   // 프로젝트와 studio 페이지에서 z-index 조정
   // 참고: HEADER_CONFIG.zIndex = { detailPage: 400, projectOrStudio: 50, default: 350 }
   const isProjectOrStudio = pathname.startsWith('/project') || pathname === '/studio';
-  const isStudio = pathname === '/studio';
   // 상세 페이지는 z-index를 더 높게 설정하여 모달 위에 표시
   const isDetailPage = pathname.startsWith('/project/') && pathname !== '/project';
   // 모바일에서는 모바일 메뉴 버튼(z-[400])보다 위에 오도록 z-index 설정
@@ -59,17 +58,17 @@ export default function Header({
   // 모바일에서는 항상 fixed, 데스크톱에서만 isFixed prop에 따라 결정
   const effectiveIsFixed = mounted ? (isMobile ? true : isFixed) : isFixed;
 
-  // studio 모바일에서는 px를 제거
-  const paddingClass = isStudio && isMobile ? 'px-4 pt-5 md:px-5' : 'px-4 pt-5 md:px-5';
+  // studio 페이지 여부 확인
+  const isStudioPage = pathname === '/studio';
 
   return (
     <header
       className={cn(
-        'w-full text-white mix-blend-difference',
+        'w-full px-8 pt-5 text-white mix-blend-difference',
+        // studio 페이지는 기존 padding 유지, 나머지는 px-8
+        isStudioPage ? 'px-4 md:px-8' : 'px-8',
         // 모든 페이지에서 mix-blend-difference 사용
-        effectiveIsFixed
-          ? `pointer-events-none fixed top-0 right-0 left-0 ${zIndexClass} ${paddingClass}`
-          : `relative ${zIndexClass} ${paddingClass}`,
+        effectiveIsFixed ? `pointer-events-none fixed top-0 right-0 left-0 ${zIndexClass}` : `relative ${zIndexClass}`,
       )}
       style={{
         // relative일 때도 명시적으로 position 설정

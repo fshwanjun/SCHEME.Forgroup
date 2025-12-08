@@ -15,6 +15,10 @@ export default function ImageCard({
   onClickProject,
   aspectRatio,
   enableHoverEffect = true,
+  distortionScale,
+  radiusPx,
+  blurStd,
+  easingFactor,
 }: {
   projectId?: string | number;
   verticalSrc?: string; // 3:4 이미지 URL
@@ -24,6 +28,10 @@ export default function ImageCard({
   aspectRatio?: string; // 선택적으로 강제 비율, 예: "3 / 4" | "4 / 3"
   onClickProject?: (projectId?: string | number, rect?: DOMRect) => void;
   enableHoverEffect?: boolean;
+  distortionScale?: number; // distortion 효과 강도 (기본값: 500)
+  radiusPx?: number; // 왜곡 반경 픽셀 (기본값: 400)
+  blurStd?: number; // 블러 강도 (기본값: 80)
+  easingFactor?: number; // 이징 팩터 (기본값: 0.08)
 }) {
   const windowSize = useWindowSize();
   // 모바일에서는 distortion 효과 비활성화
@@ -161,6 +169,10 @@ export default function ImageCard({
       className="h-full w-full object-cover"
       preserveAspect="xMidYMid slice"
       distortionEnabled={shouldEnableDistortion}
+      distortionScale={distortionScale}
+      radiusPx={radiusPx}
+      blurStd={blurStd}
+      easingFactor={easingFactor}
     />
   );
 
