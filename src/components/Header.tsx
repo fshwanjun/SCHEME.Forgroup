@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import useWindowSize from '@/hooks/useWindowSize';
 
 const navItems = [
-  { href: '/project', label: 'Project' },
+  { href: '/projects', label: 'Projects' },
   { href: '/studio', label: 'Studio' },
 ];
 
@@ -32,7 +32,7 @@ export default function Header({
     setIsMobile(windowSize.isSm);
   }, [windowSize.isSm]);
 
-  const isVisible = pathname === '/' || pathname === '/studio' || pathname.startsWith('/project');
+  const isVisible = pathname === '/' || pathname === '/studio' || pathname.startsWith('/projects');
 
   if (!isVisible) return null;
 
@@ -45,9 +45,9 @@ export default function Header({
 
   // 프로젝트와 studio 페이지에서 z-index 조정
   // 참고: HEADER_CONFIG.zIndex = { detailPage: 400, projectOrStudio: 50, default: 350 }
-  const isProjectOrStudio = pathname.startsWith('/project') || pathname === '/studio';
+  const isProjectOrStudio = pathname.startsWith('/projects') || pathname === '/studio';
   // 상세 페이지는 z-index를 더 높게 설정하여 모달 위에 표시
-  const isDetailPage = pathname.startsWith('/project/') && pathname !== '/project';
+  const isDetailPage = pathname.startsWith('/projects/') && pathname !== '/projects';
   // 모바일에서는 모바일 메뉴 버튼(z-[400])보다 위에 오도록 z-index 설정
   const zIndexClass = isDetailPage
     ? 'z-[400]' // HEADER_CONFIG.zIndex.detailPage
@@ -92,7 +92,7 @@ export default function Header({
           <nav className="flex gap-8">
             {navItems.map(({ href, label }) => {
               const active = pathname === href || (href !== '/' && pathname.startsWith(href));
-              const isProjectLink = href === '/project';
+              const isProjectLink = href === '/projects';
               return (
                 <Link
                   key={href}

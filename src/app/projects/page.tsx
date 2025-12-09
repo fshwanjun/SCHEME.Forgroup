@@ -112,9 +112,9 @@ export default function ProjectPage() {
       // 히스토리에 2개의 상태를 push하여 뒤로가기 시 중간 상태로 이동하도록 함
       // URL은 프로젝트 slug를 사용하여 변경 (selectedProjectData에서 가져옴)
       const projectSlug = selectedProjectData?.slug || selected?.projectSlug;
-      const newUrl = projectSlug ? `/project/${projectSlug}` : '/project';
-      window.history.pushState({ modal: true, step: 1, originalPath: '/project' }, '', '/project');
-      window.history.pushState({ modal: true, step: 2, originalPath: '/project' }, '', newUrl);
+      const newUrl = projectSlug ? `/projects/${projectSlug}` : '/projects';
+      window.history.pushState({ modal: true, step: 1, originalPath: '/projects' }, '', '/projects');
+      window.history.pushState({ modal: true, step: 2, originalPath: '/projects' }, '', newUrl);
       historyPushedRef.current = true;
     }
 
@@ -128,7 +128,7 @@ export default function ProjectPage() {
       setImagesLoaded(false);
       historyPushedRef.current = false;
       // URL을 원래대로 복원
-      window.history.replaceState({ zoomed: false }, '', '/project');
+      window.history.replaceState({ zoomed: false }, '', '/projects');
     }
 
     // modeRef와 prevModeRef 모두 업데이트
@@ -342,7 +342,7 @@ export default function ProjectPage() {
         } else {
           // 그 외의 경우 (step이 없는 경우 등)
           // 히스토리 복원 후 줌아웃
-          window.history.pushState({ modal: false }, '', '/project');
+          window.history.pushState({ modal: false }, '', '/projects');
           zoomOut();
         }
 
@@ -368,12 +368,12 @@ export default function ProjectPage() {
         const currentPath = window.location.pathname;
 
         // 현재 URL이 프로젝트 상세 페이지인지 확인
-        if (currentPath.startsWith('/project/') && currentPath !== '/project') {
+        if (currentPath.startsWith('/projects/') && currentPath !== '/projects') {
           // 해당 페이지로 새로고침하여 이동
           window.location.href = currentPath;
-        } else if (currentPath === '/project') {
+        } else if (currentPath === '/projects') {
           // URL이 아직 변경되지 않았다면 변경 후 이동
-          const newUrl = `/project/${selectedProject.slug}`;
+          const newUrl = `/projects/${selectedProject.slug}`;
           window.location.href = newUrl;
         }
       } else if (mode !== 'cover' && selected) {

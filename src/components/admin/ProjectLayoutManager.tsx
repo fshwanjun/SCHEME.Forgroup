@@ -173,7 +173,7 @@ function SortableProjectLayoutItem({
         {/* 액션 버튼들 - 모바일에서 오른쪽에 배치 */}
         <div className="ml-auto flex items-center gap-1 sm:hidden">
           {selectedProject && (
-            <Link href={`/project/${selectedProject.slug}`} target="_blank">
+            <Link href={`/projects/${selectedProject.slug}`} target="_blank">
               <Button
                 variant="ghost"
                 size="icon"
@@ -220,7 +220,7 @@ function SortableProjectLayoutItem({
 
         {/* 프로젝트 링크 - 데스크톱에서만 표시 */}
         {selectedProject && (
-          <Link href={`/project/${selectedProject.slug}`} target="_blank" className="hidden sm:block">
+          <Link href={`/projects/${selectedProject.slug}`} target="_blank" className="hidden sm:block">
             <Button
               variant="ghost"
               size="icon"
@@ -640,7 +640,7 @@ export default function ProjectLayoutManager() {
               <Plus className="h-4 w-4" />
               <span className="sm:inline">Add</span>
             </Button>
-            <Link href="/project" target="_blank" className="flex-1 sm:flex-none">
+            <Link href="/projects" target="_blank" className="flex-1 sm:flex-none">
               <Button
                 variant="outline"
                 className="w-full gap-2 border-stone-700 bg-stone-800 text-stone-200 hover:border-stone-600 hover:bg-stone-200 hover:text-stone-900">

@@ -64,18 +64,18 @@ export default function ProjectDetailClient({ project }: { project: ProjectDetai
       const currentPath = window.location.pathname;
 
       // 프로젝트 상세 페이지에서 뒤로가기를 누른 경우
-      if (currentPath.startsWith('/project/') && currentPath !== '/project') {
+      if (currentPath.startsWith('/projects/') && currentPath !== '/projects') {
         isNavigatingRef.current = true;
 
-        // 즉시 /project URL로 pushState하여 새로고침 방지
+        // 즉시 /projects URL로 pushState하여 새로고침 방지
         // popstate 이벤트가 발생한 직후 pushState를 호출하면
         // Next.js가 페이지를 새로고침하지 않고 클라이언트 사이드에서만 처리됨
-        window.history.pushState({ zoomed: false, preventRefresh: true }, '', '/project');
+        window.history.pushState({ zoomed: false, preventRefresh: true }, '', '/projects');
 
         // router.replace를 사용하여 클라이언트 사이드 네비게이션
         // pushState 후 약간의 지연을 두어 Next.js가 이를 감지하도록 함
         requestAnimationFrame(() => {
-          router.replace('/project');
+          router.replace('/projects');
           // 다음 이벤트 루프에서 플래그 리셋
           setTimeout(() => {
             isNavigatingRef.current = false;

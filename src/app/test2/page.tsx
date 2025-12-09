@@ -135,7 +135,7 @@ export default function Test2() {
       // 히스토리에 2개의 상태를 push하여 뒤로가기 시 중간 상태로 이동하도록 함
       // URL은 프로젝트 slug를 사용하여 변경
       const projectSlug = selected?.projectSlug || selected?.projectId;
-      const newUrl = projectSlug ? `/project/${projectSlug}` : '/test2';
+      const newUrl = projectSlug ? `/projects/${projectSlug}` : '/test2';
       window.history.pushState({ modal: true, step: 1, originalPath: '/test2' }, '', '/test2');
       window.history.pushState({ modal: true, step: 2, originalPath: '/test2' }, '', newUrl);
       historyPushedRef.current = true;
@@ -326,12 +326,12 @@ export default function Test2() {
         const currentPath = window.location.pathname;
 
         // 현재 URL이 프로젝트 상세 페이지인지 확인
-        if (currentPath.startsWith('/project/') && currentPath !== '/project') {
+        if (currentPath.startsWith('/projects/') && currentPath !== '/projects') {
           // 해당 페이지로 새로고침하여 이동
           window.location.href = currentPath;
         } else if (currentPath === '/test2') {
           // URL이 아직 변경되지 않았다면 변경 후 이동
-          const newUrl = `/project/${selectedProject.slug}`;
+          const newUrl = `/projects/${selectedProject.slug}`;
           window.location.href = newUrl;
         }
       } else if (mode !== 'cover' && selected) {

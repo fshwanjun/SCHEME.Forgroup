@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase';
 import LogoInline from './LogoInline';
 
 const navItems = [
-  { href: '/project', label: 'Project' },
+  { href: '/projects', label: 'Projects' },
   { href: '/studio', label: 'Studio' },
 ];
 
@@ -60,7 +60,7 @@ export default function MobileMenu({
     fetchSocial();
   }, []);
 
-  const isVisible = pathname === '/' || pathname === '/studio' || pathname.startsWith('/project');
+  const isVisible = pathname === '/' || pathname === '/studio' || pathname.startsWith('/projects');
 
   // Hydration 불일치 방지: 마운트 전에는 렌더링하지 않음
   if (!mounted || !isVisible || !isMobile) return null;
@@ -111,7 +111,7 @@ export default function MobileMenu({
           <div className="flex h-full flex-col p-6 pt-30">
             {navItems.map(({ href, label }) => {
               const active = pathname === href || (href !== '/' && pathname.startsWith(href));
-              const isProjectLink = href === '/project';
+              const isProjectLink = href === '/projects';
               return (
                 <Link
                   key={href}

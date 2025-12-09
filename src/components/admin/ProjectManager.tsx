@@ -163,7 +163,7 @@ function SortableProjectItem({
         </div>
         <div className="flex items-center gap-1">
           <Link
-            href={`/project/${project.slug}`}
+            href={`/projects/${project.slug}`}
             target="_blank"
             onClick={(e) => e.stopPropagation()}
             className="rounded-md p-2 text-stone-500 hover:bg-stone-800 hover:text-stone-200"
@@ -489,7 +489,7 @@ export default function ProjectManager() {
               </div>
             </div>
             {isEditing && editingId && slug && (
-              <Link href={`/project/${slug}`} target="_blank">
+              <Link href={`/projects/${slug}`} target="_blank">
                 <Button
                   variant="outline"
                   className="gap-2 border-stone-700 bg-stone-800 text-stone-200 hover:border-stone-600 hover:bg-stone-200 hover:text-stone-900">
@@ -742,7 +742,7 @@ export default function ProjectManager() {
                 </Button>
               )}
 
-              <Link href="/project" target="_blank" className="shrink-0">
+              <Link href="/projects" target="_blank" className="shrink-0">
                 <Button
                   variant="outline"
                   className="gap-2 border-stone-700 bg-stone-800 text-stone-200 hover:border-stone-600 hover:bg-stone-200 hover:text-stone-900">
@@ -824,7 +824,7 @@ export default function ProjectManager() {
                           /{item.slug}
                         </span>
                         <Link
-                          href={`/project/${item.slug}`}
+                          href={`/projects/${item.slug}`}
                           target="_blank"
                           onClick={(e) => e.stopPropagation()}
                           className="text-stone-600 transition-colors hover:text-stone-300"
