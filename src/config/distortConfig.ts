@@ -17,8 +17,8 @@ export interface DistortConfig {
 
 /** 홈 페이지 distort 설정 (기본값) */
 export const HOME_DISTORT_CONFIG: DistortConfig = {
-  distortionScale: 500,
-  radiusPx: 400,
+  distortionScale: 200,
+  radiusPx: 300,
   blurStd: 80,
   easingFactor: 0.08,
 };
