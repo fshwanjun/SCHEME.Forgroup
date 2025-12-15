@@ -255,7 +255,7 @@ export default function Test1() {
             selectedUniqueId={selected?.uniqueId ?? null}
             sectionId={id}
             distortionScale={TEST1_DISTORT_CONFIG.distortionScale}
-            radiusPx={TEST1_DISTORT_CONFIG.radiusPx}
+            radiusPercent={TEST1_DISTORT_CONFIG.radiusPercent}
             blurStd={TEST1_DISTORT_CONFIG.blurStd}
             easingFactor={TEST1_DISTORT_CONFIG.easingFactor}
           />

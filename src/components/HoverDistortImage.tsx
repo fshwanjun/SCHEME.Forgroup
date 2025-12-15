@@ -10,7 +10,7 @@ export default function HoverDistortImage({
   className,
   aspectRatio,
   distortionScale = HOVER_DISTORT_CONFIG.defaultDistortionScale,
-  radiusPx = HOVER_DISTORT_CONFIG.defaultRadiusPx,
+  radiusPercent = HOVER_DISTORT_CONFIG.defaultRadiusPercent,
   blurStd = HOVER_DISTORT_CONFIG.defaultBlurStd,
   preserveAspect = 'xMaxYMax',
   distortionEnabled = true,
@@ -20,9 +20,9 @@ export default function HoverDistortImage({
   alt?: string;
   className?: string;
   aspectRatio?: string; // e.g. "3 / 4"
-  distortionScale?: number;
-  radiusPx?: number;
-  blurStd?: number;
+  distortionScale?: number; // 대각선 비율 기반 왜곡 강도 (0.5 = 대각선의 50%)
+  radiusPercent?: number; // 대각선 대비 반경 비율 (0.25 = 대각선의 25%)
+  blurStd?: number; // 대각선 비율 기반 블러 (0.08 = 대각선의 8%)
   preserveAspect?:
     | 'none'
     | 'xMinYMin'
@@ -48,6 +48,8 @@ export default function HoverDistortImage({
 }) {
   const windowSize = useWindowSize();
   const [mounted, setMounted] = useState(false);
+  // 비례 계산된 블러 값 (렌더링에 사용)
+  const [actualBlurStd, setActualBlurStd] = useState(blurStd * HOVER_DISTORT_CONFIG.baseDiagonal);
 
   // 모바일에서는 distortion 효과 비활성화
   const isMobile = mounted && windowSize.isSm;
@@ -79,6 +81,21 @@ export default function HoverDistortImage({
   const prevMousePosRef = useRef<{ x: number; y: number } | null>(null);
   // 💡 마우스 이동 감지 타이머 Ref 추가
   const mouseMoveTimerRef = useRef<number | null>(null); // Create offscreen canvas once
+
+  // 비례 계산을 위한 실제 값 저장 (대각선 기반)
+  const proportionalValuesRef = useRef<{
+    diagonal: number;
+    actualRadiusPx: number;
+    actualDistortionScale: number;
+    actualBlurStd: number;
+    actualScaleMultiplier: number;
+  }>({
+    diagonal: HOVER_DISTORT_CONFIG.baseDiagonal,
+    actualRadiusPx: radiusPercent * HOVER_DISTORT_CONFIG.baseDiagonal,
+    actualDistortionScale: distortionScale * HOVER_DISTORT_CONFIG.baseDiagonal,
+    actualBlurStd: blurStd * HOVER_DISTORT_CONFIG.baseDiagonal,
+    actualScaleMultiplier: HOVER_DISTORT_CONFIG.scaleMultiplier * HOVER_DISTORT_CONFIG.baseDiagonal,
+  });
 
   // distortionEnabled가 false에서 true로 변경될 때 모든 상태 리셋
   useEffect(() => {
@@ -195,6 +212,20 @@ export default function HoverDistortImage({
       if (r.width === 0 || r.height === 0) return; // 요소가 아직 렌더링되지 않음
 
       elemSizeRef.current = { w: r.width, h: r.height };
+
+      // 대각선 기반 비례 값 계산
+      const diagonal = Math.sqrt(r.width * r.width + r.height * r.height);
+      const newActualBlurStd = blurStd * diagonal;
+      proportionalValuesRef.current = {
+        diagonal,
+        actualRadiusPx: radiusPercent * diagonal,
+        actualDistortionScale: distortionScale * diagonal,
+        actualBlurStd: newActualBlurStd,
+        actualScaleMultiplier: HOVER_DISTORT_CONFIG.scaleMultiplier * diagonal,
+      };
+      // 블러 값이 변경되면 상태 업데이트
+      setActualBlurStd(newActualBlurStd);
+
       const dpr = Math.min(window.devicePixelRatio || 1, HOVER_DISTORT_CONFIG.canvas.devicePixelRatioLimit);
       const target = Math.min(
         HOVER_DISTORT_CONFIG.canvas.maxSize,
@@ -241,7 +272,7 @@ export default function HoverDistortImage({
       clearTimeout(timeoutId);
       ro.disconnect();
     };
-  }, [actualDistortionEnabled]);
+  }, [actualDistortionEnabled, radiusPercent, distortionScale, blurStd]);
 
   const updateDisplacementMap = useCallback(
     (xPct: number, yPct: number) => {
@@ -259,8 +290,10 @@ export default function HoverDistortImage({
       ctx.imageSmoothingQuality = 'high';
 
       const { w: ew, h: eh } = elemSizeRef.current;
-      const rx = Math.max(HOVER_DISTORT_CONFIG.canvas.minRadius, (radiusPx * cw) / Math.max(ew, 1));
-      const ry = Math.max(HOVER_DISTORT_CONFIG.canvas.minRadius, (radiusPx * ch) / Math.max(eh, 1));
+      // 비례 계산된 반경 사용
+      const actualRadiusPx = proportionalValuesRef.current.actualRadiusPx;
+      const rx = Math.max(HOVER_DISTORT_CONFIG.canvas.minRadius, (actualRadiusPx * cw) / Math.max(ew, 1));
+      const ry = Math.max(HOVER_DISTORT_CONFIG.canvas.minRadius, (actualRadiusPx * ch) / Math.max(eh, 1));
       const cx = (xPct / 100) * cw;
       const cy = (yPct / 100) * ch;
 
@@ -294,7 +327,7 @@ export default function HoverDistortImage({
         maskFeImageRef.current.setAttribute('href', url);
       }
     },
-    [radiusPx, actualDistortionEnabled],
+    [actualDistortionEnabled],
   );
 
   const startAnimIfNeeded = useCallback(() => {
@@ -386,9 +419,10 @@ export default function HoverDistortImage({
       }
       prevMousePosRef.current = { x: px, y: py };
 
-      // 마우스 이동 속도 기반 scale 계산
+      // 마우스 이동 속도 기반 scale 계산 (비례 값 사용)
       const speed = Math.hypot(dx, dy);
-      targetScaleRef.current = Math.min(distortionScale, speed * HOVER_DISTORT_CONFIG.scaleMultiplier);
+      const { actualDistortionScale, actualScaleMultiplier } = proportionalValuesRef.current;
+      targetScaleRef.current = Math.min(actualDistortionScale, speed * actualScaleMultiplier);
 
       // scale이 0으로 돌아가는 타이머 리셋
       if (mouseMoveTimerRef.current) {
@@ -409,7 +443,7 @@ export default function HoverDistortImage({
         startAnimIfNeeded();
       }
     },
-    [distortionScale, startAnimIfNeeded, actualDistortionEnabled],
+    [startAnimIfNeeded, actualDistortionEnabled],
   );
 
   const handleLeave = useCallback(() => {
@@ -448,13 +482,13 @@ export default function HoverDistortImage({
       <svg className="block h-full w-full" xmlns="http://www.w3.org/2000/svg" style={{ imageRendering: 'auto' }}>
         {actualDistortionEnabled ? (
           <defs>
-            {/* 메인 이미지용 필터 */}
+            {/* 메인 이미지용 필터 - 영역 확장으로 잘림 방지 */}
             <filter
               id={filterId}
-              x="0"
-              y="0"
-              width="100%"
-              height="100%"
+              x={`-${HOVER_DISTORT_CONFIG.filterExpand * 100}%`}
+              y={`-${HOVER_DISTORT_CONFIG.filterExpand * 100}%`}
+              width={`${(1 + HOVER_DISTORT_CONFIG.filterExpand * 2) * 100}%`}
+              height={`${(1 + HOVER_DISTORT_CONFIG.filterExpand * 2) * 100}%`}
               colorInterpolationFilters="sRGB"
               filterRes="200%">
               <feImage
@@ -466,7 +500,7 @@ export default function HoverDistortImage({
                 preserveAspectRatio="none"
                 result="map"
               />
-              <feGaussianBlur in="map" stdDeviation={blurStd} result="smap" />
+              <feGaussianBlur in="map" stdDeviation={actualBlurStd} result="smap" />
               <feDisplacementMap
                 ref={feDispRef}
                 in="SourceGraphic"
@@ -476,13 +510,13 @@ export default function HoverDistortImage({
                 yChannelSelector="G"
               />
             </filter>
-            {/* 마스크용 필터 - 같은 displacement map 사용 */}
+            {/* 마스크용 필터 - 같은 displacement map 사용, 영역 확장 */}
             <filter
               id={maskFilterId}
-              x="-5%"
-              y="-5%"
-              width="110%"
-              height="110%"
+              x={`-${HOVER_DISTORT_CONFIG.filterExpand * 100}%`}
+              y={`-${HOVER_DISTORT_CONFIG.filterExpand * 100}%`}
+              width={`${(1 + HOVER_DISTORT_CONFIG.filterExpand * 2) * 100}%`}
+              height={`${(1 + HOVER_DISTORT_CONFIG.filterExpand * 2) * 100}%`}
               colorInterpolationFilters="sRGB"
               filterRes="200%">
               <feImage
@@ -494,7 +528,7 @@ export default function HoverDistortImage({
                 preserveAspectRatio="none"
                 result="maskMap"
               />
-              <feGaussianBlur in="maskMap" stdDeviation={blurStd} result="maskSmap" />
+              <feGaussianBlur in="maskMap" stdDeviation={actualBlurStd} result="maskSmap" />
               <feDisplacementMap
                 ref={maskFeDispRef}
                 in="SourceGraphic"

@@ -16,7 +16,7 @@ export default function ImageCard({
   aspectRatio,
   enableHoverEffect = true,
   distortionScale,
-  radiusPx,
+  radiusPercent,
   blurStd,
   easingFactor,
 }: {
@@ -28,9 +28,9 @@ export default function ImageCard({
   aspectRatio?: string; // 선택적으로 강제 비율, 예: "3 / 4" | "4 / 3"
   onClickProject?: (projectId?: string | number, rect?: DOMRect) => void;
   enableHoverEffect?: boolean;
-  distortionScale?: number; // distortion 효과 강도 (기본값: 500)
-  radiusPx?: number; // 왜곡 반경 픽셀 (기본값: 400)
-  blurStd?: number; // 블러 강도 (기본값: 80)
+  distortionScale?: number; // 대각선 비율 기반 왜곡 강도 (기본값: 1.65 = 165%)
+  radiusPercent?: number; // 대각선 대비 반경 비율 (기본값: 0.29 = 29%)
+  blurStd?: number; // 대각선 비율 기반 블러 (기본값: 0.15 = 15%)
   easingFactor?: number; // 이징 팩터 (기본값: 0.08)
 }) {
   const windowSize = useWindowSize();
@@ -170,7 +170,7 @@ export default function ImageCard({
       preserveAspect="xMidYMid slice"
       distortionEnabled={shouldEnableDistortion}
       distortionScale={distortionScale}
-      radiusPx={radiusPx}
+      radiusPercent={radiusPercent}
       blurStd={blurStd}
       easingFactor={easingFactor}
     />

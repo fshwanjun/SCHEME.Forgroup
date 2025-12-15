@@ -108,10 +108,10 @@ type HomeGalleryProps = {
   layoutConfig?: LayoutConfig; // 레이아웃 설정 (기본값: HOME_LAYOUT_CONFIG)
   sectionId?: number; // 무한 스크롤에서 섹션 구분을 위한 ID
   onIntroAnimationComplete?: () => void; // 인트로 애니메이션 완료 콜백
-  // Distort 효과 설정
-  distortionScale?: number; // distortion 효과 강도 (기본값: 500)
-  radiusPx?: number; // 왜곡 반경 픽셀 (기본값: 400)
-  blurStd?: number; // 블러 강도 (기본값: 80)
+  // Distort 효과 설정 (대각선 비율 기반)
+  distortionScale?: number; // 대각선 비율 기반 왜곡 강도 (기본값: 1.65 = 165%)
+  radiusPercent?: number; // 대각선 대비 반경 비율 (기본값: 0.29 = 29%)
+  blurStd?: number; // 대각선 비율 기반 블러 (기본값: 0.15 = 15%)
   easingFactor?: number; // 이징 팩터 (기본값: 0.08)
 };
 
@@ -124,7 +124,7 @@ function HomeGallery({
   sectionId = 0,
   onIntroAnimationComplete,
   distortionScale,
-  radiusPx,
+  radiusPercent,
   blurStd,
   easingFactor,
 }: HomeGalleryProps) {
@@ -666,7 +666,7 @@ function HomeGallery({
                 className="h-full w-full"
                 enableHoverEffect={!isSelected && !isOtherSelected}
                 distortionScale={distortionScale}
-                radiusPx={radiusPx}
+                radiusPercent={radiusPercent}
                 blurStd={blurStd}
                 easingFactor={easingFactor}
                 onClickProject={(_pid, rect) => {
