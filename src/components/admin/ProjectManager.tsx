@@ -48,28 +48,56 @@ type ProjectStatus = 'ready' | 'published' | 'hidden';
 // 프로젝트 컨텐츠 데이터 인터페이스
 interface ProjectContent {
   project: string;
-  year: number;
+  year: string;
   client: string;
   services: string;
   product: string;
-  keyword: string[];
+  keyword: string;
   challenge: string;
   thumbnail43: string;
   thumbnail34: string;
   detailImages: DetailImage[];
+  // 하단 4단 타이틀
+  projectTitle: string;
+  yearTitle: string;
+  clientTitle: string;
+  servicesTitle: string;
+  // 상세 정보 타이틀
+  productTitle: string;
+  keywordTitle: string;
+  challengeTitle: string;
+  // 하단 4단 가시성 토글
+  projectVisible: boolean;
+  yearVisible: boolean;
+  clientVisible: boolean;
+  servicesVisible: boolean;
 }
 
 const defaultContent: ProjectContent = {
   project: '',
-  year: new Date().getFullYear(),
+  year: String(new Date().getFullYear()),
   client: '',
   services: '',
   product: '',
-  keyword: [],
+  keyword: '',
   challenge: '',
   thumbnail43: '',
   thumbnail34: '',
   detailImages: [],
+  // 하단 4단 타이틀 기본값
+  projectTitle: 'Project',
+  yearTitle: 'Year',
+  clientTitle: 'Client',
+  servicesTitle: 'Services',
+  // 상세 정보 타이틀 기본값
+  productTitle: 'Product',
+  keywordTitle: 'Design Keywords',
+  challengeTitle: 'Challenge',
+  // 하단 4단 가시성 기본값
+  projectVisible: true,
+  yearVisible: true,
+  clientVisible: true,
+  servicesVisible: true,
 };
 
 // 프로젝트 데이터 인터페이스 정의 (타입스크립트)
@@ -551,22 +579,229 @@ export default function ProjectManager() {
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description" className="text-stone-300">
-                  Summary
-                </Label>
-                <Textarea
-                  id="description"
-                  rows={3}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  disabled={loading}
-                  placeholder="Enter a brief description to be displayed in the project list"
-                  className="resize-none border-stone-800 bg-stone-950 text-stone-200"
-                />
+              {/* ===== 하단 4단 정보 (Project, Year, Client, Services) ===== */}
+              <div className="space-y-4 border-t border-stone-800 pt-4">
+                <h4 className="text-lg font-medium text-stone-200">Bottom Info (4 Columns)</h4>
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                  {/* Project */}
+                  <div className="space-y-2 rounded-lg border border-stone-800 bg-stone-900/50 p-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="projectVisible"
+                        checked={contentData.projectVisible}
+                        onChange={(e) => handleContentChange('projectVisible', e.target.checked)}
+                        className="h-4 w-4 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
+                      />
+                      <Label htmlFor="projectVisible" className="text-xs text-stone-400">
+                        Visible
+                      </Label>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-stone-500">Title</Label>
+                      <Input
+                        value={contentData.projectTitle}
+                        onChange={(e) => handleContentChange('projectTitle', e.target.value)}
+                        className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
+                        placeholder="Project"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-stone-500">Value</Label>
+                      <Textarea
+                        rows={3}
+                        value={contentData.project}
+                        onChange={(e) => handleContentChange('project', e.target.value)}
+                        className="border-stone-800 bg-stone-950 text-sm text-stone-200"
+                        placeholder="Project Name"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Year */}
+                  <div className="space-y-2 rounded-lg border border-stone-800 bg-stone-900/50 p-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="yearVisible"
+                        checked={contentData.yearVisible}
+                        onChange={(e) => handleContentChange('yearVisible', e.target.checked)}
+                        className="h-4 w-4 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
+                      />
+                      <Label htmlFor="yearVisible" className="text-xs text-stone-400">
+                        Visible
+                      </Label>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-stone-500">Title</Label>
+                      <Input
+                        value={contentData.yearTitle}
+                        onChange={(e) => handleContentChange('yearTitle', e.target.value)}
+                        className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
+                        placeholder="Year"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-stone-500">Value</Label>
+                      <Textarea
+                        rows={3}
+                        value={contentData.year}
+                        onChange={(e) => handleContentChange('year', e.target.value)}
+                        className="border-stone-800 bg-stone-950 text-sm text-stone-200"
+                        placeholder="2024"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Client */}
+                  <div className="space-y-2 rounded-lg border border-stone-800 bg-stone-900/50 p-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="clientVisible"
+                        checked={contentData.clientVisible}
+                        onChange={(e) => handleContentChange('clientVisible', e.target.checked)}
+                        className="h-4 w-4 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
+                      />
+                      <Label htmlFor="clientVisible" className="text-xs text-stone-400">
+                        Visible
+                      </Label>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-stone-500">Title</Label>
+                      <Input
+                        value={contentData.clientTitle}
+                        onChange={(e) => handleContentChange('clientTitle', e.target.value)}
+                        className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
+                        placeholder="Client"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-stone-500">Value</Label>
+                      <Textarea
+                        rows={3}
+                        value={contentData.client}
+                        onChange={(e) => handleContentChange('client', e.target.value)}
+                        className="border-stone-800 bg-stone-950 text-sm text-stone-200"
+                        placeholder="Client Name"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Services */}
+                  <div className="space-y-2 rounded-lg border border-stone-800 bg-stone-900/50 p-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="servicesVisible"
+                        checked={contentData.servicesVisible}
+                        onChange={(e) => handleContentChange('servicesVisible', e.target.checked)}
+                        className="h-4 w-4 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
+                      />
+                      <Label htmlFor="servicesVisible" className="text-xs text-stone-400">
+                        Visible
+                      </Label>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-stone-500">Title</Label>
+                      <Input
+                        value={contentData.servicesTitle}
+                        onChange={(e) => handleContentChange('servicesTitle', e.target.value)}
+                        className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
+                        placeholder="Services"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-stone-500">Value</Label>
+                      <Textarea
+                        rows={3}
+                        value={contentData.services}
+                        onChange={(e) => handleContentChange('services', e.target.value)}
+                        className="border-stone-800 bg-stone-950 text-sm text-stone-200"
+                        placeholder="Services"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* ===== 상세 컨텐츠 정보 (JSONB) ===== */}
+              {/* ===== 상세 정보 (Product, Keywords, Challenge) ===== */}
+              <div className="space-y-4 border-t border-stone-800 pt-4">
+                <h4 className="text-lg font-medium text-stone-200">Detail Contents</h4>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  {/* Product */}
+                  <div className="space-y-2 rounded-lg border border-stone-800 bg-stone-900/50 p-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-stone-500">Section Title</Label>
+                      <Input
+                        value={contentData.productTitle}
+                        onChange={(e) => handleContentChange('productTitle', e.target.value)}
+                        className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
+                        placeholder="Product"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-stone-500">Value</Label>
+                      <Textarea
+                        rows={3}
+                        value={contentData.product}
+                        onChange={(e) => handleContentChange('product', e.target.value)}
+                        className="border-stone-800 bg-stone-950 text-sm text-stone-200"
+                        placeholder="Product description"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Keywords */}
+                  <div className="space-y-2 rounded-lg border border-stone-800 bg-stone-900/50 p-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-stone-500">Section Title</Label>
+                      <Input
+                        value={contentData.keywordTitle}
+                        onChange={(e) => handleContentChange('keywordTitle', e.target.value)}
+                        className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
+                        placeholder="Design Keywords"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-stone-500">Value</Label>
+                      <Textarea
+                        rows={3}
+                        value={contentData.keyword}
+                        onChange={(e) => handleContentChange('keyword', e.target.value)}
+                        className="border-stone-800 bg-stone-950 text-sm text-stone-200"
+                        placeholder="Design keywords"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Challenge */}
+                <div className="space-y-2 rounded-lg border border-stone-800 bg-stone-900/50 p-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-stone-500">Section Title</Label>
+                    <Input
+                      value={contentData.challengeTitle}
+                      onChange={(e) => handleContentChange('challengeTitle', e.target.value)}
+                      className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
+                      placeholder="Challenge"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-stone-500">Content (Long Text)</Label>
+                    <Textarea
+                      rows={6}
+                      value={contentData.challenge}
+                      onChange={(e) => handleContentChange('challenge', e.target.value)}
+                      className="border-stone-800 bg-stone-950 text-stone-200"
+                      placeholder="Enter project challenges and detailed description"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* ===== 썸네일 이미지 ===== */}
               <div className="space-y-4 border-t border-stone-800 pt-4">
                 <h4 className="text-lg font-medium text-stone-200">Thumbnail Images</h4>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -601,92 +836,12 @@ export default function ProjectManager() {
                   folderPath="projects/details"
                 />
               </div>
-
-              {/* ===== 상세 컨텐츠 정보 (JSONB) ===== */}
-              <div className="space-y-4 border-t border-stone-800 pt-4">
-                <h4 className="text-lg font-medium text-stone-200">Contents</h4>
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label className="text-stone-300">Project Name</Label>
-                    <Input
-                      value={contentData.project}
-                      onChange={(e) => handleContentChange('project', e.target.value)}
-                      className="border-stone-800 bg-stone-950 text-stone-200"
-                      placeholder="Project Name"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-stone-300">Year</Label>
-                    <Input
-                      type="number"
-                      value={contentData.year}
-                      onChange={(e) => handleContentChange('year', parseInt(e.target.value))}
-                      className="border-stone-800 bg-stone-950 text-stone-200"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label className="text-stone-300">Client</Label>
-                    <Input
-                      value={contentData.client}
-                      onChange={(e) => handleContentChange('client', e.target.value)}
-                      className="border-stone-800 bg-stone-950 text-stone-200"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-stone-300">Services</Label>
-                    <Input
-                      value={contentData.services}
-                      onChange={(e) => handleContentChange('services', e.target.value)}
-                      className="border-stone-800 bg-stone-950 text-stone-200"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-stone-300">Product</Label>
-                  <Input
-                    value={contentData.product}
-                    onChange={(e) => handleContentChange('product', e.target.value)}
-                    className="border-stone-800 bg-stone-950 text-stone-200"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-stone-300">Keywords (separated by comma)</Label>
-                  <Input
-                    value={contentData.keyword.join(', ')}
-                    onChange={(e) =>
-                      handleContentChange(
-                        'keyword',
-                        e.target.value.split(',').map((k) => k.trim()),
-                      )
-                    }
-                    className="border-stone-800 bg-stone-950 text-stone-200"
-                    placeholder="e.g., Branding, UI/UX, Web Design"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-stone-300">Challenge (Long Text)</Label>
-                  <Textarea
-                    rows={6}
-                    value={contentData.challenge}
-                    onChange={(e) => handleContentChange('challenge', e.target.value)}
-                    className="border-stone-800 bg-stone-950 text-stone-200"
-                    placeholder="Enter project challenges and detailed description"
-                  />
-                </div>
-              </div>
             </CardContent>
             <CardFooter className="flex justify-end gap-3 border-t border-stone-800 p-6">
               <Button
                 variant="outline"
                 onClick={handleCancel}
-                className="border-stone-700 text-stone-400 hover:border-stone-600 hover:bg-stone-800 hover:text-stone-200">
+                className="border-stone-700 bg-stone-800 text-stone-400 hover:border-stone-600 hover:bg-stone-700 hover:text-stone-200">
                 Cancel
               </Button>
               <Button

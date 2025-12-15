@@ -83,9 +83,11 @@ export default function MobileMenu({
       {/* 참고: MOBILE_MENU_CONFIG.zIndex.button = 400 */}
       <button
         onClick={() => setIsMenuOpen(!isMenuOpen)}
-        className="pointer-events-auto fixed right-4 z-[400] flex h-8 w-8 items-center justify-center select-none"
+        className={cn(
+          'pointer-events-auto fixed right-[25px] z-[400] flex h-8 w-8 items-center justify-center select-none',
+          !isMenuOpen && 'mix-blend-difference',
+        )}
         style={{
-          mixBlendMode: 'normal',
           position: 'fixed',
           top: '20px', // 헤더 pt-5와 동일
         }}
@@ -93,13 +95,13 @@ export default function MobileMenu({
         <div className="relative flex h-3 w-6 items-center justify-center">
           <span
             className={cn(
-              'absolute block h-[2px] w-6 bg-black transition-all duration-300',
-              isMenuOpen ? 'top-0 rotate-45' : '-top-1 rotate-0',
+              'absolute block h-[2px] w-6 transition-all duration-300',
+              isMenuOpen ? 'top-0 rotate-45 bg-black' : '-top-1 rotate-0 bg-white',
             )}></span>
           <span
             className={cn(
-              'absolute block h-[2px] w-6 bg-black transition-all duration-300',
-              isMenuOpen ? 'top-0 -rotate-45' : 'top-1 rotate-0',
+              'absolute block h-[2px] w-6 transition-all duration-300',
+              isMenuOpen ? 'top-0 -rotate-45 bg-black' : 'top-1 rotate-0 bg-white',
             )}></span>
         </div>
       </button>

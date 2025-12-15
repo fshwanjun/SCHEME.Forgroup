@@ -450,38 +450,44 @@ export default function ProjectPage() {
           animate={{ opacity: mode === 'cover' && !isAnimating ? 1 : 0 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className={cn(
-            'fixed inset-0 z-[200] overflow-y-auto',
+            'fixed inset-0 z-[200]',
             mode === 'cover' && !isAnimating ? 'pointer-events-auto' : 'pointer-events-none',
           )}
           style={{
-            backgroundColor: 'white',
             overscrollBehavior: 'none',
             overscrollBehaviorY: 'none',
-            WebkitOverflowScrolling: 'touch',
-            ...(selected?.src && !imagesLoaded
-              ? {
-                  backgroundImage: `url(${selected.src})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  backgroundRepeat: 'no-repeat',
-                }
-              : {}),
-            transition: 'background-image 0.3s ease-out',
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget && mode === 'cover') {
-              zoomOut();
-            }
           }}>
-          <main className="relative h-full w-full">
-            <ProjectDetailContent
-              key={selected?.projectId || 'default'}
-              contents={selectedProject.contents}
-              title={selectedProject.title}
-              heroImageSrc={selected?.src}
-              onHeroImageLoad={() => setImagesLoaded(true)}
-            />
-          </main>
+          {/* 스크롤 컨테이너 */}
+          <div
+            className="h-full w-full overflow-y-auto"
+            style={{
+              backgroundColor: 'white',
+              WebkitOverflowScrolling: 'touch',
+              ...(selected?.src && !imagesLoaded
+                ? {
+                    backgroundImage: `url(${selected.src})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                  }
+                : {}),
+              transition: 'background-image 0.3s ease-out',
+            }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget && mode === 'cover') {
+                zoomOut();
+              }
+            }}>
+            <main className="relative min-h-full w-full">
+              <ProjectDetailContent
+                key={selected?.projectId || 'default'}
+                contents={selectedProject.contents}
+                title={selectedProject.title}
+                heroImageSrc={selected?.src}
+                onHeroImageLoad={() => setImagesLoaded(true)}
+              />
+            </main>
+          </div>
         </motion.div>
       )}
     </>

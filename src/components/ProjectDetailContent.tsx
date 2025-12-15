@@ -111,7 +111,7 @@ function ScrollIndicator() {
   return (
     <div
       ref={indicatorRef}
-      className="pointer-events-none fixed top-1/2 right-2 z-[500] -translate-y-1/2 mix-blend-difference transition-opacity duration-300 md:right-10"
+      className="pointer-events-none fixed top-1/2 right-2 z-500 -translate-y-1/2 mix-blend-difference transition-opacity duration-300 md:right-10"
       style={{
         width: 2,
         height: 'clamp(10vh, 15vh, 20vh)', // 최소 10vh, 기본 15vh, 최대 20vh
@@ -140,15 +140,29 @@ interface DetailImage {
 
 interface ProjectContent {
   project?: string;
-  year?: number;
+  year?: string | number; // 호환성을 위해 number도 허용
   client?: string;
   services?: string;
   product?: string;
-  keyword?: string[];
+  keyword?: string | string[]; // 호환성을 위해 배열도 허용
   challenge?: string;
   thumbnail43?: string;
   thumbnail34?: string;
   detailImages?: DetailImage[];
+  // 하단 4단 타이틀
+  projectTitle?: string;
+  yearTitle?: string;
+  clientTitle?: string;
+  servicesTitle?: string;
+  // 상세 정보 타이틀
+  productTitle?: string;
+  keywordTitle?: string;
+  challengeTitle?: string;
+  // 하단 4단 가시성 토글
+  projectVisible?: boolean;
+  yearVisible?: boolean;
+  clientVisible?: boolean;
+  servicesVisible?: boolean;
 }
 
 interface ProjectDetailContentProps {
@@ -192,26 +206,28 @@ export default function ProjectDetailContent({
           ease: PROJECT_DETAIL_CONFIG.animation.ease,
         }}
         className="fixed bottom-0 left-0 z-10 flex w-full justify-between gap-4 px-10 pb-8 text-white mix-blend-difference md:px-10">
-        <div className="flex flex-col gap-1">
-          <h5>Project</h5>
-          <h6>{contents.project || ''}</h6>
-        </div>
-        {contents.year && (
+        {contents.projectVisible !== false && (
           <div className="flex flex-col gap-1">
-            <h5>Year</h5>
-            <h6>{contents.year}</h6>
+            <h5>{contents.projectTitle || 'Project'}</h5>
+            <h6 className="whitespace-pre-line">{contents.project || ''}</h6>
           </div>
         )}
-        {contents.client && (
+        {contents.yearVisible !== false && contents.year && (
           <div className="flex flex-col gap-1">
-            <h5>Client</h5>
-            <h6>{contents.client}</h6>
+            <h5>{contents.yearTitle || 'Year'}</h5>
+            <h6 className="whitespace-pre-line">{contents.year}</h6>
           </div>
         )}
-        {contents.services && (
+        {contents.clientVisible !== false && contents.client && (
           <div className="flex flex-col gap-1">
-            <h5>Services</h5>
-            <h6>{contents.services}</h6>
+            <h5>{contents.clientTitle || 'Client'}</h5>
+            <h6 className="whitespace-pre-line">{contents.client}</h6>
+          </div>
+        )}
+        {contents.servicesVisible !== false && contents.services && (
+          <div className="flex flex-col gap-1">
+            <h5>{contents.servicesTitle || 'Services'}</h5>
+            <h6 className="whitespace-pre-line">{contents.services}</h6>
           </div>
         )}
       </motion.div>
@@ -248,23 +264,25 @@ export default function ProjectDetailContent({
           <div className="flex w-2/3 flex-row justify-end gap-8 self-end md:w-full md:justify-start md:gap-12 md:self-start md:pb-40">
             {contents.product && (
               <div className="flex flex-col gap-4 md:w-[20%]">
-                <h5 className="text-[14px] leading-[130%] font-bold md:text-[16px]">Product</h5>
+                <h5 className="text-[14px] leading-[130%] font-bold md:text-[16px]">
+                  {contents.productTitle || 'Product'}
+                </h5>
                 <div className="flex flex-col">
-                  <span className="text-[14px] leading-[130%] font-semibold capitalize md:text-[16px]">
+                  <span className="text-[14px] leading-[130%] font-semibold whitespace-pre-line md:text-[16px]">
                     {contents.product}
                   </span>
                 </div>
               </div>
             )}
-            {contents.keyword && contents.keyword.length > 0 && (
+            {contents.keyword && (
               <div className="flex flex-col gap-4">
-                <h5 className="text-[14px] leading-[130%] font-bold md:text-[16px]">Design Keywords</h5>
+                <h5 className="text-[14px] leading-[130%] font-bold md:text-[16px]">
+                  {contents.keywordTitle || 'Design Keywords'}
+                </h5>
                 <div className="flex flex-col">
-                  {contents.keyword.map((tag, idx) => (
-                    <span className="text-[14px] leading-[130%] font-semibold capitalize md:text-[16px]" key={idx}>
-                      {tag}
-                    </span>
-                  ))}
+                  <span className="text-[14px] leading-[130%] font-semibold whitespace-pre-line md:text-[16px]">
+                    {Array.isArray(contents.keyword) ? contents.keyword.join('\n') : contents.keyword}
+                  </span>
                 </div>
               </div>
             )}
@@ -272,9 +290,13 @@ export default function ProjectDetailContent({
           {/* 챌린지 */}
           {contents.challenge && (
             <div className="flex flex-col gap-4">
-              <h5 className="text-[14px] leading-[130%] font-bold md:text-[16px]">Challenge</h5>
+              <h5 className="text-[14px] leading-[130%] font-bold md:text-[16px]">
+                {contents.challengeTitle || 'Challenge'}
+              </h5>
               <div className="flex flex-col">
-                <h4 className="leading-[122%] font-normal md:leading-[130%]">{contents.challenge}</h4>
+                <h4 className="leading-[122%] font-normal whitespace-pre-line md:leading-[130%]">
+                  {contents.challenge}
+                </h4>
               </div>
             </div>
           )}

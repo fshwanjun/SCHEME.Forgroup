@@ -44,6 +44,12 @@ interface StudioData {
   address: string;
   contact: string;
   social: string;
+  experienceTitle: string;
+  servicesTitle: string;
+  clientsTitle: string;
+  addressTitle: string;
+  contactTitle: string;
+  socialTitle: string;
 }
 
 // 초기값
@@ -56,6 +62,12 @@ const initialData: StudioData = {
   address: '',
   contact: '',
   social: '',
+  experienceTitle: 'Experience',
+  servicesTitle: 'Services',
+  clientsTitle: 'Clients',
+  addressTitle: 'Address',
+  contactTitle: 'Contact',
+  socialTitle: 'Social',
 };
 
 // --- Sortable Item Component ---
@@ -214,6 +226,13 @@ export default function StudioManager() {
             experience: migrateList(parsed.experience),
             services: migrateList(parsed.services),
             clients: migrateList(parsed.clients),
+            // 타이틀 필드가 없으면 기본값 사용
+            experienceTitle: parsed.experienceTitle || initialData.experienceTitle,
+            servicesTitle: parsed.servicesTitle || initialData.servicesTitle,
+            clientsTitle: parsed.clientsTitle || initialData.clientsTitle,
+            addressTitle: parsed.addressTitle || initialData.addressTitle,
+            contactTitle: parsed.contactTitle || initialData.contactTitle,
+            socialTitle: parsed.socialTitle || initialData.socialTitle,
           };
 
           setData(newData);
@@ -319,51 +338,123 @@ export default function StudioManager() {
 
         {/* 리스트 편집 영역 (3열) */}
         <div className="grid grid-cols-1 gap-6 border-t border-stone-800 pt-4 md:grid-cols-3">
-          <SortableSection
-            title="Experience"
-            items={data.experience}
-            onItemsChange={(items) => handleListChange('experience', items)}
-          />
-          <SortableSection
-            title="Services"
-            items={data.services}
-            onItemsChange={(items) => handleListChange('services', items)}
-          />
-          <SortableSection
-            title="Clients"
-            items={data.clients}
-            onItemsChange={(items) => handleListChange('clients', items)}
-          />
+          <div className="space-y-2">
+            <div className="space-y-1">
+              <Label className="text-xs text-stone-400">Section Title</Label>
+              <Input
+                value={data.experienceTitle}
+                onChange={(e) => handleChange('experienceTitle', e.target.value)}
+                disabled={loading}
+                placeholder="Experience"
+                className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
+              />
+            </div>
+            <SortableSection
+              title={data.experienceTitle || 'Experience'}
+              items={data.experience}
+              onItemsChange={(items) => handleListChange('experience', items)}
+            />
+          </div>
+          <div className="space-y-2">
+            <div className="space-y-1">
+              <Label className="text-xs text-stone-400">Section Title</Label>
+              <Input
+                value={data.servicesTitle}
+                onChange={(e) => handleChange('servicesTitle', e.target.value)}
+                disabled={loading}
+                placeholder="Services"
+                className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
+              />
+            </div>
+            <SortableSection
+              title={data.servicesTitle || 'Services'}
+              items={data.services}
+              onItemsChange={(items) => handleListChange('services', items)}
+            />
+          </div>
+          <div className="space-y-2">
+            <div className="space-y-1">
+              <Label className="text-xs text-stone-400">Section Title</Label>
+              <Input
+                value={data.clientsTitle}
+                onChange={(e) => handleChange('clientsTitle', e.target.value)}
+                disabled={loading}
+                placeholder="Clients"
+                className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
+              />
+            </div>
+            <SortableSection
+              title={data.clientsTitle || 'Clients'}
+              items={data.clients}
+              onItemsChange={(items) => handleListChange('clients', items)}
+            />
+          </div>
         </div>
 
         {/* 일반 텍스트 영역 (Address, Contact, Social) */}
         <div className="grid grid-cols-1 gap-6 border-t border-stone-800 pt-4 md:grid-cols-3">
           <div className="space-y-2">
-            <Label className="text-stone-300">Address</Label>
-            <Textarea
-              rows={4}
-              value={data.address}
-              onChange={(e) => handleChange('address', e.target.value)}
-              className="border-stone-800 bg-stone-950 text-stone-200"
-            />
+            <div className="space-y-1">
+              <Label className="text-xs text-stone-400">Section Title</Label>
+              <Input
+                value={data.addressTitle}
+                onChange={(e) => handleChange('addressTitle', e.target.value)}
+                disabled={loading}
+                placeholder="Address"
+                className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-stone-300">{data.addressTitle || 'Address'}</Label>
+              <Textarea
+                rows={4}
+                value={data.address}
+                onChange={(e) => handleChange('address', e.target.value)}
+                className="border-stone-800 bg-stone-950 text-stone-200"
+              />
+            </div>
           </div>
           <div className="space-y-2">
-            <Label className="text-stone-300">Contact</Label>
-            <Textarea
-              rows={4}
-              value={data.contact}
-              onChange={(e) => handleChange('contact', e.target.value)}
-              className="border-stone-800 bg-stone-950 text-stone-200"
-            />
+            <div className="space-y-1">
+              <Label className="text-xs text-stone-400">Section Title</Label>
+              <Input
+                value={data.contactTitle}
+                onChange={(e) => handleChange('contactTitle', e.target.value)}
+                disabled={loading}
+                placeholder="Contact"
+                className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-stone-300">{data.contactTitle || 'Contact'}</Label>
+              <Textarea
+                rows={4}
+                value={data.contact}
+                onChange={(e) => handleChange('contact', e.target.value)}
+                className="border-stone-800 bg-stone-950 text-stone-200"
+              />
+            </div>
           </div>
           <div className="space-y-2">
-            <Label className="text-stone-300">Social</Label>
-            <Textarea
-              rows={4}
-              value={data.social}
-              onChange={(e) => handleChange('social', e.target.value)}
-              className="border-stone-800 bg-stone-950 text-stone-200"
-            />
+            <div className="space-y-1">
+              <Label className="text-xs text-stone-400">Section Title</Label>
+              <Input
+                value={data.socialTitle}
+                onChange={(e) => handleChange('socialTitle', e.target.value)}
+                disabled={loading}
+                placeholder="Social"
+                className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-stone-300">{data.socialTitle || 'Social'}</Label>
+              <Textarea
+                rows={4}
+                value={data.social}
+                onChange={(e) => handleChange('social', e.target.value)}
+                className="border-stone-800 bg-stone-950 text-stone-200"
+              />
+            </div>
           </div>
         </div>
 

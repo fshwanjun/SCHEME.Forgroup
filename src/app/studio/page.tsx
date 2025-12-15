@@ -25,6 +25,12 @@ interface AboutData {
   address: string;
   contact: string;
   social: string;
+  experienceTitle?: string;
+  servicesTitle?: string;
+  clientsTitle?: string;
+  addressTitle?: string;
+  contactTitle?: string;
+  socialTitle?: string;
 }
 
 // 기본값
@@ -37,6 +43,12 @@ const defaultData: AboutData = {
   address: '',
   contact: '',
   social: '',
+  experienceTitle: 'Experience',
+  servicesTitle: 'Services',
+  clientsTitle: 'Clients',
+  addressTitle: 'Address',
+  contactTitle: 'Contact',
+  socialTitle: 'Social',
 };
 
 // 리스트 렌더링 헬퍼 컴포넌트
@@ -162,33 +174,33 @@ export default function StudioPage() {
             {/* md~xl: 1열, xl이상: 3열 */}
             <div className="grid w-full gap-x-4 gap-y-10 xl:grid-cols-3">
               <div className="grid grid-cols-5 flex-row md:flex md:flex-col md:gap-2 xl:gap-4">
-                <h5 className="col-span-2">Experience</h5>
+                <h5 className="col-span-2">{data.experienceTitle || 'Experience'}</h5>
                 <div className="col-span-3 flex flex-col">
                   <RenderList items={data.experience} />
                 </div>
               </div>
               <div className="grid grid-cols-5 flex-row md:flex md:flex-col md:gap-2 xl:gap-4">
-                <h5 className="col-span-2">Services</h5>
+                <h5 className="col-span-2">{data.servicesTitle || 'Services'}</h5>
                 <div className="col-span-3 flex flex-col">
                   <RenderList items={data.services} />
                 </div>
               </div>
               <div className="grid grid-cols-5 flex-row md:flex md:flex-col md:gap-2 xl:gap-4">
-                <h5 className="col-span-2">Clients</h5>
+                <h5 className="col-span-2">{data.clientsTitle || 'Clients'}</h5>
                 <div className="col-span-3 flex flex-col">
                   <RenderList items={data.clients} />
                 </div>
               </div>
               <div className="hidden flex-col md:flex md:gap-2 xl:gap-4">
-                <h5>Address</h5>
+                <h5>{data.addressTitle || 'Address'}</h5>
                 <span className="flex flex-col">{data.address}</span>
               </div>
               <div className="hidden flex-col md:flex md:gap-2 xl:gap-4">
-                <h5>Contact</h5>
+                <h5>{data.contactTitle || 'Contact'}</h5>
                 <span className="flex flex-col">{data.contact}</span>
               </div>
               <div className="hidden flex-col md:flex md:gap-2 xl:gap-4">
-                <h5>Social</h5>
+                <h5>{data.socialTitle || 'Social'}</h5>
                 <span className="flex flex-col">{data.social}</span>
               </div>
 
