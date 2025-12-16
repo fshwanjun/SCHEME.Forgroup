@@ -84,7 +84,7 @@ export default function MobileMenu({
       <button
         onClick={() => setIsMenuOpen(!isMenuOpen)}
         className={cn(
-          'pointer-events-auto fixed right-[25px] z-[400] flex h-8 w-8 items-center justify-center select-none',
+          'pointer-events-auto fixed right-[25px] z-400 flex h-8 w-8 items-center justify-center select-none',
           !isMenuOpen && 'mix-blend-difference',
         )}
         style={{
@@ -109,8 +109,8 @@ export default function MobileMenu({
       {/* 모바일 메뉴 - 화면 전체를 덮는 흰색 메뉴 (헤더 아래) */}
       {/* 참고: MOBILE_MENU_CONFIG.zIndex.menu = 300, logo = { height: 80, width: 200 } */}
       {isMenuOpen && (
-        <nav className="pointer-events-auto fixed inset-0 z-[300] bg-white text-black">
-          <div className="flex h-full flex-col p-6 pt-30">
+        <nav className="pointer-events-auto fixed inset-0 z-300 bg-white text-black">
+          <div className="flex h-full flex-col p-10 pt-30">
             {navItems.map(({ href, label }) => {
               const active = pathname === href || (href !== '/' && pathname.startsWith(href));
               const isProjectLink = href === '/projects';
