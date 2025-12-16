@@ -12,6 +12,7 @@ import IntroLogo from '@/components/IntroLogo';
 import ProjectDetailContent from '@/components/ProjectDetailContent';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
+import { HOME_DISTORT_CONFIG } from '@/config/distortConfig';
 
 // Landing Page 이미지 타입 정의
 interface LandingPageImage {
@@ -253,6 +254,10 @@ export default function Home() {
             selectedProjectId={selected?.projectId ?? null}
             selectedUniqueId={selected?.uniqueId ?? null}
             sectionId={id}
+            distortionScale={HOME_DISTORT_CONFIG.distortionScale}
+            radiusPx={HOME_DISTORT_CONFIG.radiusPx}
+            blurStd={HOME_DISTORT_CONFIG.blurStd}
+            easingFactor={HOME_DISTORT_CONFIG.easingFactor}
           />
         </div>
       )),

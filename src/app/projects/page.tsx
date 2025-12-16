@@ -12,6 +12,7 @@ import { useZoom } from '@/hooks/useZoom';
 import useWindowSize from '@/hooks/useWindowSize';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
+import { PROJECT_DISTORT_CONFIG } from '@/config/distortConfig';
 
 interface ProjectContent {
   thumbnail43?: string;
@@ -292,6 +293,10 @@ export default function ProjectPage() {
             layoutConfig={PROJECT_LAYOUT_CONFIG}
             sectionId={id}
             onIntroAnimationComplete={id === 0 ? handleIntroAnimationComplete : undefined}
+            distortionScale={PROJECT_DISTORT_CONFIG.distortionScale}
+            radiusPx={PROJECT_DISTORT_CONFIG.radiusPx}
+            blurStd={PROJECT_DISTORT_CONFIG.blurStd}
+            easingFactor={PROJECT_DISTORT_CONFIG.easingFactor}
           />
         </div>
       )),

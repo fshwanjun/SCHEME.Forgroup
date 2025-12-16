@@ -41,8 +41,8 @@ export const TEST2_DISTORT_CONFIG: DistortConfig = {
 
 /** 프로젝트 페이지 distort 설정 */
 export const PROJECT_DISTORT_CONFIG: DistortConfig = {
-  distortionScale: 500,
-  radiusPx: 400,
-  blurStd: 80,
+  distortionScale: 200,
+  radiusPx: 300,
+  blurStd: 100,
   easingFactor: 0.08,
 };

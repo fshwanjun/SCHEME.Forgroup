@@ -64,9 +64,9 @@ export default function Header({
   return (
     <header
       className={cn(
-        'w-full px-10 pt-5 text-white mix-blend-difference',
+        'w-full pt-5 text-white mix-blend-difference md:px-10',
         // studio 페이지는 기존 padding 유지, 나머지는 px-8
-        isStudioPage ? 'px-5 md:px-10' : 'px-10',
+        isStudioPage ? 'px-5 md:px-10' : 'px-5',
         // 모든 페이지에서 mix-blend-difference 사용
         effectiveIsFixed ? `pointer-events-none fixed top-0 right-0 left-0 ${zIndexClass}` : `relative ${zIndexClass}`,
       )}

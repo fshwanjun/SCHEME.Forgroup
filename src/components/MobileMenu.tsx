@@ -110,7 +110,7 @@ export default function MobileMenu({
       {/* 참고: MOBILE_MENU_CONFIG.zIndex.menu = 300, logo = { height: 80, width: 200 } */}
       {isMenuOpen && (
         <nav className="pointer-events-auto fixed inset-0 z-300 bg-white text-black">
-          <div className="flex h-full flex-col p-10 pt-30">
+          <div className="flex h-full flex-col px-5 pt-30">
             {navItems.map(({ href, label }) => {
               const active = pathname === href || (href !== '/' && pathname.startsWith(href));
               const isProjectLink = href === '/projects';
