@@ -25,16 +25,12 @@ export const INTRO_LOGO_CONFIG = {
 
 // ===== HoverDistortImage 설정 =====
 export const HOVER_DISTORT_CONFIG = {
-  // 비례 기반 설정 (이미지 대각선 기준)
-  baseDiagonal: 1000, // 기준 대각선 길이 (px)
-  defaultRadiusPercent: 0.29, // 대각선의 29%를 반경으로 사용
-  defaultDistortionScale: 1.65, // 대각선 비율 기반 왜곡 강도 (1.65 = 대각선의 165%)
-  defaultBlurStd: 0.15, // 대각선 비율 기반 블러 (0.15 = 대각선의 15%)
+  defaultDistortionScale: 500,
+  defaultRadiusPx: 400,
+  defaultBlurStd: 80,
   defaultEasingFactor: 0.08,
-  scaleMultiplier: 0.4, // 대각선 비율 기반 스케일 배율
+  scaleMultiplier: 400,
   mouseMoveTimer: 100, // ms
-  // 필터 영역 확장 (잘림 방지)
-  filterExpand: 0.2, // 필터 영역을 20% 확장
   animation: {
     nearPosThreshold: 0.2,
     nearScaleThreshold: 0.5,

@@ -116,9 +116,6 @@ function ScrollIndicator() {
         width: 2,
         height: 'clamp(10vh, 15vh, 20vh)', // 최소 10vh, 기본 15vh, 최대 20vh
         opacity: hasScrollableContent && isReady ? 1 : 0,
-        isolation: 'isolate',
-        WebkitTransform: 'translateZ(0)',
-        transform: 'translateZ(0)',
       }}>
       {/* 트랙 (투명 배경) */}
       <div className="absolute inset-0 rounded-full bg-white/30" />
@@ -208,12 +205,7 @@ export default function ProjectDetailContent({
           delay: PROJECT_DETAIL_CONFIG.animation.delay,
           ease: PROJECT_DETAIL_CONFIG.animation.ease,
         }}
-        className="fixed bottom-0 left-0 z-10 flex w-full justify-between gap-4 px-10 pb-8 text-white mix-blend-difference md:px-10"
-        style={{
-          isolation: 'isolate',
-          WebkitTransform: 'translateZ(0)',
-          transform: 'translateZ(0)',
-        }}>
+        className="fixed bottom-0 left-0 z-10 flex w-full justify-between gap-4 px-10 pb-8 text-white mix-blend-difference md:px-10">
         {contents.projectVisible !== false && (
           <div className="flex flex-col gap-1">
             <h5>{contents.projectTitle || 'Project'}</h5>

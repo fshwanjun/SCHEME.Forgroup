@@ -65,8 +65,16 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params;
+  const project = await getProjectBySlug(slug);
+  
+  if (!project) {
+    return { title: 'Project Not Found | for' };
+  }
+  
+  // contents.project가 있으면 사용, 없으면 title 사용
+  const projectName = project.contents?.project || project.title;
   return {
-    title: `Project: ${slug}`,
+    title: `${projectName} | for`,
   };
 }
 
