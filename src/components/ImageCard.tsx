@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import HoverDistortImage from './HoverDistortImage';
-import Image from 'next/image';
-import { IMAGE_CARD_CONFIG, APP_CONFIG } from '@/config/appConfig';
+import { APP_CONFIG } from '@/config/appConfig';
 import useWindowSize from '@/hooks/useWindowSize';
 
 export default function ImageCard({
@@ -34,8 +33,16 @@ export default function ImageCard({
   easingFactor?: number; // 이징 팩터 (기본값: 0.08)
 }) {
   const windowSize = useWindowSize();
+  const [mounted, setMounted] = useState(false);
+
+  // 클라이언트 사이드에서만 마운트 상태 설정 (hydration 불일치 방지)
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // 모바일에서는 distortion 효과 비활성화
-  const isMobile = windowSize.isSm;
+  // mounted 후에만 isMobile 체크하여 hydration 불일치 방지
+  const isMobile = mounted && windowSize.isSm;
   const shouldEnableDistortion = enableHoverEffect && !isMobile;
 
   // 터치 이벤트 추적을 위한 ref
@@ -146,10 +153,6 @@ export default function ImageCard({
   if (!src) return null;
 
   const altText = projectId ? `Project ${projectId} preview` : 'Project preview';
-  const [width, height] =
-    resolvedOrientation === 'vertical'
-      ? [IMAGE_CARD_CONFIG.vertical.width, IMAGE_CARD_CONFIG.vertical.height]
-      : [IMAGE_CARD_CONFIG.horizontal.width, IMAGE_CARD_CONFIG.horizontal.height];
 
   // 이미지 컴포넌트 렌더링 추적
   // console.log('[ImageCard] render', {

@@ -364,7 +364,11 @@ export default function ProjectPage() {
   }, [zoomOut]);
 
   // 리사이즈 처리 - 상세 모달이 나온 상태에서 화면 사이즈 변경 시 해당 페이지로 이동
+  // 모바일에서는 리사이즈 이벤트 비활성화
   useEffect(() => {
+    // 모바일에서는 리사이즈 이벤트 처리하지 않음
+    if (isMobile) return;
+
     let resizeTimer: NodeJS.Timeout;
 
     const handleResize = () => {
@@ -398,7 +402,7 @@ export default function ProjectPage() {
       window.removeEventListener('resize', debouncedResize);
       clearTimeout(resizeTimer);
     };
-  }, [mode, selectedProject, selected, zoomOut]);
+  }, [mode, selectedProject, selected, zoomOut, isMobile]);
 
   // 줌 모드일 때 body 스크롤 잠금
   // 인트로 애니메이션 중이거나 줌 애니메이션 중이거나 cover 상태일 때 스크롤 잠금

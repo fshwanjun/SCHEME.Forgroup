@@ -317,7 +317,11 @@ export default function Home() {
   }, [zoomOut]);
 
   // 리사이즈 처리 - 상세 모달이 나온 상태에서 화면 사이즈 변경 시 해당 페이지로 이동
+  // 모바일에서는 리사이즈 이벤트 비활성화
   useEffect(() => {
+    // 모바일에서는 리사이즈 이벤트 처리하지 않음
+    if (isMobile) return;
+
     let resizeTimer: NodeJS.Timeout;
 
     const handleResize = () => {
@@ -353,7 +357,7 @@ export default function Home() {
       window.removeEventListener('resize', debouncedResize);
       clearTimeout(resizeTimer);
     };
-  }, [mode, selectedProject, selected, zoomOut]);
+  }, [mode, selectedProject, selected, zoomOut, isMobile]);
 
   // center 모드일 때 외부 영역 클릭/터치로 줌 아웃
   const handleClickOutside = useCallback(

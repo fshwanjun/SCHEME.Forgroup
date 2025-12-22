@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko" className={abcrom.variable}>
+    <html lang="en" className={abcrom.variable}>
       <body className={abcrom.className}>{children}</body>
     </html>
   );

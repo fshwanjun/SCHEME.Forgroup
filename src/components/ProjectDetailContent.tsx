@@ -111,11 +111,12 @@ function ScrollIndicator() {
   return (
     <div
       ref={indicatorRef}
-      className="pointer-events-none fixed top-1/2 right-2 z-500 -translate-y-1/2 mix-blend-difference transition-opacity duration-300 md:right-10"
+      className="pointer-events-none fixed top-1/2 right-2 z-[500] -translate-y-1/2 transition-opacity duration-300 md:right-10"
       style={{
         width: 2,
         height: 'clamp(10vh, 15vh, 20vh)', // 최소 10vh, 기본 15vh, 최대 20vh
         opacity: hasScrollableContent && isReady ? 1 : 0,
+        mixBlendMode: 'difference',
       }}>
       {/* 트랙 (투명 배경) */}
       <div className="absolute inset-0 rounded-full bg-white/30" />
