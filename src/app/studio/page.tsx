@@ -119,7 +119,7 @@ export default function StudioPage() {
   return (
     <div className="flex h-screen flex-col md:gap-4">
       <Header isFixed={false} headerLogoTrigger={headerLogoTrigger} />
-      <MobileMenu headerLogoTrigger={headerLogoTrigger} />
+      <MobileMenu />
       <HomeContainer
         isFixed={false}
         addClassName="studio-typography p-5 flex-1 flex flex-col gap-5 overflow-y-auto md:overflow-y-hidden pt-20 md:pt-0">

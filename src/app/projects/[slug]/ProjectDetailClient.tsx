@@ -93,7 +93,7 @@ export default function ProjectDetailClient({ project }: { project: ProjectDetai
   return (
     <div className="h-svh w-full overflow-x-hidden overflow-y-auto">
       <Header headerLogoTrigger={headerLogoTrigger} />
-      <MobileMenu headerLogoTrigger={headerLogoTrigger} />
+      <MobileMenu />
       <main className="relative w-full">
         {contents && <ProjectDetailContent contents={contents} title={project.title} heroImageSrc={heroImageSrc} />}
       </main>

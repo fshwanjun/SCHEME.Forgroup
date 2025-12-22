@@ -108,6 +108,11 @@ type HomeGalleryProps = {
   layoutConfig?: LayoutConfig; // 레이아웃 설정 (기본값: HOME_LAYOUT_CONFIG)
   sectionId?: number; // 무한 스크롤에서 섹션 구분을 위한 ID
   onIntroAnimationComplete?: () => void; // 인트로 애니메이션 완료 콜백
+  // Distortion 효과 설정 (ImageCard에 전달)
+  distortionScale?: number;
+  radiusPx?: number;
+  blurStd?: number;
+  easingFactor?: number;
 };
 
 function HomeGallery({
@@ -118,6 +123,10 @@ function HomeGallery({
   layoutConfig = HOME_LAYOUT_CONFIG,
   sectionId = 0,
   onIntroAnimationComplete,
+  distortionScale,
+  radiusPx,
+  blurStd,
+  easingFactor,
 }: HomeGalleryProps) {
   // console.log('[HomeGallery] render', {
   //   imagesCount: images.length,
@@ -660,6 +669,10 @@ function HomeGallery({
                 aspectRatio={aspectRatio}
                 className="h-full w-full"
                 enableHoverEffect={!isSelected && !isOtherSelected}
+                distortionScale={distortionScale}
+                radiusPx={radiusPx}
+                blurStd={blurStd}
+                easingFactor={easingFactor}
                 onClickProject={(_pid, rect) => {
                   onSelectImage?.({
                     projectId: assignment.projectId,

@@ -6,20 +6,13 @@ import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import useWindowSize from '@/hooks/useWindowSize';
 import { supabase } from '@/lib/supabase';
-import LogoInline from './LogoInline';
 
 const navItems = [
   { href: '/projects', label: 'Projects' },
   { href: '/studio', label: 'Studio' },
 ];
 
-export default function MobileMenu({
-  onProjectClick,
-  headerLogoTrigger,
-}: {
-  onProjectClick?: () => void;
-  headerLogoTrigger?: number;
-}) {
+export default function MobileMenu({ onProjectClick }: { onProjectClick?: () => void }) {
   const pathname = usePathname();
   const windowSize = useWindowSize();
   const [isMobile, setIsMobile] = useState(false);

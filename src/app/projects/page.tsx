@@ -418,7 +418,7 @@ export default function ProjectPage() {
   return (
     <>
       <Header isFixed={true} headerLogoTrigger={headerLogoTrigger} onProjectClick={handleProjectClick} />
-      <MobileMenu headerLogoTrigger={headerLogoTrigger} onProjectClick={handleProjectClick} />
+      <MobileMenu onProjectClick={handleProjectClick} />
 
       {/* 인트로 애니메이션 중 모든 인터랙션 차단용 오버레이 */}
       {introAnimating && <div className="fixed inset-0 z-[100]" />}

@@ -450,7 +450,7 @@ export default function Home() {
         isFixed={true}
         onHomeClick={mode !== 'default' ? handleHomeClick : undefined}
       />
-      <MobileMenu headerLogoTrigger={headerLogoTrigger} />
+      <MobileMenu />
 
       <div
         ref={scrollContainerRef}

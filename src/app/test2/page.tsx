@@ -433,7 +433,7 @@ export default function Test2() {
     <>
       <IntroLogo onHeaderAnimationStart={handleHeaderAnimationStart} />
       <Header headerLogoTrigger={headerLogoTrigger} isFixed={true} />
-      <MobileMenu headerLogoTrigger={headerLogoTrigger} />
+      <MobileMenu />
 
       <div
         ref={scrollContainerRef}
