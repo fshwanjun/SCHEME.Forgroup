@@ -430,13 +430,26 @@ export default function Home() {
     setHeaderLogoTrigger(trigger);
   }, []);
 
+  // 홈 버튼 클릭 핸들러 - 상세 페이지에서 홈으로 이동 시 새로고침
+  const handleHomeClick = useCallback(() => {
+    if (mode === 'center' || mode === 'cover') {
+      // 상세 모달이 열려있을 때 홈 클릭 시 새로고침하여 홈으로 이동
+      window.location.href = '/';
+    }
+    // default 모드일 때는 기본 Link 동작 (새로고침 없음)
+  }, [mode]);
+
   // 줌 애니메이션 중이거나 center/cover 상태일 때 스크롤 잠금
   const isScrollLocked = mode === 'center' || mode === 'cover' || isAnimating;
 
   return (
     <>
       <IntroLogo onHeaderAnimationStart={handleHeaderAnimationStart} />
-      <Header headerLogoTrigger={headerLogoTrigger} isFixed={true} />
+      <Header
+        headerLogoTrigger={headerLogoTrigger}
+        isFixed={true}
+        onHomeClick={mode !== 'default' ? handleHomeClick : undefined}
+      />
       <MobileMenu headerLogoTrigger={headerLogoTrigger} />
 
       <div

@@ -15,10 +15,12 @@ const navItems = [
 export default function Header({
   isFixed = true,
   onProjectClick,
+  onHomeClick,
   headerLogoTrigger,
 }: {
   isFixed?: boolean;
   onProjectClick?: () => void;
+  onHomeClick?: () => void;
   headerLogoTrigger?: number;
 }) {
   const pathname = usePathname();
@@ -40,6 +42,13 @@ export default function Header({
     if (onProjectClick) {
       e.preventDefault();
       onProjectClick();
+    }
+  };
+
+  const handleHomeClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (onHomeClick) {
+      e.preventDefault();
+      onHomeClick();
     }
   };
 
@@ -80,7 +89,10 @@ export default function Header({
       suppressHydrationWarning>
       <div className="relative mx-auto flex items-start justify-between">
         {/* 참고: HEADER_CONFIG.logo = { mobileWidth: 160, desktopWidth: 300 } */}
-        <Link href="/" className="pointer-events-auto h-full w-[120px] min-w-[120px] select-none md:w-[15vh]">
+        <Link
+          href="/"
+          className="pointer-events-auto h-full w-[120px] min-w-[120px] pl-2 select-none md:w-[15vh] md:pl-0"
+          onClick={handleHomeClick}>
           <LogoInline
             playTrigger={pathname === '/' || isProjectOrStudio ? headerLogoTrigger : undefined}
             invert={true} // 모든 페이지에서 인버트 적용 (mix-blend-difference와 함께 사용)

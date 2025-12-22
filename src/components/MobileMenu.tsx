@@ -110,7 +110,7 @@ export default function MobileMenu({
       {/* 참고: MOBILE_MENU_CONFIG.zIndex.menu = 300, logo = { height: 80, width: 200 } */}
       {isMenuOpen && (
         <nav className="pointer-events-auto fixed inset-0 z-300 bg-white text-black">
-          <div className="flex h-full flex-col px-5 pt-30">
+          <div className="flex h-full flex-col px-7 pt-30">
             {navItems.map(({ href, label }) => {
               const active = pathname === href || (href !== '/' && pathname.startsWith(href));
               const isProjectLink = href === '/projects';
@@ -131,7 +131,7 @@ export default function MobileMenu({
           </div>
           <a
             href={`https://instagram.com/${social.replace('@', '')}`}
-            className="absolute right-4 bottom-4 text-right"
+            className="absolute right-7 bottom-7 text-right"
             target="_blank"
             rel="noopener noreferrer">
             {social}

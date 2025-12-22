@@ -111,7 +111,7 @@ function ScrollIndicator() {
   return (
     <div
       ref={indicatorRef}
-      className="pointer-events-none fixed top-1/2 right-2 z-[500] -translate-y-1/2 transition-opacity duration-300 md:right-10"
+      className="pointer-events-none fixed top-1/2 right-2 z-500 -translate-y-1/2 transition-opacity duration-300 md:right-10"
       style={{
         width: 2,
         height: 'clamp(10vh, 15vh, 20vh)', // 최소 10vh, 기본 15vh, 최대 20vh
@@ -206,7 +206,7 @@ export default function ProjectDetailContent({
           delay: PROJECT_DETAIL_CONFIG.animation.delay,
           ease: PROJECT_DETAIL_CONFIG.animation.ease,
         }}
-        className="fixed bottom-0 left-0 z-10 flex w-full justify-between gap-4 px-10 pb-8 text-white mix-blend-difference md:px-10">
+        className="fixed bottom-0 left-0 z-10 grid w-full grid-cols-2 gap-4 px-7 pb-8 text-white mix-blend-difference md:flex md:justify-between md:px-10">
         {contents.projectVisible !== false && (
           <div className="flex flex-col gap-1">
             <h5>{contents.projectTitle || 'Project'}</h5>
