@@ -93,92 +93,71 @@ function SortableLandingImageItem({
     <div
       ref={setNodeRef}
       style={style}
-      className="group flex flex-col gap-3 rounded-lg border border-stone-800 bg-stone-900 p-3 transition-colors hover:border-stone-600 sm:flex-row sm:items-center sm:gap-4"
+      className="group flex items-center gap-4 rounded-lg border border-stone-800 bg-stone-900 p-3 transition-colors hover:border-stone-600"
       onClick={(e) => e.stopPropagation()}>
-      {/* 상단 행: 드래그 핸들 + 썸네일 + 배지 + 삭제버튼(모바일) */}
-      <div className="flex items-center gap-3">
-        {/* 드래그 핸들 */}
-        <button
-          {...attributes}
-          {...listeners}
-          className="cursor-grab rounded bg-stone-800 p-1.5 text-stone-400 transition-colors hover:bg-stone-700 hover:text-stone-200 active:cursor-grabbing"
-          onClick={(e) => e.stopPropagation()}
-          title="Drag to reorder">
-          <GripVertical className="h-4 w-4" />
-        </button>
+      {/* 드래그 핸들 */}
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab rounded bg-stone-800 p-1.5 text-stone-400 transition-colors hover:bg-stone-700 hover:text-stone-200 active:cursor-grabbing"
+        onClick={(e) => e.stopPropagation()}
+        title="Drag to reorder">
+        <GripVertical className="h-4 w-4" />
+      </button>
 
-        {/* 썸네일 */}
-        <div
-          className="relative h-12 shrink-0 overflow-hidden rounded bg-stone-950 sm:h-16"
-          style={{ maxWidth: '72px' }}>
-          <Image
-            src={image.url}
-            alt="Landing page image"
-            className="h-full w-auto object-contain"
-            width={72}
-            height={48}
-            unoptimized
-          />
-        </div>
-
-        {/* Orientation 배지 */}
-        <div className="shrink-0">
-          <span className="rounded bg-stone-800 px-2 py-1 text-[10px] font-medium text-stone-300">
-            {image.orientation === 'vertical' ? 'Vertical' : 'Horizontal'}
-          </span>
-        </div>
-
-        {/* 이미지 URL 표시 - 모바일에서는 숨김 */}
-        <div className="hidden flex-1 truncate text-sm text-stone-300 sm:block">{image.url.split('/').pop()}</div>
-
-        {/* 삭제 버튼 - 모바일에서 오른쪽에 배치 */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={(e) => {
-            e.stopPropagation();
-            onRemove(image.id);
-          }}
-          className="ml-auto h-8 w-8 shrink-0 text-stone-400 hover:bg-stone-800 hover:text-red-400 sm:hidden"
-          title="Delete image">
-          <Trash2 className="h-4 w-4" />
-        </Button>
+      {/* 썸네일 */}
+      <div className="relative h-16 shrink-0 overflow-hidden rounded bg-stone-950" style={{ maxWidth: '96px' }}>
+        <Image
+          src={image.url}
+          alt="Landing page image"
+          className="h-full w-auto object-contain"
+          width={96}
+          height={64}
+          unoptimized
+        />
       </div>
 
-      {/* 하단 행: 프로젝트 선택 (모바일에서는 전체 너비) */}
-      <div className="flex flex-1 items-center gap-2 pl-9 sm:pl-0">
-        {/* 프로젝트 링크 선택 */}
-        <div className="w-full shrink-0 sm:w-48">
-          <Select
-            value={image.projectSlug || undefined}
-            onValueChange={(value) => onProjectChange(image.id, value === '__none__' ? undefined : value)}>
-            <SelectTrigger className="h-8 border-stone-700 bg-stone-800 text-xs text-stone-200 hover:bg-stone-700">
-              <SelectValue placeholder="No project" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__none__">No project</SelectItem>
-              {projects.map((project) => (
-                <SelectItem key={project.id} value={project.slug}>
-                  {project.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* 삭제 버튼 - 데스크톱에서만 표시 */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={(e) => {
-            e.stopPropagation();
-            onRemove(image.id);
-          }}
-          className="hidden h-8 w-8 shrink-0 text-stone-400 hover:bg-stone-800 hover:text-red-400 sm:flex"
-          title="Delete image">
-          <Trash2 className="h-4 w-4" />
-        </Button>
+      {/* Orientation 배지 */}
+      <div className="shrink-0">
+        <span className="rounded bg-stone-800 px-2 py-1 text-[10px] font-medium text-stone-300">
+          {image.orientation === 'vertical' ? 'Vertical' : 'Horizontal'}
+        </span>
       </div>
+
+      {/* 이미지 URL 표시 */}
+      <div className="flex-1 truncate text-sm text-stone-300">{image.url.split('/').pop()}</div>
+
+      {/* 프로젝트 링크 선택 */}
+      <div className="w-48 shrink-0">
+        <Select
+          value={image.projectSlug || undefined}
+          onValueChange={(value) => onProjectChange(image.id, value === '__none__' ? undefined : value)}>
+          <SelectTrigger className="h-8 border-stone-700 bg-stone-800 text-xs text-stone-200 hover:bg-stone-700">
+            <SelectValue placeholder="No project" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__none__">No project</SelectItem>
+            {projects.map((project) => (
+              <SelectItem key={project.id} value={project.slug}>
+                {project.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* 삭제 버튼 */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove(image.id);
+        }}
+        className="h-8 w-8 shrink-0 text-stone-400 hover:bg-stone-800 hover:text-red-400"
+        title="Delete image">
+        <Trash2 className="h-4 w-4" />
+      </Button>
     </div>
   );
 }
@@ -418,17 +397,17 @@ export default function LandingPageManager() {
   return (
     <Card className="border-stone-800 bg-stone-900">
       <CardContent className="space-y-6 p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center justify-between">
           <div>
             <CardTitle className="mb-2 text-stone-200">Landing Page Images</CardTitle>
             <CardDescription className="text-stone-400">
               Manage images displayed in the home page gallery. You can change the order by dragging and dropping.
             </CardDescription>
           </div>
-          <Link href="/" target="_blank" className="shrink-0">
+          <Link href="/" target="_blank">
             <Button
               variant="outline"
-              className="w-full gap-2 border-stone-700 bg-stone-800 text-stone-200 hover:border-stone-600 hover:bg-stone-200 hover:text-stone-900 sm:w-auto">
+              className="gap-2 border-stone-700 bg-stone-800 text-stone-200 hover:border-stone-600 hover:bg-stone-200 hover:text-stone-900">
               View Home <ExternalLink className="h-4 w-4" />
             </Button>
           </Link>

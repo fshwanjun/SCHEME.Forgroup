@@ -80,170 +80,156 @@ function SortableProjectLayoutItem({
     <div
       ref={setNodeRef}
       style={style}
-      className="group flex flex-col gap-3 rounded-lg border border-stone-800 bg-stone-900 p-3 transition-colors hover:border-stone-600 sm:flex-row sm:items-center sm:gap-4"
+      className="group flex items-center gap-4 rounded-lg border border-stone-800 bg-stone-900 p-3 transition-colors hover:border-stone-600"
       onClick={(e) => e.stopPropagation()}>
-      {/* 상단 행: 드래그 핸들 + 프레임/오리엔테이션 정보 + 이미지 */}
-      <div className="flex items-center gap-3">
-        {/* 드래그 핸들 */}
-        <button
-          {...attributes}
-          {...listeners}
-          className="cursor-grab rounded bg-stone-800 p-1.5 text-stone-400 transition-colors hover:bg-stone-700 hover:text-stone-200 active:cursor-grabbing"
-          onClick={(e) => e.stopPropagation()}
-          title="Drag to reorder">
-          <GripVertical className="h-4 w-4" />
-        </button>
+      {/* 드래그 핸들 */}
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab rounded bg-stone-800 p-1.5 text-stone-400 transition-colors hover:bg-stone-700 hover:text-stone-200 active:cursor-grabbing"
+        onClick={(e) => e.stopPropagation()}
+        title="Drag to reorder">
+        <GripVertical className="h-4 w-4" />
+      </button>
 
-        {/* 프레임 정보 */}
-        <div className="shrink-0">
-          <span className="rounded bg-stone-800 px-2 py-1 text-[10px] font-medium text-stone-300">
-            Frame {item.frameIndex + 1}
-          </span>
-        </div>
-
-        {/* Orientation 배지 */}
-        <div className="shrink-0">
-          <span className="rounded bg-stone-800 px-2 py-1 text-[10px] font-medium text-stone-300">
-            {orientation === 'vertical' ? 'Vertical' : orientation === 'horizontal' ? 'Horizontal' : 'No Image'}
-          </span>
-        </div>
-
-        {/* 이미지 업로드 */}
-        <div className="shrink-0">
-          {item.imageUrl ? (
-            <div className="relative">
-              <div className="relative h-12 w-12 overflow-hidden rounded bg-stone-950 sm:h-16 sm:w-16">
-                <Image
-                  src={item.imageUrl}
-                  alt="Uploaded image"
-                  className="h-full w-full object-cover"
-                  width={64}
-                  height={64}
-                  unoptimized
-                />
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onImageRemove(item.frameIndex)}
-                className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 p-0 text-white hover:bg-red-600"
-                title="Remove image">
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
-          ) : (
-            <button
-              onClick={() => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = 'image/*';
-                input.onchange = async (e) => {
-                  const file = (e.target as HTMLInputElement).files?.[0];
-                  if (!file) return;
-
-                  try {
-                    const fileExt = file.name.split('.').pop();
-                    const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
-                    const filePath = `project-layout/${fileName}`;
-
-                    const { error: uploadError } = await supabase.storage.from('images').upload(filePath, file);
-
-                    if (uploadError) throw uploadError;
-
-                    const {
-                      data: { publicUrl },
-                    } = supabase.storage.from('images').getPublicUrl(filePath);
-
-                    // 이미지 비율 감지 후 업로드
-                    const orientation = await detectImageOrientation(publicUrl);
-                    onImageUpload(item.frameIndex, publicUrl, orientation);
-                  } catch (error) {
-                    alert('Failed to upload image');
-                  }
-                };
-                input.click();
-              }}
-              className="flex h-12 w-12 items-center justify-center rounded border border-dashed border-stone-700 bg-stone-900/50 text-stone-500 transition-colors hover:border-stone-600 hover:bg-stone-900 hover:text-stone-400 sm:h-16 sm:w-16"
-              title="Upload image">
-              <Upload className="h-5 w-5" />
-            </button>
-          )}
-        </div>
-
-        {/* 액션 버튼들 - 모바일에서 오른쪽에 배치 */}
-        <div className="ml-auto flex items-center gap-1 sm:hidden">
-          {selectedProject && (
-            <Link href={`/projects/${selectedProject.slug}`} target="_blank">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 shrink-0 text-stone-400 hover:bg-stone-800 hover:text-stone-200"
-                title="View project">
-                <ExternalLink className="h-4 w-4" />
-              </Button>
-            </Link>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              onRemove(item.frameIndex);
-            }}
-            className="h-8 w-8 shrink-0 text-stone-400 hover:bg-stone-800 hover:text-red-400"
-            title="Delete item">
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
+      {/* 프레임 정보 */}
+      <div className="shrink-0">
+        <span className="rounded bg-stone-800 px-2 py-1 text-[10px] font-medium text-stone-300">
+          Frame {item.frameIndex + 1}
+        </span>
       </div>
 
-      {/* 하단 행: 프로젝트 선택 (모바일에서는 전체 너비) */}
-      <div className="flex flex-1 items-center gap-2 pl-9 sm:pl-0">
-        {/* 프로젝트 선택 드롭다운 (링크용) */}
-        <div className="flex-1">
-          <select
-            value={item.projectId || ''}
-            onChange={(e) => {
-              const projectId = e.target.value || null;
-              onSelectProject(item.frameIndex, projectId);
-            }}
-            className="w-full rounded border border-stone-700 bg-stone-800 px-3 py-1.5 text-sm text-stone-200 focus:border-stone-600 focus:ring-1 focus:ring-stone-600 focus:outline-none"
-            disabled={!item.imageUrl}>
-            <option value="">-- Select Project --</option>
-            {projects.map((project) => (
-              <option key={project.id} value={project.id.toString()}>
-                {project.title}
-              </option>
-            ))}
-          </select>
-        </div>
+      {/* Orientation 배지 */}
+      <div className="shrink-0">
+        <span className="rounded bg-stone-800 px-2 py-1 text-[10px] font-medium text-stone-300">
+          {orientation === 'vertical' ? 'Vertical' : orientation === 'horizontal' ? 'Horizontal' : 'No Image'}
+        </span>
+      </div>
 
-        {/* 프로젝트 링크 - 데스크톱에서만 표시 */}
-        {selectedProject && (
-          <Link href={`/projects/${selectedProject.slug}`} target="_blank" className="hidden sm:block">
+      {/* 이미지 업로드 */}
+      <div className="shrink-0">
+        {item.imageUrl ? (
+          <div className="relative">
+            <div className="relative h-16 w-16 overflow-hidden rounded bg-stone-950">
+              <Image
+                src={item.imageUrl}
+                alt="Uploaded image"
+                className="h-full w-full object-cover"
+                width={64}
+                height={64}
+                unoptimized
+              />
+            </div>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 shrink-0 text-stone-400 hover:bg-stone-800 hover:text-stone-200"
-              title="View project">
-              <ExternalLink className="h-4 w-4" />
+              onClick={() => onImageRemove(item.frameIndex)}
+              className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 p-0 text-white hover:bg-red-600"
+              title="Remove image">
+              <X className="h-3 w-3" />
             </Button>
-          </Link>
-        )}
+          </div>
+        ) : (
+          <button
+            onClick={() => {
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = 'image/*';
+              input.onchange = async (e) => {
+                const file = (e.target as HTMLInputElement).files?.[0];
+                if (!file) return;
 
-        {/* 아이템 삭제 버튼 - 데스크톱에서만 표시 */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={(e) => {
-            e.stopPropagation();
-            onRemove(item.frameIndex);
-          }}
-          className="hidden h-8 w-8 shrink-0 text-stone-400 hover:bg-stone-800 hover:text-red-400 sm:flex"
-          title="Delete item">
-          <Trash2 className="h-4 w-4" />
-        </Button>
+                try {
+                  const fileExt = file.name.split('.').pop();
+                  const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+                  const filePath = `project-layout/${fileName}`;
+
+                  const { error: uploadError } = await supabase.storage.from('images').upload(filePath, file);
+
+                  if (uploadError) throw uploadError;
+
+                  const {
+                    data: { publicUrl },
+                  } = supabase.storage.from('images').getPublicUrl(filePath);
+
+                  // 이미지 비율 감지 후 업로드
+                  const orientation = await detectImageOrientation(publicUrl);
+                  onImageUpload(item.frameIndex, publicUrl, orientation);
+                } catch (error) {
+                  alert('Failed to upload image');
+                }
+              };
+              input.click();
+            }}
+            className="flex h-16 w-16 items-center justify-center rounded border border-dashed border-stone-700 bg-stone-900/50 text-stone-500 transition-colors hover:border-stone-600 hover:bg-stone-900 hover:text-stone-400"
+            title="Upload image">
+            <Upload className="h-5 w-5" />
+          </button>
+        )}
       </div>
+
+      {/* 썸네일 - 업로드한 이미지만 표시 */}
+      {item.imageUrl ? (
+        <div className="relative h-16 shrink-0 overflow-hidden rounded bg-stone-950" style={{ maxWidth: '96px' }}>
+          <Image
+            src={item.imageUrl}
+            alt="Uploaded image"
+            className="h-full w-auto object-contain"
+            width={96}
+            height={64}
+            unoptimized
+          />
+        </div>
+      ) : (
+        <div className="relative h-16 shrink-0 overflow-hidden rounded bg-stone-950" style={{ maxWidth: '96px' }}>
+          <div className="flex h-full w-full items-center justify-center text-xs text-stone-600">No Image</div>
+        </div>
+      )}
+
+      {/* 프로젝트 선택 드롭다운 (링크용) */}
+      <div className="flex-1">
+        <select
+          value={item.projectId || ''}
+          onChange={(e) => {
+            const projectId = e.target.value || null;
+            onSelectProject(item.frameIndex, projectId);
+          }}
+          className="w-full rounded border border-stone-700 bg-stone-800 px-3 py-1.5 text-sm text-stone-200 focus:border-stone-600 focus:ring-1 focus:ring-stone-600 focus:outline-none"
+          disabled={!item.imageUrl}>
+          <option value="">-- Select Project (Link) --</option>
+          {projects.map((project) => (
+            <option key={project.id} value={project.id.toString()}>
+              {project.title}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* 프로젝트 링크 */}
+      {selectedProject && (
+        <Link href={`/project/${selectedProject.slug}`} target="_blank">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0 text-stone-400 hover:bg-stone-800 hover:text-stone-200"
+            title="View project">
+            <ExternalLink className="h-4 w-4" />
+          </Button>
+        </Link>
+      )}
+
+      {/* 아이템 삭제 버튼 */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove(item.frameIndex);
+        }}
+        className="h-8 w-8 shrink-0 text-stone-400 hover:bg-stone-800 hover:text-red-400"
+        title="Delete item">
+        <Trash2 className="h-4 w-4" />
+      </Button>
     </div>
   );
 }
@@ -624,7 +610,7 @@ export default function ProjectLayoutManager() {
   return (
     <Card className="border-stone-800 bg-stone-900">
       <CardContent className="space-y-6 p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center justify-between">
           <div>
             <CardTitle className="mb-2 text-stone-200">Project Layout</CardTitle>
             <CardDescription className="text-stone-400">
@@ -632,21 +618,19 @@ export default function ProjectLayoutManager() {
               dragging. Drag and drop multiple images to add new cards.
             </CardDescription>
           </div>
-          <div className="flex shrink-0 gap-2">
+          <div className="flex gap-2">
             <Button
               onClick={handleAddNewCard}
               variant="outline"
-              className="flex-1 gap-2 border-stone-700 bg-stone-800 text-stone-200 hover:border-stone-600 hover:bg-stone-200 hover:text-stone-900 sm:flex-none">
+              className="gap-2 border-stone-700 bg-stone-800 text-stone-200 hover:border-stone-600 hover:bg-stone-200 hover:text-stone-900">
               <Plus className="h-4 w-4" />
-              <span className="sm:inline">Add</span>
+              Add Card
             </Button>
-            <Link href="/projects" target="_blank" className="flex-1 sm:flex-none">
+            <Link href="/project" target="_blank">
               <Button
                 variant="outline"
-                className="w-full gap-2 border-stone-700 bg-stone-800 text-stone-200 hover:border-stone-600 hover:bg-stone-200 hover:text-stone-900">
-                <span className="hidden sm:inline">View Project Page</span>
-                <span className="sm:hidden">View</span>
-                <ExternalLink className="h-4 w-4" />
+                className="gap-2 border-stone-700 bg-stone-800 text-stone-200 hover:border-stone-600 hover:bg-stone-200 hover:text-stone-900">
+                View Project Page <ExternalLink className="h-4 w-4" />
               </Button>
             </Link>
           </div>
