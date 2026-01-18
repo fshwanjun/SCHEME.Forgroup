@@ -35,6 +35,7 @@ interface ProjectLayoutItem {
   orientation: 'horizontal' | 'vertical' | null; // 업로드한 이미지의 비율 (null이면 미업로드)
   projectId: string | null; // 선택된 프로젝트 ID (null이면 미선택, 이미지에 링크)
   order: number; // 표시 순서
+  clickDisabled?: boolean; // 클릭 비활성화 여부
 }
 
 // 프로젝트 타입 정의
@@ -56,6 +57,7 @@ function SortableProjectLayoutItem({
   onImageUpload,
   onImageRemove,
   onRemove,
+  onClickDisabledChange,
 }: {
   item: ProjectLayoutItem;
   projects: Project[];
@@ -63,6 +65,7 @@ function SortableProjectLayoutItem({
   onImageUpload: (frameIndex: number, imageUrl: string, orientation: 'horizontal' | 'vertical') => void;
   onImageRemove: (frameIndex: number) => void;
   onRemove: (frameIndex: number) => void;
+  onClickDisabledChange: (frameIndex: number, disabled: boolean) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: item.id });
 
@@ -203,6 +206,21 @@ function SortableProjectLayoutItem({
             </option>
           ))}
         </select>
+      </div>
+
+      {/* 클릭 비활성화 체크박스 */}
+      <div className="flex shrink-0 items-center gap-2">
+        <input
+          type="checkbox"
+          id={`clickDisabled-${item.id}`}
+          checked={item.clickDisabled || false}
+          onChange={(e) => onClickDisabledChange(item.frameIndex, e.target.checked)}
+          className="h-4 w-4 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
+          disabled={!item.imageUrl}
+        />
+        <label htmlFor={`clickDisabled-${item.id}`} className="text-xs text-stone-400 whitespace-nowrap">
+          No Click
+        </label>
       </div>
 
       {/* 프로젝트 링크 */}
@@ -404,6 +422,19 @@ export default function ProjectLayoutManager() {
             ...item,
             imageUrl: null,
             orientation: null,
+          }
+        : item,
+    );
+    setLayoutItems(updatedItems);
+  };
+
+  // 클릭 비활성화 핸들러
+  const handleClickDisabledChange = (frameIndex: number, disabled: boolean) => {
+    const updatedItems = layoutItems.map((item) =>
+      item.frameIndex === frameIndex
+        ? {
+            ...item,
+            clickDisabled: disabled,
           }
         : item,
     );
@@ -682,6 +713,7 @@ export default function ProjectLayoutManager() {
                     onImageUpload={handleImageUpload}
                     onImageRemove={handleImageRemove}
                     onRemove={handleRemoveItem}
+                    onClickDisabledChange={handleClickDisabledChange}
                   />
                 ))}
               </SortableContext>

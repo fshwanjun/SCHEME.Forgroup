@@ -196,6 +196,7 @@ export default function ProjectPage() {
       orientation: 'horizontal' | 'vertical' | null;
       projectId: string | null;
       order: number;
+      clickDisabled?: boolean;
     }>
   >([]);
 
@@ -214,6 +215,7 @@ export default function ProjectPage() {
                   orientation?: 'horizontal' | 'vertical' | null;
                   projectId: string | null;
                   order: number;
+                  clickDisabled?: boolean;
                 }>;
               }
             ).items || [];
@@ -223,6 +225,7 @@ export default function ProjectPage() {
               ...item,
               imageUrl: item.imageUrl || null,
               orientation: item.orientation || null,
+              clickDisabled: item.clickDisabled || false,
             }));
           setLayoutItems(sortedItems);
         }
@@ -249,6 +252,7 @@ export default function ProjectPage() {
             horizontalSrc: !isVertical ? item.imageUrl : item.imageUrl,
             orientation: item.orientation || undefined, // orientation 속성 추가
             frameIndex: item.frameIndex, // frameIndex 저장
+            clickDisabled: item.clickDisabled || false, // 클릭 비활성화 여부
           };
         }
         return null;
@@ -264,6 +268,12 @@ export default function ProjectPage() {
         return;
       }
 
+      // 클릭 비활성화된 이미지인지 확인
+      const clickedImage = projectImages.find((img) => img.projectId === image.projectId);
+      if (clickedImage?.clickDisabled) {
+        return; // 클릭 비활성화된 이미지는 무시
+      }
+
       // 같은 이미지를 클릭한 경우
       if (selected?.projectId === image.projectId) {
         // cover 상태면 아무 동작 안함
@@ -277,7 +287,7 @@ export default function ProjectPage() {
         selectImage(image, 'cover');
       }
     },
-    [selected, mode, selectImage, isAnimating, introAnimating],
+    [selected, mode, selectImage, isAnimating, introAnimating, projectImages],
   );
 
   // 섹션 리스트 생성

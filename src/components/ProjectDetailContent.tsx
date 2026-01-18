@@ -139,6 +139,17 @@ interface DetailImage {
   position?: 'left' | 'center' | 'right' | 'full-cover' | 'full-padding';
 }
 
+// 폰트 두께 타입 정의
+type FontWeight = 'book' | 'regular' | 'medium' | 'bold';
+
+// 폰트 두께 → CSS 클래스 매핑
+const fontWeightClass: Record<FontWeight, string> = {
+  book: 'font-light',
+  regular: 'font-normal',
+  medium: 'font-medium',
+  bold: 'font-bold',
+};
+
 interface ProjectContent {
   project?: string;
   year?: string | number; // 호환성을 위해 number도 허용
@@ -159,11 +170,38 @@ interface ProjectContent {
   productTitle?: string;
   keywordTitle?: string;
   challengeTitle?: string;
-  // 하단 4단 가시성 토글
-  projectVisible?: boolean;
-  yearVisible?: boolean;
-  clientVisible?: boolean;
-  servicesVisible?: boolean;
+  // 하단 4단 가시성 토글 (Title / Value 분리)
+  projectTitleVisible?: boolean;
+  projectValueVisible?: boolean;
+  yearTitleVisible?: boolean;
+  yearValueVisible?: boolean;
+  clientTitleVisible?: boolean;
+  clientValueVisible?: boolean;
+  servicesTitleVisible?: boolean;
+  servicesValueVisible?: boolean;
+  // 상세 정보 가시성 토글 (Title / Value 분리)
+  productTitleVisible?: boolean;
+  productValueVisible?: boolean;
+  keywordTitleVisible?: boolean;
+  keywordValueVisible?: boolean;
+  challengeTitleVisible?: boolean;
+  challengeValueVisible?: boolean;
+  // 하단 4단 폰트 두께 (Title / Value 분리)
+  projectTitleFontWeight?: FontWeight;
+  projectValueFontWeight?: FontWeight;
+  yearTitleFontWeight?: FontWeight;
+  yearValueFontWeight?: FontWeight;
+  clientTitleFontWeight?: FontWeight;
+  clientValueFontWeight?: FontWeight;
+  servicesTitleFontWeight?: FontWeight;
+  servicesValueFontWeight?: FontWeight;
+  // 상세 정보 폰트 두께 (Title / Value 분리)
+  productTitleFontWeight?: FontWeight;
+  productValueFontWeight?: FontWeight;
+  keywordTitleFontWeight?: FontWeight;
+  keywordValueFontWeight?: FontWeight;
+  challengeTitleFontWeight?: FontWeight;
+  challengeValueFontWeight?: FontWeight;
 }
 
 interface ProjectDetailContentProps {
@@ -207,28 +245,44 @@ export default function ProjectDetailContent({
           ease: PROJECT_DETAIL_CONFIG.animation.ease,
         }}
         className="fixed bottom-0 left-0 z-10 grid w-full grid-cols-2 gap-4 px-7 pb-8 text-white mix-blend-difference md:flex md:justify-between md:px-10">
-        {contents.projectVisible !== false && (
+        {(contents.projectTitleVisible !== false || contents.projectValueVisible !== false) && (
           <div className="flex flex-col gap-1">
-            <h5>{contents.projectTitle || 'Project'}</h5>
-            <h6 className="whitespace-pre-line">{contents.project || ''}</h6>
+            {contents.projectTitleVisible !== false && (
+              <h5 className={fontWeightClass[contents.projectTitleFontWeight || 'bold']}>{contents.projectTitle}</h5>
+            )}
+            {contents.projectValueVisible !== false && (
+              <h6 className={`whitespace-pre-line ${fontWeightClass[contents.projectValueFontWeight || 'regular']}`}>{contents.project}</h6>
+            )}
           </div>
         )}
-        {contents.yearVisible !== false && contents.year && (
+        {(contents.yearTitleVisible !== false || contents.yearValueVisible !== false) && contents.year && (
           <div className="flex flex-col gap-1">
-            <h5>{contents.yearTitle || 'Year'}</h5>
-            <h6 className="whitespace-pre-line">{contents.year}</h6>
+            {contents.yearTitleVisible !== false && (
+              <h5 className={fontWeightClass[contents.yearTitleFontWeight || 'bold']}>{contents.yearTitle}</h5>
+            )}
+            {contents.yearValueVisible !== false && (
+              <h6 className={`whitespace-pre-line ${fontWeightClass[contents.yearValueFontWeight || 'regular']}`}>{contents.year}</h6>
+            )}
           </div>
         )}
-        {contents.clientVisible !== false && contents.client && (
+        {(contents.clientTitleVisible !== false || contents.clientValueVisible !== false) && contents.client && (
           <div className="flex flex-col gap-1">
-            <h5>{contents.clientTitle || 'Client'}</h5>
-            <h6 className="whitespace-pre-line">{contents.client}</h6>
+            {contents.clientTitleVisible !== false && (
+              <h5 className={fontWeightClass[contents.clientTitleFontWeight || 'bold']}>{contents.clientTitle}</h5>
+            )}
+            {contents.clientValueVisible !== false && (
+              <h6 className={`whitespace-pre-line ${fontWeightClass[contents.clientValueFontWeight || 'regular']}`}>{contents.client}</h6>
+            )}
           </div>
         )}
-        {contents.servicesVisible !== false && contents.services && (
+        {(contents.servicesTitleVisible !== false || contents.servicesValueVisible !== false) && contents.services && (
           <div className="flex flex-col gap-1">
-            <h5>{contents.servicesTitle || 'Services'}</h5>
-            <h6 className="whitespace-pre-line">{contents.services}</h6>
+            {contents.servicesTitleVisible !== false && (
+              <h5 className={fontWeightClass[contents.servicesTitleFontWeight || 'bold']}>{contents.servicesTitle}</h5>
+            )}
+            {contents.servicesValueVisible !== false && (
+              <h6 className={`whitespace-pre-line ${fontWeightClass[contents.servicesValueFontWeight || 'regular']}`}>{contents.services}</h6>
+            )}
           </div>
         )}
       </motion.div>
@@ -256,49 +310,58 @@ export default function ProjectDetailContent({
 
       <div className="mx-auto grid min-h-2/3 w-full gap-20 overflow-hidden px-5 py-16 md:grid-cols-2 md:gap-4 md:px-5">
         <h1 className="text-4xl leading-[124%] md:text-5xl">
-          {title || contents.project || 'Design Project'}
-          <br />
-          Design Project
-          <br />
+          {title || contents.project }
         </h1>
         <div className="flex flex-col justify-between gap-8 md:gap-4">
           <div className="flex w-2/3 flex-row justify-end gap-8 self-end md:w-full md:justify-start md:gap-12 md:self-start md:pb-40">
-            {contents.product && (
+            {(contents.productTitleVisible !== false || contents.productValueVisible !== false) && contents.product && (
               <div className="flex flex-col gap-4 md:w-[20%]">
-                <h5 className="text-[14px] leading-[130%] font-bold md:text-[16px]">
-                  {contents.productTitle || 'Product'}
-                </h5>
-                <div className="flex flex-col">
-                  <span className="text-[14px] leading-[130%] font-semibold whitespace-pre-line md:text-[16px]">
-                    {contents.product}
-                  </span>
-                </div>
+                {contents.productTitleVisible !== false && (
+                  <h5 className={`text-[14px] leading-[130%] md:text-[16px] ${fontWeightClass[contents.productTitleFontWeight || 'bold']}`}>
+                    {contents.productTitle}
+                  </h5>
+                )}
+                {contents.productValueVisible !== false && (
+                  <div className="flex flex-col">
+                    <span className={`text-[14px] leading-[130%] whitespace-pre-line md:text-[16px] ${fontWeightClass[contents.productValueFontWeight || 'medium']}`}>
+                      {contents.product}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
-            {contents.keyword && (
+            {(contents.keywordTitleVisible !== false || contents.keywordValueVisible !== false) && contents.keyword && (
               <div className="flex flex-col gap-4">
-                <h5 className="text-[14px] leading-[130%] font-bold md:text-[16px]">
-                  {contents.keywordTitle || 'Design Keywords'}
-                </h5>
-                <div className="flex flex-col">
-                  <span className="text-[14px] leading-[130%] font-semibold whitespace-pre-line md:text-[16px]">
-                    {Array.isArray(contents.keyword) ? contents.keyword.join('\n') : contents.keyword}
-                  </span>
-                </div>
+                {contents.keywordTitleVisible !== false && (
+                  <h5 className={`text-[14px] leading-[130%] md:text-[16px] ${fontWeightClass[contents.keywordTitleFontWeight || 'bold']}`}>
+                    {contents.keywordTitle}
+                  </h5>
+                )}
+                {contents.keywordValueVisible !== false && (
+                  <div className="flex flex-col">
+                    <span className={`text-[14px] leading-[130%] whitespace-pre-line md:text-[16px] ${fontWeightClass[contents.keywordValueFontWeight || 'medium']}`}>
+                      {Array.isArray(contents.keyword) ? contents.keyword.join('\n') : contents.keyword}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
           </div>
           {/* 챌린지 */}
-          {contents.challenge && (
+          {(contents.challengeTitleVisible !== false || contents.challengeValueVisible !== false) && contents.challenge && (
             <div className="flex flex-col gap-4">
-              <h5 className="text-[14px] leading-[130%] font-bold md:text-[16px]">
-                {contents.challengeTitle || 'Challenge'}
-              </h5>
-              <div className="flex flex-col">
-                <h4 className="leading-[122%] font-normal whitespace-pre-line md:leading-[130%]">
-                  {contents.challenge}
-                </h4>
-              </div>
+              {contents.challengeTitleVisible !== false && (
+                <h5 className={`text-[14px] leading-[130%] md:text-[16px] ${fontWeightClass[contents.challengeTitleFontWeight || 'bold']}`}>
+                  {contents.challengeTitle}
+                </h5>
+              )}
+              {contents.challengeValueVisible !== false && (
+                <div className="flex flex-col">
+                  <h4 className={`leading-[122%] whitespace-pre-line md:leading-[130%] ${fontWeightClass[contents.challengeValueFontWeight || 'regular']}`}>
+                    {contents.challenge}
+                  </h4>
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -45,6 +45,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 // 프로젝트 상태 타입 정의
 type ProjectStatus = 'ready' | 'published' | 'hidden';
 
+// 폰트 두께 타입 정의
+type FontWeight = 'book' | 'regular' | 'medium' | 'bold';
+
 // 프로젝트 컨텐츠 데이터 인터페이스
 interface ProjectContent {
   project: string;
@@ -66,11 +69,38 @@ interface ProjectContent {
   productTitle: string;
   keywordTitle: string;
   challengeTitle: string;
-  // 하단 4단 가시성 토글
-  projectVisible: boolean;
-  yearVisible: boolean;
-  clientVisible: boolean;
-  servicesVisible: boolean;
+  // 하단 4단 가시성 토글 (Title / Value 분리)
+  projectTitleVisible: boolean;
+  projectValueVisible: boolean;
+  yearTitleVisible: boolean;
+  yearValueVisible: boolean;
+  clientTitleVisible: boolean;
+  clientValueVisible: boolean;
+  servicesTitleVisible: boolean;
+  servicesValueVisible: boolean;
+  // 상세 정보 가시성 토글 (Title / Value 분리)
+  productTitleVisible: boolean;
+  productValueVisible: boolean;
+  keywordTitleVisible: boolean;
+  keywordValueVisible: boolean;
+  challengeTitleVisible: boolean;
+  challengeValueVisible: boolean;
+  // 하단 4단 폰트 두께 (Title / Value 분리)
+  projectTitleFontWeight: FontWeight;
+  projectValueFontWeight: FontWeight;
+  yearTitleFontWeight: FontWeight;
+  yearValueFontWeight: FontWeight;
+  clientTitleFontWeight: FontWeight;
+  clientValueFontWeight: FontWeight;
+  servicesTitleFontWeight: FontWeight;
+  servicesValueFontWeight: FontWeight;
+  // 상세 정보 폰트 두께 (Title / Value 분리)
+  productTitleFontWeight: FontWeight;
+  productValueFontWeight: FontWeight;
+  keywordTitleFontWeight: FontWeight;
+  keywordValueFontWeight: FontWeight;
+  challengeTitleFontWeight: FontWeight;
+  challengeValueFontWeight: FontWeight;
 }
 
 const defaultContent: ProjectContent = {
@@ -93,11 +123,38 @@ const defaultContent: ProjectContent = {
   productTitle: 'Product',
   keywordTitle: 'Design Keywords',
   challengeTitle: 'Challenge',
-  // 하단 4단 가시성 기본값
-  projectVisible: true,
-  yearVisible: true,
-  clientVisible: true,
-  servicesVisible: true,
+  // 하단 4단 가시성 기본값 (Title / Value 분리)
+  projectTitleVisible: true,
+  projectValueVisible: true,
+  yearTitleVisible: true,
+  yearValueVisible: true,
+  clientTitleVisible: true,
+  clientValueVisible: true,
+  servicesTitleVisible: true,
+  servicesValueVisible: true,
+  // 상세 정보 가시성 기본값 (Title / Value 분리)
+  productTitleVisible: true,
+  productValueVisible: true,
+  keywordTitleVisible: true,
+  keywordValueVisible: true,
+  challengeTitleVisible: true,
+  challengeValueVisible: true,
+  // 하단 4단 폰트 두께 기본값 (Title / Value 분리)
+  projectTitleFontWeight: 'bold',
+  projectValueFontWeight: 'regular',
+  yearTitleFontWeight: 'bold',
+  yearValueFontWeight: 'regular',
+  clientTitleFontWeight: 'bold',
+  clientValueFontWeight: 'regular',
+  servicesTitleFontWeight: 'bold',
+  servicesValueFontWeight: 'regular',
+  // 상세 정보 폰트 두께 기본값 (Title / Value 분리)
+  productTitleFontWeight: 'bold',
+  productValueFontWeight: 'medium',
+  keywordTitleFontWeight: 'bold',
+  keywordValueFontWeight: 'medium',
+  challengeTitleFontWeight: 'bold',
+  challengeValueFontWeight: 'regular',
 };
 
 // 프로젝트 데이터 인터페이스 정의 (타입스크립트)
@@ -309,7 +366,7 @@ export default function ProjectManager() {
 
   // 3. 프로젝트 저장 또는 수정 (Create / Update)
   const handleSave = async () => {
-    if (!title || !description || !slug) return alert('Please enter title, description, and slug!');
+    if (!title || !slug) return alert('Please enter title and slug!');
 
     if (slug.includes(' ') || slug !== encodeURIComponent(slug)) {
       return alert(
@@ -585,20 +642,30 @@ export default function ProjectManager() {
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                   {/* Project */}
                   <div className="space-y-2 rounded-lg border border-stone-800 bg-stone-900/50 p-3">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="projectVisible"
-                        checked={contentData.projectVisible}
-                        onChange={(e) => handleContentChange('projectVisible', e.target.checked)}
-                        className="h-4 w-4 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
-                      />
-                      <Label htmlFor="projectVisible" className="text-xs text-stone-400">
-                        Visible
-                      </Label>
-                    </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-stone-500">Title</Label>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-stone-500">Title</Label>
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={contentData.projectTitleFontWeight}
+                            onChange={(e) => handleContentChange('projectTitleFontWeight', e.target.value)}
+                            className="h-5 rounded border border-stone-700 bg-stone-800 px-1 text-[10px] text-stone-300">
+                            <option value="book">Book</option>
+                            <option value="regular">Regular</option>
+                            <option value="medium">Medium</option>
+                            <option value="bold">Bold</option>
+                          </select>
+                          <label className="flex cursor-pointer items-center gap-1">
+                            <input
+                              type="checkbox"
+                              checked={contentData.projectTitleVisible}
+                              onChange={(e) => handleContentChange('projectTitleVisible', e.target.checked)}
+                              className="h-3 w-3 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
+                            />
+                            <span className="text-[10px] text-stone-500">Show</span>
+                          </label>
+                        </div>
+                      </div>
                       <Input
                         value={contentData.projectTitle}
                         onChange={(e) => handleContentChange('projectTitle', e.target.value)}
@@ -607,7 +674,29 @@ export default function ProjectManager() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-stone-500">Value</Label>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-stone-500">Value</Label>
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={contentData.projectValueFontWeight}
+                            onChange={(e) => handleContentChange('projectValueFontWeight', e.target.value)}
+                            className="h-5 rounded border border-stone-700 bg-stone-800 px-1 text-[10px] text-stone-300">
+                            <option value="book">Book</option>
+                            <option value="regular">Regular</option>
+                            <option value="medium">Medium</option>
+                            <option value="bold">Bold</option>
+                          </select>
+                          <label className="flex cursor-pointer items-center gap-1">
+                            <input
+                              type="checkbox"
+                              checked={contentData.projectValueVisible}
+                              onChange={(e) => handleContentChange('projectValueVisible', e.target.checked)}
+                              className="h-3 w-3 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
+                            />
+                            <span className="text-[10px] text-stone-500">Show</span>
+                          </label>
+                        </div>
+                      </div>
                       <Textarea
                         rows={3}
                         value={contentData.project}
@@ -620,20 +709,30 @@ export default function ProjectManager() {
 
                   {/* Year */}
                   <div className="space-y-2 rounded-lg border border-stone-800 bg-stone-900/50 p-3">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="yearVisible"
-                        checked={contentData.yearVisible}
-                        onChange={(e) => handleContentChange('yearVisible', e.target.checked)}
-                        className="h-4 w-4 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
-                      />
-                      <Label htmlFor="yearVisible" className="text-xs text-stone-400">
-                        Visible
-                      </Label>
-                    </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-stone-500">Title</Label>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-stone-500">Title</Label>
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={contentData.yearTitleFontWeight}
+                            onChange={(e) => handleContentChange('yearTitleFontWeight', e.target.value)}
+                            className="h-5 rounded border border-stone-700 bg-stone-800 px-1 text-[10px] text-stone-300">
+                            <option value="book">Book</option>
+                            <option value="regular">Regular</option>
+                            <option value="medium">Medium</option>
+                            <option value="bold">Bold</option>
+                          </select>
+                          <label className="flex cursor-pointer items-center gap-1">
+                            <input
+                              type="checkbox"
+                              checked={contentData.yearTitleVisible}
+                              onChange={(e) => handleContentChange('yearTitleVisible', e.target.checked)}
+                              className="h-3 w-3 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
+                            />
+                            <span className="text-[10px] text-stone-500">Show</span>
+                          </label>
+                        </div>
+                      </div>
                       <Input
                         value={contentData.yearTitle}
                         onChange={(e) => handleContentChange('yearTitle', e.target.value)}
@@ -642,7 +741,29 @@ export default function ProjectManager() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-stone-500">Value</Label>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-stone-500">Value</Label>
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={contentData.yearValueFontWeight}
+                            onChange={(e) => handleContentChange('yearValueFontWeight', e.target.value)}
+                            className="h-5 rounded border border-stone-700 bg-stone-800 px-1 text-[10px] text-stone-300">
+                            <option value="book">Book</option>
+                            <option value="regular">Regular</option>
+                            <option value="medium">Medium</option>
+                            <option value="bold">Bold</option>
+                          </select>
+                          <label className="flex cursor-pointer items-center gap-1">
+                            <input
+                              type="checkbox"
+                              checked={contentData.yearValueVisible}
+                              onChange={(e) => handleContentChange('yearValueVisible', e.target.checked)}
+                              className="h-3 w-3 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
+                            />
+                            <span className="text-[10px] text-stone-500">Show</span>
+                          </label>
+                        </div>
+                      </div>
                       <Textarea
                         rows={3}
                         value={contentData.year}
@@ -655,20 +776,30 @@ export default function ProjectManager() {
 
                   {/* Client */}
                   <div className="space-y-2 rounded-lg border border-stone-800 bg-stone-900/50 p-3">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="clientVisible"
-                        checked={contentData.clientVisible}
-                        onChange={(e) => handleContentChange('clientVisible', e.target.checked)}
-                        className="h-4 w-4 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
-                      />
-                      <Label htmlFor="clientVisible" className="text-xs text-stone-400">
-                        Visible
-                      </Label>
-                    </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-stone-500">Title</Label>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-stone-500">Title</Label>
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={contentData.clientTitleFontWeight}
+                            onChange={(e) => handleContentChange('clientTitleFontWeight', e.target.value)}
+                            className="h-5 rounded border border-stone-700 bg-stone-800 px-1 text-[10px] text-stone-300">
+                            <option value="book">Book</option>
+                            <option value="regular">Regular</option>
+                            <option value="medium">Medium</option>
+                            <option value="bold">Bold</option>
+                          </select>
+                          <label className="flex cursor-pointer items-center gap-1">
+                            <input
+                              type="checkbox"
+                              checked={contentData.clientTitleVisible}
+                              onChange={(e) => handleContentChange('clientTitleVisible', e.target.checked)}
+                              className="h-3 w-3 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
+                            />
+                            <span className="text-[10px] text-stone-500">Show</span>
+                          </label>
+                        </div>
+                      </div>
                       <Input
                         value={contentData.clientTitle}
                         onChange={(e) => handleContentChange('clientTitle', e.target.value)}
@@ -677,7 +808,29 @@ export default function ProjectManager() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-stone-500">Value</Label>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-stone-500">Value</Label>
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={contentData.clientValueFontWeight}
+                            onChange={(e) => handleContentChange('clientValueFontWeight', e.target.value)}
+                            className="h-5 rounded border border-stone-700 bg-stone-800 px-1 text-[10px] text-stone-300">
+                            <option value="book">Book</option>
+                            <option value="regular">Regular</option>
+                            <option value="medium">Medium</option>
+                            <option value="bold">Bold</option>
+                          </select>
+                          <label className="flex cursor-pointer items-center gap-1">
+                            <input
+                              type="checkbox"
+                              checked={contentData.clientValueVisible}
+                              onChange={(e) => handleContentChange('clientValueVisible', e.target.checked)}
+                              className="h-3 w-3 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
+                            />
+                            <span className="text-[10px] text-stone-500">Show</span>
+                          </label>
+                        </div>
+                      </div>
                       <Textarea
                         rows={3}
                         value={contentData.client}
@@ -690,20 +843,30 @@ export default function ProjectManager() {
 
                   {/* Services */}
                   <div className="space-y-2 rounded-lg border border-stone-800 bg-stone-900/50 p-3">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="servicesVisible"
-                        checked={contentData.servicesVisible}
-                        onChange={(e) => handleContentChange('servicesVisible', e.target.checked)}
-                        className="h-4 w-4 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
-                      />
-                      <Label htmlFor="servicesVisible" className="text-xs text-stone-400">
-                        Visible
-                      </Label>
-                    </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-stone-500">Title</Label>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-stone-500">Title</Label>
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={contentData.servicesTitleFontWeight}
+                            onChange={(e) => handleContentChange('servicesTitleFontWeight', e.target.value)}
+                            className="h-5 rounded border border-stone-700 bg-stone-800 px-1 text-[10px] text-stone-300">
+                            <option value="book">Book</option>
+                            <option value="regular">Regular</option>
+                            <option value="medium">Medium</option>
+                            <option value="bold">Bold</option>
+                          </select>
+                          <label className="flex cursor-pointer items-center gap-1">
+                            <input
+                              type="checkbox"
+                              checked={contentData.servicesTitleVisible}
+                              onChange={(e) => handleContentChange('servicesTitleVisible', e.target.checked)}
+                              className="h-3 w-3 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
+                            />
+                            <span className="text-[10px] text-stone-500">Show</span>
+                          </label>
+                        </div>
+                      </div>
                       <Input
                         value={contentData.servicesTitle}
                         onChange={(e) => handleContentChange('servicesTitle', e.target.value)}
@@ -712,7 +875,29 @@ export default function ProjectManager() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-stone-500">Value</Label>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-stone-500">Value</Label>
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={contentData.servicesValueFontWeight}
+                            onChange={(e) => handleContentChange('servicesValueFontWeight', e.target.value)}
+                            className="h-5 rounded border border-stone-700 bg-stone-800 px-1 text-[10px] text-stone-300">
+                            <option value="book">Book</option>
+                            <option value="regular">Regular</option>
+                            <option value="medium">Medium</option>
+                            <option value="bold">Bold</option>
+                          </select>
+                          <label className="flex cursor-pointer items-center gap-1">
+                            <input
+                              type="checkbox"
+                              checked={contentData.servicesValueVisible}
+                              onChange={(e) => handleContentChange('servicesValueVisible', e.target.checked)}
+                              className="h-3 w-3 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
+                            />
+                            <span className="text-[10px] text-stone-500">Show</span>
+                          </label>
+                        </div>
+                      </div>
                       <Textarea
                         rows={3}
                         value={contentData.services}
@@ -733,7 +918,29 @@ export default function ProjectManager() {
                   {/* Product */}
                   <div className="space-y-2 rounded-lg border border-stone-800 bg-stone-900/50 p-3">
                     <div className="space-y-1">
-                      <Label className="text-xs text-stone-500">Section Title</Label>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-stone-500">Section Title</Label>
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={contentData.productTitleFontWeight}
+                            onChange={(e) => handleContentChange('productTitleFontWeight', e.target.value)}
+                            className="h-5 rounded border border-stone-700 bg-stone-800 px-1 text-[10px] text-stone-300">
+                            <option value="book">Book</option>
+                            <option value="regular">Regular</option>
+                            <option value="medium">Medium</option>
+                            <option value="bold">Bold</option>
+                          </select>
+                          <label className="flex cursor-pointer items-center gap-1">
+                            <input
+                              type="checkbox"
+                              checked={contentData.productTitleVisible}
+                              onChange={(e) => handleContentChange('productTitleVisible', e.target.checked)}
+                              className="h-3 w-3 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
+                            />
+                            <span className="text-[10px] text-stone-500">Show</span>
+                          </label>
+                        </div>
+                      </div>
                       <Input
                         value={contentData.productTitle}
                         onChange={(e) => handleContentChange('productTitle', e.target.value)}
@@ -742,7 +949,29 @@ export default function ProjectManager() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-stone-500">Value</Label>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-stone-500">Value</Label>
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={contentData.productValueFontWeight}
+                            onChange={(e) => handleContentChange('productValueFontWeight', e.target.value)}
+                            className="h-5 rounded border border-stone-700 bg-stone-800 px-1 text-[10px] text-stone-300">
+                            <option value="book">Book</option>
+                            <option value="regular">Regular</option>
+                            <option value="medium">Medium</option>
+                            <option value="bold">Bold</option>
+                          </select>
+                          <label className="flex cursor-pointer items-center gap-1">
+                            <input
+                              type="checkbox"
+                              checked={contentData.productValueVisible}
+                              onChange={(e) => handleContentChange('productValueVisible', e.target.checked)}
+                              className="h-3 w-3 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
+                            />
+                            <span className="text-[10px] text-stone-500">Show</span>
+                          </label>
+                        </div>
+                      </div>
                       <Textarea
                         rows={3}
                         value={contentData.product}
@@ -756,7 +985,29 @@ export default function ProjectManager() {
                   {/* Keywords */}
                   <div className="space-y-2 rounded-lg border border-stone-800 bg-stone-900/50 p-3">
                     <div className="space-y-1">
-                      <Label className="text-xs text-stone-500">Section Title</Label>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-stone-500">Section Title</Label>
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={contentData.keywordTitleFontWeight}
+                            onChange={(e) => handleContentChange('keywordTitleFontWeight', e.target.value)}
+                            className="h-5 rounded border border-stone-700 bg-stone-800 px-1 text-[10px] text-stone-300">
+                            <option value="book">Book</option>
+                            <option value="regular">Regular</option>
+                            <option value="medium">Medium</option>
+                            <option value="bold">Bold</option>
+                          </select>
+                          <label className="flex cursor-pointer items-center gap-1">
+                            <input
+                              type="checkbox"
+                              checked={contentData.keywordTitleVisible}
+                              onChange={(e) => handleContentChange('keywordTitleVisible', e.target.checked)}
+                              className="h-3 w-3 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
+                            />
+                            <span className="text-[10px] text-stone-500">Show</span>
+                          </label>
+                        </div>
+                      </div>
                       <Input
                         value={contentData.keywordTitle}
                         onChange={(e) => handleContentChange('keywordTitle', e.target.value)}
@@ -765,7 +1016,29 @@ export default function ProjectManager() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-stone-500">Value</Label>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-stone-500">Value</Label>
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={contentData.keywordValueFontWeight}
+                            onChange={(e) => handleContentChange('keywordValueFontWeight', e.target.value)}
+                            className="h-5 rounded border border-stone-700 bg-stone-800 px-1 text-[10px] text-stone-300">
+                            <option value="book">Book</option>
+                            <option value="regular">Regular</option>
+                            <option value="medium">Medium</option>
+                            <option value="bold">Bold</option>
+                          </select>
+                          <label className="flex cursor-pointer items-center gap-1">
+                            <input
+                              type="checkbox"
+                              checked={contentData.keywordValueVisible}
+                              onChange={(e) => handleContentChange('keywordValueVisible', e.target.checked)}
+                              className="h-3 w-3 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
+                            />
+                            <span className="text-[10px] text-stone-500">Show</span>
+                          </label>
+                        </div>
+                      </div>
                       <Textarea
                         rows={3}
                         value={contentData.keyword}
@@ -780,7 +1053,29 @@ export default function ProjectManager() {
                 {/* Challenge */}
                 <div className="space-y-2 rounded-lg border border-stone-800 bg-stone-900/50 p-3">
                   <div className="space-y-1">
-                    <Label className="text-xs text-stone-500">Section Title</Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs text-stone-500">Section Title</Label>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={contentData.challengeTitleFontWeight}
+                          onChange={(e) => handleContentChange('challengeTitleFontWeight', e.target.value)}
+                          className="h-5 rounded border border-stone-700 bg-stone-800 px-1 text-[10px] text-stone-300">
+                          <option value="book">Book</option>
+                          <option value="regular">Regular</option>
+                          <option value="medium">Medium</option>
+                          <option value="bold">Bold</option>
+                        </select>
+                        <label className="flex cursor-pointer items-center gap-1">
+                          <input
+                            type="checkbox"
+                            checked={contentData.challengeTitleVisible}
+                            onChange={(e) => handleContentChange('challengeTitleVisible', e.target.checked)}
+                            className="h-3 w-3 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
+                          />
+                          <span className="text-[10px] text-stone-500">Show</span>
+                        </label>
+                      </div>
+                    </div>
                     <Input
                       value={contentData.challengeTitle}
                       onChange={(e) => handleContentChange('challengeTitle', e.target.value)}
@@ -789,7 +1084,29 @@ export default function ProjectManager() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs text-stone-500">Content (Long Text)</Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs text-stone-500">Content (Long Text)</Label>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={contentData.challengeValueFontWeight}
+                          onChange={(e) => handleContentChange('challengeValueFontWeight', e.target.value)}
+                          className="h-5 rounded border border-stone-700 bg-stone-800 px-1 text-[10px] text-stone-300">
+                          <option value="book">Book</option>
+                          <option value="regular">Regular</option>
+                          <option value="medium">Medium</option>
+                          <option value="bold">Bold</option>
+                        </select>
+                        <label className="flex cursor-pointer items-center gap-1">
+                          <input
+                            type="checkbox"
+                            checked={contentData.challengeValueVisible}
+                            onChange={(e) => handleContentChange('challengeValueVisible', e.target.checked)}
+                            className="h-3 w-3 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
+                          />
+                          <span className="text-[10px] text-stone-500">Show</span>
+                        </label>
+                      </div>
+                    </div>
                     <Textarea
                       rows={6}
                       value={contentData.challenge}

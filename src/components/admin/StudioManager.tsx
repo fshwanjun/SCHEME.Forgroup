@@ -50,6 +50,13 @@ interface StudioData {
   addressTitle: string;
   contactTitle: string;
   socialTitle: string;
+  // 섹션 표시 여부
+  experienceVisible: boolean;
+  servicesVisible: boolean;
+  clientsVisible: boolean;
+  addressVisible: boolean;
+  contactVisible: boolean;
+  socialVisible: boolean;
 }
 
 // 초기값
@@ -68,6 +75,13 @@ const initialData: StudioData = {
   addressTitle: 'Address',
   contactTitle: 'Contact',
   socialTitle: 'Social',
+  // 기본적으로 모든 섹션 표시
+  experienceVisible: true,
+  servicesVisible: true,
+  clientsVisible: true,
+  addressVisible: true,
+  contactVisible: true,
+  socialVisible: true,
 };
 
 // --- Sortable Item Component ---
@@ -233,6 +247,13 @@ export default function StudioManager() {
             addressTitle: parsed.addressTitle || initialData.addressTitle,
             contactTitle: parsed.contactTitle || initialData.contactTitle,
             socialTitle: parsed.socialTitle || initialData.socialTitle,
+            // visible 필드가 없으면 기본값(true) 사용
+            experienceVisible: parsed.experienceVisible ?? initialData.experienceVisible,
+            servicesVisible: parsed.servicesVisible ?? initialData.servicesVisible,
+            clientsVisible: parsed.clientsVisible ?? initialData.clientsVisible,
+            addressVisible: parsed.addressVisible ?? initialData.addressVisible,
+            contactVisible: parsed.contactVisible ?? initialData.contactVisible,
+            socialVisible: parsed.socialVisible ?? initialData.socialVisible,
           };
 
           setData(newData);
@@ -339,15 +360,26 @@ export default function StudioManager() {
         {/* 리스트 편집 영역 (3열) */}
         <div className="grid grid-cols-1 gap-6 border-t border-stone-800 pt-4 md:grid-cols-3">
           <div className="space-y-2">
-            <div className="space-y-1">
-              <Label className="text-xs text-stone-400">Section Title</Label>
-              <Input
-                value={data.experienceTitle}
-                onChange={(e) => handleChange('experienceTitle', e.target.value)}
-                disabled={loading}
-                placeholder="Experience"
-                className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
-              />
+            <div className="flex items-center justify-between">
+              <div className="space-y-1 flex-1">
+                <Label className="text-xs text-stone-400">Section Title</Label>
+                <Input
+                  value={data.experienceTitle}
+                  onChange={(e) => handleChange('experienceTitle', e.target.value)}
+                  disabled={loading}
+                  placeholder="Experience"
+                  className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
+                />
+              </div>
+              <label className="ml-3 flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={data.experienceVisible}
+                  onChange={(e) => setData((prev) => ({ ...prev, experienceVisible: e.target.checked }))}
+                  className="h-4 w-4 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
+                />
+                <span className="text-xs text-stone-400">Visible</span>
+              </label>
             </div>
             <SortableSection
               title={data.experienceTitle || 'Experience'}
@@ -356,15 +388,26 @@ export default function StudioManager() {
             />
           </div>
           <div className="space-y-2">
-            <div className="space-y-1">
-              <Label className="text-xs text-stone-400">Section Title</Label>
-              <Input
-                value={data.servicesTitle}
-                onChange={(e) => handleChange('servicesTitle', e.target.value)}
-                disabled={loading}
-                placeholder="Services"
-                className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
-              />
+            <div className="flex items-center justify-between">
+              <div className="space-y-1 flex-1">
+                <Label className="text-xs text-stone-400">Section Title</Label>
+                <Input
+                  value={data.servicesTitle}
+                  onChange={(e) => handleChange('servicesTitle', e.target.value)}
+                  disabled={loading}
+                  placeholder="Services"
+                  className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
+                />
+              </div>
+              <label className="ml-3 flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={data.servicesVisible}
+                  onChange={(e) => setData((prev) => ({ ...prev, servicesVisible: e.target.checked }))}
+                  className="h-4 w-4 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
+                />
+                <span className="text-xs text-stone-400">Visible</span>
+              </label>
             </div>
             <SortableSection
               title={data.servicesTitle || 'Services'}
@@ -373,15 +416,26 @@ export default function StudioManager() {
             />
           </div>
           <div className="space-y-2">
-            <div className="space-y-1">
-              <Label className="text-xs text-stone-400">Section Title</Label>
-              <Input
-                value={data.clientsTitle}
-                onChange={(e) => handleChange('clientsTitle', e.target.value)}
-                disabled={loading}
-                placeholder="Clients"
-                className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
-              />
+            <div className="flex items-center justify-between">
+              <div className="space-y-1 flex-1">
+                <Label className="text-xs text-stone-400">Section Title</Label>
+                <Input
+                  value={data.clientsTitle}
+                  onChange={(e) => handleChange('clientsTitle', e.target.value)}
+                  disabled={loading}
+                  placeholder="Clients"
+                  className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
+                />
+              </div>
+              <label className="ml-3 flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={data.clientsVisible}
+                  onChange={(e) => setData((prev) => ({ ...prev, clientsVisible: e.target.checked }))}
+                  className="h-4 w-4 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
+                />
+                <span className="text-xs text-stone-400">Visible</span>
+              </label>
             </div>
             <SortableSection
               title={data.clientsTitle || 'Clients'}
@@ -394,15 +448,26 @@ export default function StudioManager() {
         {/* 일반 텍스트 영역 (Address, Contact, Social) */}
         <div className="grid grid-cols-1 gap-6 border-t border-stone-800 pt-4 md:grid-cols-3">
           <div className="space-y-2">
-            <div className="space-y-1">
-              <Label className="text-xs text-stone-400">Section Title</Label>
-              <Input
-                value={data.addressTitle}
-                onChange={(e) => handleChange('addressTitle', e.target.value)}
-                disabled={loading}
-                placeholder="Address"
-                className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
-              />
+            <div className="flex items-center justify-between">
+              <div className="space-y-1 flex-1">
+                <Label className="text-xs text-stone-400">Section Title</Label>
+                <Input
+                  value={data.addressTitle}
+                  onChange={(e) => handleChange('addressTitle', e.target.value)}
+                  disabled={loading}
+                  placeholder="Address"
+                  className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
+                />
+              </div>
+              <label className="ml-3 flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={data.addressVisible}
+                  onChange={(e) => setData((prev) => ({ ...prev, addressVisible: e.target.checked }))}
+                  className="h-4 w-4 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
+                />
+                <span className="text-xs text-stone-400">Visible</span>
+              </label>
             </div>
             <div className="space-y-2">
               <Label className="text-stone-300">{data.addressTitle || 'Address'}</Label>
@@ -415,15 +480,26 @@ export default function StudioManager() {
             </div>
           </div>
           <div className="space-y-2">
-            <div className="space-y-1">
-              <Label className="text-xs text-stone-400">Section Title</Label>
-              <Input
-                value={data.contactTitle}
-                onChange={(e) => handleChange('contactTitle', e.target.value)}
-                disabled={loading}
-                placeholder="Contact"
-                className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
-              />
+            <div className="flex items-center justify-between">
+              <div className="space-y-1 flex-1">
+                <Label className="text-xs text-stone-400">Section Title</Label>
+                <Input
+                  value={data.contactTitle}
+                  onChange={(e) => handleChange('contactTitle', e.target.value)}
+                  disabled={loading}
+                  placeholder="Contact"
+                  className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
+                />
+              </div>
+              <label className="ml-3 flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={data.contactVisible}
+                  onChange={(e) => setData((prev) => ({ ...prev, contactVisible: e.target.checked }))}
+                  className="h-4 w-4 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
+                />
+                <span className="text-xs text-stone-400">Visible</span>
+              </label>
             </div>
             <div className="space-y-2">
               <Label className="text-stone-300">{data.contactTitle || 'Contact'}</Label>
@@ -436,15 +512,26 @@ export default function StudioManager() {
             </div>
           </div>
           <div className="space-y-2">
-            <div className="space-y-1">
-              <Label className="text-xs text-stone-400">Section Title</Label>
-              <Input
-                value={data.socialTitle}
-                onChange={(e) => handleChange('socialTitle', e.target.value)}
-                disabled={loading}
-                placeholder="Social"
-                className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
-              />
+            <div className="flex items-center justify-between">
+              <div className="space-y-1 flex-1">
+                <Label className="text-xs text-stone-400">Section Title</Label>
+                <Input
+                  value={data.socialTitle}
+                  onChange={(e) => handleChange('socialTitle', e.target.value)}
+                  disabled={loading}
+                  placeholder="Social"
+                  className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
+                />
+              </div>
+              <label className="ml-3 flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={data.socialVisible}
+                  onChange={(e) => setData((prev) => ({ ...prev, socialVisible: e.target.checked }))}
+                  className="h-4 w-4 rounded border-stone-600 bg-stone-800 text-blue-500 focus:ring-blue-500"
+                />
+                <span className="text-xs text-stone-400">Visible</span>
+              </label>
             </div>
             <div className="space-y-2">
               <Label className="text-stone-300">{data.socialTitle || 'Social'}</Label>

@@ -31,6 +31,13 @@ interface AboutData {
   addressTitle?: string;
   contactTitle?: string;
   socialTitle?: string;
+  // 섹션 표시 여부
+  experienceVisible?: boolean;
+  servicesVisible?: boolean;
+  clientsVisible?: boolean;
+  addressVisible?: boolean;
+  contactVisible?: boolean;
+  socialVisible?: boolean;
 }
 
 // 기본값
@@ -49,6 +56,13 @@ const defaultData: AboutData = {
   addressTitle: 'Address',
   contactTitle: 'Contact',
   socialTitle: 'Social',
+  // 기본적으로 모든 섹션 표시
+  experienceVisible: true,
+  servicesVisible: true,
+  clientsVisible: true,
+  addressVisible: true,
+  contactVisible: true,
+  socialVisible: true,
 };
 
 // 리스트 렌더링 헬퍼 컴포넌트
@@ -173,41 +187,60 @@ export default function StudioPage() {
             {/* 2. 하단 그리드 정보 */}
             {/* md~xl: 1열, xl이상: 3열 */}
             <div className="grid w-full gap-x-4 gap-y-10 xl:grid-cols-3">
-              <div className="grid grid-cols-5 flex-row md:flex md:flex-col md:gap-2 xl:gap-4">
-                <h5 className="col-span-2">{data.experienceTitle || 'Experience'}</h5>
-                <div className="col-span-3 flex flex-col">
-                  <RenderList items={data.experience} />
+              {(data.experienceVisible ?? true) && (
+                <div className="grid grid-cols-5 flex-row md:flex md:flex-col md:gap-2 xl:gap-4">
+                  <h5 className="col-span-2">{data.experienceTitle || 'Experience'}</h5>
+                  <div className="col-span-3 flex flex-col">
+                    <RenderList items={data.experience} />
+                  </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-5 flex-row md:flex md:flex-col md:gap-2 xl:gap-4">
-                <h5 className="col-span-2">{data.servicesTitle || 'Services'}</h5>
-                <div className="col-span-3 flex flex-col">
-                  <RenderList items={data.services} />
+              )}
+              {(data.servicesVisible ?? true) && (
+                <div className="grid grid-cols-5 flex-row md:flex md:flex-col md:gap-2 xl:gap-4">
+                  <h5 className="col-span-2">{data.servicesTitle || 'Services'}</h5>
+                  <div className="col-span-3 flex flex-col">
+                    <RenderList items={data.services} />
+                  </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-5 flex-row md:flex md:flex-col md:gap-2 xl:gap-4">
-                <h5 className="col-span-2">{data.clientsTitle || 'Clients'}</h5>
-                <div className="col-span-3 flex flex-col">
-                  <RenderList items={data.clients} />
+              )}
+              {(data.clientsVisible ?? true) && (
+                <div className="grid grid-cols-5 flex-row md:flex md:flex-col md:gap-2 xl:gap-4">
+                  <h5 className="col-span-2">{data.clientsTitle || 'Clients'}</h5>
+                  <div className="col-span-3 flex flex-col">
+                    <RenderList items={data.clients} />
+                  </div>
                 </div>
-              </div>
-              <div className="hidden flex-col md:flex md:gap-2 xl:gap-4">
-                <h5>{data.addressTitle || 'Address'}</h5>
-                <span className="flex flex-col">{data.address}</span>
-              </div>
-              <div className="hidden flex-col md:flex md:gap-2 xl:gap-4">
-                <h5>{data.contactTitle || 'Contact'}</h5>
-                <span className="flex flex-col">{data.contact}</span>
-              </div>
-              <div className="hidden flex-col md:flex md:gap-2 xl:gap-4">
-                <h5>{data.socialTitle || 'Social'}</h5>
-                <span className="flex flex-col">{data.social}</span>
-              </div>
+              )}
+              {(data.addressVisible ?? true) && (
+                <div className="hidden flex-col md:flex md:gap-2 xl:gap-4">
+                  <h5>{data.addressTitle || 'Address'}</h5>
+                  <span className="flex flex-col">{data.address}</span>
+                </div>
+              )}
+              {(data.contactVisible ?? true) && (
+                <div className="hidden flex-col md:flex md:gap-2 xl:gap-4">
+                  <h5>{data.contactTitle || 'Contact'}</h5>
+                  <span className="flex flex-col">{data.contact}</span>
+                </div>
+              )}
+              {(data.socialVisible ?? true) && (
+                <div className="hidden flex-col md:flex md:gap-2 xl:gap-4">
+                  <h5>{data.socialTitle || 'Social'}</h5>
+                  <span className="flex flex-col">{data.social}</span>
+                </div>
+              )}
 
+              {/* 모바일 전용 하단 영역 */}
               <div className="flex flex-col gap-8 py-16 pb-40 md:hidden">
-                <h4 className="text-center leading-[130%] font-semibold">{data.contact}</h4>
-                <h4 className="text-center leading-[130%] font-semibold">{data.address}</h4>
-                <h4 className="text-center leading-[130%] font-semibold">{data.social}</h4>
+                {(data.contactVisible ?? true) && (
+                  <h4 className="text-center leading-[130%] font-semibold">{data.contact}</h4>
+                )}
+                {(data.addressVisible ?? true) && (
+                  <h4 className="text-center leading-[130%] font-semibold">{data.address}</h4>
+                )}
+                {(data.socialVisible ?? true) && (
+                  <h4 className="text-center leading-[130%] font-semibold">{data.social}</h4>
+                )}
               </div>
             </div>
           </div>

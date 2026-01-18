@@ -209,13 +209,13 @@ svg {
     @apply text-[28px] leading-[130%] font-semibold;
   }
   .studio-typography h5 {
-    @apply text-[16px] leading-[100%] font-bold capitalize;
+    @apply text-[16px] leading-[100%] font-bold;
   }
   .studio-typography span {
-    @apply text-[16px] leading-[120%] font-normal tracking-[0] uppercase;
+    @apply text-[16px] leading-[120%] font-normal tracking-[0];
   }
   .studio-typography li {
-    @apply !my-0 text-[16px] leading-[120%] font-normal tracking-[0] uppercase;
+    @apply !my-0 text-[16px] leading-[120%] font-normal tracking-[0];
   }
   /* h1 {
     @apply text-5xl md:text-6xl;

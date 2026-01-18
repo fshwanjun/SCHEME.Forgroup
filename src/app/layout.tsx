@@ -16,8 +16,8 @@ const abcrom = localFont({
 });
 
 export const metadata: Metadata = {
-  title: 'for',
-  description: 'for creative studio',
+  title: 'FOR',
+  description: 'FOR creative studio',
   icons: {
     icon: [
       { url: '/favicon.ico' },
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
   },
   manifest: '/site.webmanifest',
-};
+}; 
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
