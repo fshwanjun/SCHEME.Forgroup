@@ -189,7 +189,7 @@ export default function StudioPage() {
             <div className="grid w-full gap-x-4 gap-y-10 xl:grid-cols-3">
               {(data.experienceVisible ?? true) && (
                 <div className="grid grid-cols-5 flex-row md:flex md:flex-col md:gap-2 xl:gap-4">
-                  <h5 className="col-span-2">{data.experienceTitle || 'Experience'}</h5>
+                  <h5 className="col-span-2">{data.experienceTitle}</h5>
                   <div className="col-span-3 flex flex-col">
                     <RenderList items={data.experience} />
                   </div>
@@ -197,7 +197,7 @@ export default function StudioPage() {
               )}
               {(data.servicesVisible ?? true) && (
                 <div className="grid grid-cols-5 flex-row md:flex md:flex-col md:gap-2 xl:gap-4">
-                  <h5 className="col-span-2">{data.servicesTitle || 'Services'}</h5>
+                  <h5 className="col-span-2">{data.servicesTitle}</h5>
                   <div className="col-span-3 flex flex-col">
                     <RenderList items={data.services} />
                   </div>
@@ -205,7 +205,7 @@ export default function StudioPage() {
               )}
               {(data.clientsVisible ?? true) && (
                 <div className="grid grid-cols-5 flex-row md:flex md:flex-col md:gap-2 xl:gap-4">
-                  <h5 className="col-span-2">{data.clientsTitle || 'Clients'}</h5>
+                  <h5 className="col-span-2">{data.clientsTitle}</h5>
                   <div className="col-span-3 flex flex-col">
                     <RenderList items={data.clients} />
                   </div>
@@ -213,19 +213,19 @@ export default function StudioPage() {
               )}
               {(data.addressVisible ?? true) && (
                 <div className="hidden flex-col md:flex md:gap-2 xl:gap-4">
-                  <h5>{data.addressTitle || 'Address'}</h5>
+                  <h5>{data.addressTitle}</h5>
                   <span className="flex flex-col">{data.address}</span>
                 </div>
               )}
               {(data.contactVisible ?? true) && (
                 <div className="hidden flex-col md:flex md:gap-2 xl:gap-4">
-                  <h5>{data.contactTitle || 'Contact'}</h5>
+                  <h5>{data.contactTitle}</h5>
                   <span className="flex flex-col">{data.contact}</span>
                 </div>
               )}
               {(data.socialVisible ?? true) && (
                 <div className="hidden flex-col md:flex md:gap-2 xl:gap-4">
-                  <h5>{data.socialTitle || 'Social'}</h5>
+                  <h5>{data.socialTitle}</h5>
                   <span className="flex flex-col">{data.social}</span>
                 </div>
               )}

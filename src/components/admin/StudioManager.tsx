@@ -70,12 +70,12 @@ const initialData: StudioData = {
   address: '',
   contact: '',
   social: '',
-  experienceTitle: 'Experience',
-  servicesTitle: 'Services',
-  clientsTitle: 'Clients',
-  addressTitle: 'Address',
-  contactTitle: 'Contact',
-  socialTitle: 'Social',
+  experienceTitle: '',
+  servicesTitle: '',
+  clientsTitle: '',
+  addressTitle: '',
+  contactTitle: '',
+  socialTitle: '',
   // 기본적으로 모든 섹션 표시
   experienceVisible: true,
   servicesVisible: true,
@@ -370,7 +370,7 @@ export default function StudioManager() {
                   value={data.experienceTitle}
                   onChange={(e) => handleChange('experienceTitle', e.target.value)}
                   disabled={loading}
-                  placeholder="Experience"
+                  placeholder="title"
                   className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
                 />
               </div>
@@ -385,7 +385,7 @@ export default function StudioManager() {
               </label>
             </div>
             <SortableSection
-              title={data.experienceTitle || 'Experience'}
+              title={data.experienceTitle}
               items={data.experience}
               onItemsChange={(items) => handleListChange('experience', items)}
             />
@@ -398,7 +398,7 @@ export default function StudioManager() {
                   value={data.servicesTitle}
                   onChange={(e) => handleChange('servicesTitle', e.target.value)}
                   disabled={loading}
-                  placeholder="Services"
+                  placeholder="title"
                   className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
                 />
               </div>
@@ -413,7 +413,7 @@ export default function StudioManager() {
               </label>
             </div>
             <SortableSection
-              title={data.servicesTitle || 'Services'}
+              title={data.servicesTitle}
               items={data.services}
               onItemsChange={(items) => handleListChange('services', items)}
             />
@@ -426,7 +426,7 @@ export default function StudioManager() {
                   value={data.clientsTitle}
                   onChange={(e) => handleChange('clientsTitle', e.target.value)}
                   disabled={loading}
-                  placeholder="Clients"
+                  placeholder="title"
                   className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
                 />
               </div>
@@ -441,7 +441,7 @@ export default function StudioManager() {
               </label>
             </div>
             <SortableSection
-              title={data.clientsTitle || 'Clients'}
+              title={data.clientsTitle}
               items={data.clients}
               onItemsChange={(items) => handleListChange('clients', items)}
             />
@@ -458,7 +458,7 @@ export default function StudioManager() {
                   value={data.addressTitle}
                   onChange={(e) => handleChange('addressTitle', e.target.value)}
                   disabled={loading}
-                  placeholder="Address"
+                  placeholder="title"
                   className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
                 />
               </div>
@@ -473,7 +473,7 @@ export default function StudioManager() {
               </label>
             </div>
             <div className="space-y-2">
-              <Label className="text-stone-300">{data.addressTitle || 'Address'}</Label>
+              <Label className="text-stone-300">{data.addressTitle}</Label>
               <Textarea
                 rows={4}
                 value={data.address}
@@ -490,7 +490,7 @@ export default function StudioManager() {
                   value={data.contactTitle}
                   onChange={(e) => handleChange('contactTitle', e.target.value)}
                   disabled={loading}
-                  placeholder="Contact"
+                  placeholder="title"
                   className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
                 />
               </div>
@@ -505,7 +505,7 @@ export default function StudioManager() {
               </label>
             </div>
             <div className="space-y-2">
-              <Label className="text-stone-300">{data.contactTitle || 'Contact'}</Label>
+              <Label className="text-stone-300">{data.contactTitle}</Label>
               <Textarea
                 rows={4}
                 value={data.contact}
@@ -522,7 +522,7 @@ export default function StudioManager() {
                   value={data.socialTitle}
                   onChange={(e) => handleChange('socialTitle', e.target.value)}
                   disabled={loading}
-                  placeholder="Social"
+                  placeholder="title"
                   className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
                 />
               </div>
@@ -537,7 +537,7 @@ export default function StudioManager() {
               </label>
             </div>
             <div className="space-y-2">
-              <Label className="text-stone-300">{data.socialTitle || 'Social'}</Label>
+              <Label className="text-stone-300">{data.socialTitle}</Label>
               <Textarea
                 rows={4}
                 value={data.social}
