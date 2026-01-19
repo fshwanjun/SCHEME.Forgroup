@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { revalidateProjects } from '@/lib/revalidate';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card';
 import {
@@ -615,6 +616,8 @@ export default function ProjectLayoutManager() {
         alert('An error occurred while saving: ' + error.message);
       } else {
         setOriginalLayoutItems(itemsToSave);
+        // 캐시 무효화
+        await revalidateProjects();
         alert('Saved successfully.');
       }
     } catch (error) {

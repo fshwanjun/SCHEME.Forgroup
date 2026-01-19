@@ -3,6 +3,10 @@ import { supabase } from '@/lib/supabase';
 import { notFound } from 'next/navigation';
 import ProjectDetailClient from './ProjectDetailClient';
 
+// 캐싱 비활성화 - 항상 최신 데이터 가져오기
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // 타입 정의
 interface DetailImage {
   id: string;

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase'; // 새로 내보낸 함수를 가져옵니다.
+import { supabase } from '@/lib/supabase';
+import { revalidateProjects } from '@/lib/revalidate';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -435,6 +436,8 @@ export default function ProjectManager() {
           }
         }
 
+        // 캐시 무효화
+        await revalidateProjects(slug);
         alert('Project updated successfully.');
       } else {
         // 새 프로젝트 생성 시에는 폼 초기화하고 다이얼로그 닫기
@@ -446,6 +449,8 @@ export default function ProjectManager() {
         setIsEditing(false);
         setEditingId(null);
         setIsDialogOpen(false);
+        // 캐시 무효화
+        await revalidateProjects(slug);
         alert('Project created successfully.');
       }
       setLoading(false);
@@ -461,6 +466,8 @@ export default function ProjectManager() {
       alert('Failed to delete project.');
     } else {
       setRefreshTrigger((prev) => prev + 1);
+      // 캐시 무효화
+      await revalidateProjects();
       alert('Project successfully deleted.');
     }
     setLoading(false);

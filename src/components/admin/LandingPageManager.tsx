@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
+import { revalidateLanding } from '@/lib/revalidate';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card';
 import {
@@ -288,6 +289,8 @@ export default function LandingPageManager() {
         alert('An error occurred while saving: ' + error.message);
       } else {
         setOriginalImages(imagesToSave); // 저장 성공 시 원본 데이터 갱신
+        // 캐시 무효화
+        await revalidateLanding();
         alert('Saved successfully.');
       }
     } catch (error) {

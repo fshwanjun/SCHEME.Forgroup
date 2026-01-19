@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
+import { revalidateStudio } from '@/lib/revalidate';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ExternalLink, GripVertical, Plus, Trash2 } from 'lucide-react';
@@ -298,6 +299,8 @@ export default function StudioManager() {
     if (error) {
       alert('Error occurred: ' + error.message);
     } else {
+      // 캐시 무효화
+      await revalidateStudio();
       alert('Saved successfully.');
       setOriginalData(data); // 👈 저장 성공 시 원본 데이터 갱신
     }
