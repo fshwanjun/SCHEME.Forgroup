@@ -228,7 +228,13 @@ export default function Home() {
         // center 상태이고 애니메이션이 완료된 경우에만 cover로 전환
         // mode가 'default'에서 'center'로 전환 중일 때는 cover로 전환하지 않음
         if (mode === 'center' && !isAnimating) {
-          setMode('cover');
+          // 프로젝트가 연결되어 있는 경우에만 cover로 전환
+          if (selectedProjectData) {
+            setMode('cover');
+          } else {
+            // 프로젝트가 연결되어 있지 않으면 줌 아웃
+            zoomOut();
+          }
         }
         // cover 상태면 아무 동작 안함
         return;
@@ -240,7 +246,7 @@ export default function Home() {
         selectImage(image, 'center');
       }
     },
-    [selected, mode, selectImage, setMode, isAnimating],
+    [selected, mode, selectImage, setMode, isAnimating, selectedProjectData, zoomOut],
   );
 
   // 섹션 리스트 생성
