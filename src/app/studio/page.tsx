@@ -42,7 +42,7 @@ interface AboutData {
 
 // 기본값
 const defaultData: AboutData = {
-  imageUrl: '/images/dummy/studio.jpg',
+  imageUrl: '', // 빈 문자열로 설정하여 로딩 중 기본 이미지 플래시 방지
   description: '',
   experience: [],
   services: [],
@@ -144,8 +144,9 @@ export default function StudioPage() {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}>
           {/* [좌측] 데스크탑 이미지 영역 (40%) */}
           <div className="pointer-events-none relative hidden h-full min-h-0 w-fit overflow-hidden select-none md:flex md:max-w-[50%] md:min-w-0">
-            {data.imageUrl ? (
+            {!isLoading && data.imageUrl ? (
               <Image
+                key={data.imageUrl}
                 className="h-full w-auto max-w-full object-cover object-top"
                 src={data.imageUrl}
                 alt="Studio preview"
@@ -156,7 +157,7 @@ export default function StudioPage() {
                 draggable={false}
               />
             ) : (
-              // 이미지가 없을 때도 같은 영역 차지, 빈 공간 유지
+              // 이미지가 없거나 로딩 중일 때도 같은 영역 차지, 빈 공간 유지
               <div className="h-full w-full bg-transparent" />
             )}
           </div>
@@ -171,8 +172,9 @@ export default function StudioPage() {
             </div>
 
             {/* [모바일 전용] 이미지 */}
-            {data.imageUrl && (
+            {!isLoading && data.imageUrl && (
               <Image
+                key={data.imageUrl}
                 className="pointer-events-none block h-auto w-full md:hidden"
                 src={data.imageUrl}
                 alt="Studio preview mobile"
