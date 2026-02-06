@@ -505,9 +505,8 @@ export default function Home() {
           }}>
           {/* 스크롤 컨테이너 */}
           <div
-            className="h-full w-full overflow-y-auto"
+            className="relative h-full w-full overflow-y-auto bg-white"
             style={{
-              backgroundColor: 'white',
               WebkitOverflowScrolling: 'touch',
               ...(selected?.src && !imagesLoaded
                 ? {

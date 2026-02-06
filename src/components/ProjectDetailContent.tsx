@@ -217,9 +217,30 @@ export default function ProjectDetailContent({
   heroImageSrc,
   onHeroImageLoad,
 }: ProjectDetailContentProps) {
+  const didRenderLogRef = useRef(false);
   // Hero 이미지 소스 결정: heroImageSrc가 있으면 우선 사용, 없으면 thumbnail43
   const heroImage = heroImageSrc || contents.thumbnail43;
   const [heroImageLoaded, setHeroImageLoaded] = useState(false);
+  const footerRef = useRef<HTMLDivElement | null>(null);
+
+  if (!didRenderLogRef.current) {
+    didRenderLogRef.current = true;
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/21210756-054f-4427-9853-0c6cc03f9a44', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: 'debug-session',
+        runId: 'blend-debug-2',
+        hypothesisId: 'H0',
+        location: 'ProjectDetailContent.tsx:224',
+        message: 'Render entered',
+        data: { title, hasHeroImage: Boolean(heroImage) },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+  }
 
   // heroImage가 변경되면 로드 상태 리셋
   useEffect(() => {
@@ -231,12 +252,143 @@ export default function ProjectDetailContent({
     onHeroImageLoad?.();
   };
 
+  const hasText = (value?: string) => Boolean(value && value.trim() !== '');
+  const showProject =
+    (contents.projectTitleVisible !== false && hasText(contents.projectTitle)) ||
+    (contents.projectValueVisible !== false && hasText(contents.project));
+  const showYear =
+    (contents.yearTitleVisible !== false && hasText(contents.yearTitle)) ||
+    (contents.yearValueVisible !== false && hasText(contents.year));
+  const showClient =
+    (contents.clientTitleVisible !== false && hasText(contents.clientTitle)) ||
+    (contents.clientValueVisible !== false && hasText(contents.client));
+  const showServices =
+    (contents.servicesTitleVisible !== false && hasText(contents.servicesTitle)) ||
+    (contents.servicesValueVisible !== false && hasText(contents.services));
+
+  useEffect(() => {
+    const el = footerRef.current;
+    if (!el || typeof window === 'undefined') return;
+
+    const computed = getComputedStyle(el);
+    const ancestors: Array<{
+      tag: string;
+      className: string;
+      bgColor: string;
+      bgImage: string;
+      position: string;
+      zIndex: string;
+      isolation: string;
+      transform: string;
+    }> = [];
+
+    let node: HTMLElement | null = el.parentElement;
+    let depth = 0;
+    while (node && depth < 6) {
+      const cs = getComputedStyle(node);
+      ancestors.push({
+        tag: node.tagName,
+        className: node.className || '',
+        bgColor: cs.backgroundColor,
+        bgImage: cs.backgroundImage,
+        position: cs.position,
+        zIndex: cs.zIndex,
+        isolation: cs.isolation,
+        transform: cs.transform,
+      });
+      node = node.parentElement;
+      depth += 1;
+    }
+
+    const probe = document.elementFromPoint(20, window.innerHeight - 10) as HTMLElement | null;
+    const probeStyle = probe ? getComputedStyle(probe) : null;
+
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/21210756-054f-4427-9853-0c6cc03f9a44', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: 'debug-session',
+        runId: 'blend-debug-1',
+        hypothesisId: 'H1',
+        location: 'ProjectDetailContent.tsx:239',
+        message: 'Footer mounted',
+        data: { heroImageLoaded, hasHeroImage: Boolean(heroImage) },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/21210756-054f-4427-9853-0c6cc03f9a44', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: 'debug-session',
+        runId: 'blend-debug-1',
+        hypothesisId: 'H1',
+        location: 'ProjectDetailContent.tsx:258',
+        message: 'Footer computed style',
+        data: {
+          mixBlendMode: computed.mixBlendMode,
+          position: computed.position,
+          zIndex: computed.zIndex,
+          color: computed.color,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/21210756-054f-4427-9853-0c6cc03f9a44', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: 'debug-session',
+        runId: 'blend-debug-1',
+        hypothesisId: 'H2',
+        location: 'ProjectDetailContent.tsx:276',
+        message: 'Ancestor backgrounds',
+        data: { ancestors },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/21210756-054f-4427-9853-0c6cc03f9a44', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: 'debug-session',
+        runId: 'blend-debug-1',
+        hypothesisId: 'H3',
+        location: 'ProjectDetailContent.tsx:290',
+        message: 'ElementFromPoint at footer',
+        data: probe
+          ? {
+              tag: probe.tagName,
+              className: probe.className || '',
+              bgColor: probeStyle?.backgroundColor,
+              bgImage: probeStyle?.backgroundImage,
+              position: probeStyle?.position,
+              zIndex: probeStyle?.zIndex,
+            }
+          : { missing: true },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+  }, [heroImage, heroImageLoaded]);
+
   return (
     <>
       {/* 커스텀 스크롤 인디케이터 */}
       <ScrollIndicator />
 
       <motion.div
+        ref={footerRef}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{
@@ -244,41 +396,46 @@ export default function ProjectDetailContent({
           delay: PROJECT_DETAIL_CONFIG.animation.delay,
           ease: PROJECT_DETAIL_CONFIG.animation.ease,
         }}
-        className="fixed bottom-0 left-0 z-10 grid w-full grid-cols-2 gap-4 px-7 pb-8 text-white mix-blend-difference md:grid-cols-4 md:px-10">
-        {/* Column 1: Project - 항상 구역 유지 */}
-        <div className="flex flex-col gap-1">
+        className="fixed bottom-0 left-0 z-10 grid w-full grid-cols-2 gap-4 px-7 pb-8 text-white mix-blend-difference md:flex md:justify-between md:px-10">
+        <div
+          className={`flex min-w-[80px] flex-col gap-1 md:min-w-[120px] ${showProject ? '' : 'opacity-0'}`}>
           {contents.projectTitleVisible !== false && (
             <h5 className={fontWeightClass[contents.projectTitleFontWeight || 'bold']}>{contents.projectTitle}</h5>
           )}
           {contents.projectValueVisible !== false && (
-            <h6 className={`whitespace-pre-line ${fontWeightClass[contents.projectValueFontWeight || 'regular']}`}>{contents.project}</h6>
+            <h6 className={`whitespace-pre-line ${fontWeightClass[contents.projectValueFontWeight || 'regular']}`}>
+              {contents.project}
+            </h6>
           )}
         </div>
-        {/* Column 2: Year - 항상 구역 유지 */}
-        <div className="flex flex-col gap-1">
+        <div className={`flex min-w-[80px] flex-col gap-1 md:min-w-[120px] ${showYear ? '' : 'opacity-0'}`}>
           {contents.yearTitleVisible !== false && (
             <h5 className={fontWeightClass[contents.yearTitleFontWeight || 'bold']}>{contents.yearTitle}</h5>
           )}
           {contents.yearValueVisible !== false && (
-            <h6 className={`whitespace-pre-line ${fontWeightClass[contents.yearValueFontWeight || 'regular']}`}>{contents.year}</h6>
+            <h6 className={`whitespace-pre-line ${fontWeightClass[contents.yearValueFontWeight || 'regular']}`}>
+              {contents.year}
+            </h6>
           )}
         </div>
-        {/* Column 3: Client - 항상 구역 유지 */}
-        <div className="flex flex-col gap-1">
+        <div className={`flex min-w-[80px] flex-col gap-1 md:min-w-[120px] ${showClient ? '' : 'opacity-0'}`}>
           {contents.clientTitleVisible !== false && (
             <h5 className={fontWeightClass[contents.clientTitleFontWeight || 'bold']}>{contents.clientTitle}</h5>
           )}
           {contents.clientValueVisible !== false && (
-            <h6 className={`whitespace-pre-line ${fontWeightClass[contents.clientValueFontWeight || 'regular']}`}>{contents.client}</h6>
+            <h6 className={`whitespace-pre-line ${fontWeightClass[contents.clientValueFontWeight || 'regular']}`}>
+              {contents.client}
+            </h6>
           )}
         </div>
-        {/* Column 4: Services - 항상 구역 유지 */}
-        <div className="flex flex-col gap-1">
+        <div className={`flex min-w-[80px] flex-col gap-1 md:min-w-[120px] ${showServices ? '' : 'opacity-0'}`}>
           {contents.servicesTitleVisible !== false && (
             <h5 className={fontWeightClass[contents.servicesTitleFontWeight || 'bold']}>{contents.servicesTitle}</h5>
           )}
           {contents.servicesValueVisible !== false && (
-            <h6 className={`whitespace-pre-line ${fontWeightClass[contents.servicesValueFontWeight || 'regular']}`}>{contents.services}</h6>
+            <h6 className={`whitespace-pre-line ${fontWeightClass[contents.servicesValueFontWeight || 'regular']}`}>
+              {contents.services}
+            </h6>
           )}
         </div>
       </motion.div>
@@ -305,21 +462,21 @@ export default function ProjectDetailContent({
       )}
 
       <div className="mx-auto grid min-h-2/3 w-full gap-20 overflow-hidden px-5 py-16 md:grid-cols-2 md:gap-4 md:px-5">
-        <h1 className="text-4xl leading-[124%] md:text-5xl">
-          {title || contents.project }
-        </h1>
+        <h1 className="text-4xl leading-[124%] md:text-5xl">{title || contents.project}</h1>
         <div className="flex flex-col justify-between gap-8 md:gap-4">
           <div className="flex w-2/3 flex-row justify-end gap-8 self-end md:w-full md:justify-start md:gap-12 md:self-start md:pb-40">
             {(contents.productTitleVisible !== false || contents.productValueVisible !== false) && contents.product && (
               <div className="flex flex-col gap-4 md:w-[20%]">
                 {contents.productTitleVisible !== false && (
-                  <h5 className={`text-[14px] leading-[130%] md:text-[16px] ${fontWeightClass[contents.productTitleFontWeight || 'bold']}`}>
+                  <h5
+                    className={`text-[14px] leading-[130%] md:text-[16px] ${fontWeightClass[contents.productTitleFontWeight || 'bold']}`}>
                     {contents.productTitle}
                   </h5>
                 )}
                 {contents.productValueVisible !== false && (
                   <div className="flex flex-col">
-                    <span className={`text-[14px] leading-[130%] whitespace-pre-line md:text-[16px] ${fontWeightClass[contents.productValueFontWeight || 'medium']}`}>
+                    <span
+                      className={`text-[14px] leading-[130%] whitespace-pre-line md:text-[16px] ${fontWeightClass[contents.productValueFontWeight || 'medium']}`}>
                       {contents.product}
                     </span>
                   </div>
@@ -329,13 +486,15 @@ export default function ProjectDetailContent({
             {(contents.keywordTitleVisible !== false || contents.keywordValueVisible !== false) && contents.keyword && (
               <div className="flex flex-col gap-4">
                 {contents.keywordTitleVisible !== false && (
-                  <h5 className={`text-[14px] leading-[130%] md:text-[16px] ${fontWeightClass[contents.keywordTitleFontWeight || 'bold']}`}>
+                  <h5
+                    className={`text-[14px] leading-[130%] md:text-[16px] ${fontWeightClass[contents.keywordTitleFontWeight || 'bold']}`}>
                     {contents.keywordTitle}
                   </h5>
                 )}
                 {contents.keywordValueVisible !== false && (
                   <div className="flex flex-col">
-                    <span className={`text-[14px] leading-[130%] whitespace-pre-line md:text-[16px] ${fontWeightClass[contents.keywordValueFontWeight || 'medium']}`}>
+                    <span
+                      className={`text-[14px] leading-[130%] whitespace-pre-line md:text-[16px] ${fontWeightClass[contents.keywordValueFontWeight || 'medium']}`}>
                       {Array.isArray(contents.keyword) ? contents.keyword.join('\n') : contents.keyword}
                     </span>
                   </div>
@@ -344,22 +503,25 @@ export default function ProjectDetailContent({
             )}
           </div>
           {/* 챌린지 */}
-          {(contents.challengeTitleVisible !== false || contents.challengeValueVisible !== false) && contents.challenge && (
-            <div className="flex flex-col gap-4">
-              {contents.challengeTitleVisible !== false && (
-                <h5 className={`text-[14px] leading-[130%] md:text-[16px] ${fontWeightClass[contents.challengeTitleFontWeight || 'bold']}`}>
-                  {contents.challengeTitle}
-                </h5>
-              )}
-              {contents.challengeValueVisible !== false && (
-                <div className="flex flex-col">
-                  <h4 className={`leading-[122%] whitespace-pre-line md:leading-[130%] ${fontWeightClass[contents.challengeValueFontWeight || 'regular']}`}>
-                    {contents.challenge}
-                  </h4>
-                </div>
-              )}
-            </div>
-          )}
+          {(contents.challengeTitleVisible !== false || contents.challengeValueVisible !== false) &&
+            contents.challenge && (
+              <div className="flex flex-col gap-4">
+                {contents.challengeTitleVisible !== false && (
+                  <h5
+                    className={`text-[14px] leading-[130%] md:text-[16px] ${fontWeightClass[contents.challengeTitleFontWeight || 'bold']}`}>
+                    {contents.challengeTitle}
+                  </h5>
+                )}
+                {contents.challengeValueVisible !== false && (
+                  <div className="flex flex-col">
+                    <h4
+                      className={`leading-[122%] whitespace-pre-line md:leading-[130%] ${fontWeightClass[contents.challengeValueFontWeight || 'regular']}`}>
+                      {contents.challenge}
+                    </h4>
+                  </div>
+                )}
+              </div>
+            )}
         </div>
       </div>
       {/* Detail Images */}
