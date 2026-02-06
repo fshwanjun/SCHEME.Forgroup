@@ -158,6 +158,8 @@ interface ProjectContent {
   product?: string;
   keyword?: string | string[]; // 호환성을 위해 배열도 허용
   challenge?: string;
+  productLink?: string;
+  keywordLink?: string;
   thumbnail43?: string;
   thumbnail34?: string;
   detailImages?: DetailImage[];
@@ -252,7 +254,19 @@ export default function ProjectDetailContent({
     onHeroImageLoad?.();
   };
 
-  const hasText = (value?: string) => Boolean(value && value.trim() !== '');
+  const hasText = (value?: string | number) =>
+    Boolean(value !== undefined && value !== null && String(value).trim() !== '');
+  const hasLink = (value?: string) => Boolean(value && value.trim() !== '');
+  const keywordText = Array.isArray(contents.keyword) ? contents.keyword.join('\n') : contents.keyword;
+  const showProduct =
+    (contents.productTitleVisible !== false && hasText(contents.productTitle)) ||
+    (contents.productValueVisible !== false && hasText(contents.product));
+  const showKeyword =
+    (contents.keywordTitleVisible !== false && hasText(contents.keywordTitle)) ||
+    (contents.keywordValueVisible !== false && hasText(keywordText));
+  const showChallenge =
+    (contents.challengeTitleVisible !== false && hasText(contents.challengeTitle)) ||
+    (contents.challengeValueVisible !== false && hasText(contents.challenge));
   const showProject =
     (contents.projectTitleVisible !== false && hasText(contents.projectTitle)) ||
     (contents.projectValueVisible !== false && hasText(contents.project));
@@ -397,8 +411,7 @@ export default function ProjectDetailContent({
           ease: PROJECT_DETAIL_CONFIG.animation.ease,
         }}
         className="fixed bottom-0 left-0 z-10 grid w-full grid-cols-2 gap-4 px-7 pb-8 text-white mix-blend-difference md:flex md:justify-between md:px-10">
-        <div
-          className={`flex min-w-[80px] flex-col gap-1 md:min-w-[120px] ${showProject ? '' : 'opacity-0'}`}>
+        <div className={`flex min-w-[80px] flex-col gap-1 md:min-w-[120px] ${showProject ? '' : 'opacity-0'}`}>
           {contents.projectTitleVisible !== false && (
             <h5 className={fontWeightClass[contents.projectTitleFontWeight || 'bold']}>{contents.projectTitle}</h5>
           )}
@@ -463,65 +476,104 @@ export default function ProjectDetailContent({
 
       <div className="mx-auto grid min-h-2/3 w-full gap-20 overflow-hidden px-5 py-16 md:grid-cols-2 md:gap-4 md:px-5">
         <h1 className="text-4xl leading-[124%] md:text-5xl">{title || contents.project}</h1>
-        <div className="flex flex-col justify-between gap-8 md:gap-4">
-          <div className="flex w-2/3 flex-row justify-end gap-8 self-end md:w-full md:justify-start md:gap-12 md:self-start md:pb-40">
-            {(contents.productTitleVisible !== false || contents.productValueVisible !== false) && contents.product && (
+        <div className="flex flex-col justify-between gap-8 md:gap-20">
+          {/* 챌린지 */}
+          {showChallenge && (
+            <div className="flex flex-col gap-4">
+              {contents.challengeTitleVisible !== false && (
+                <h5
+                  className={`text-[14px] leading-[130%] md:text-[16px] ${fontWeightClass[contents.challengeTitleFontWeight || 'bold']}`}>
+                  {contents.challengeTitle}
+                </h5>
+              )}
+              {contents.challengeValueVisible !== false && (
+                <div className="flex flex-col">
+                  <h4
+                    className={`leading-[122%] whitespace-pre-line md:leading-[130%] ${fontWeightClass[contents.challengeValueFontWeight || 'regular']}`}>
+                    {contents.challenge}
+                  </h4>
+                </div>
+              )}
+            </div>
+          )}
+          <div className="flex w-2/3 flex-row justify-end gap-8 self-end md:w-full md:justify-start md:gap-12 md:self-start md:pb-20">
+            {showProduct && (
               <div className="flex flex-col gap-4 md:w-[20%]">
                 {contents.productTitleVisible !== false && (
                   <h5
                     className={`text-[14px] leading-[130%] md:text-[16px] ${fontWeightClass[contents.productTitleFontWeight || 'bold']}`}>
-                    {contents.productTitle}
+                    {hasLink(contents.productLink) ? (
+                      <a
+                        href={contents.productLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-block cursor-pointer transition-opacity hover:opacity-30">
+                        {contents.productTitle}
+                      </a>
+                    ) : (
+                      contents.productTitle
+                    )}
                   </h5>
                 )}
                 {contents.productValueVisible !== false && (
                   <div className="flex flex-col">
                     <span
                       className={`text-[14px] leading-[130%] whitespace-pre-line md:text-[16px] ${fontWeightClass[contents.productValueFontWeight || 'medium']}`}>
-                      {contents.product}
+                      {hasLink(contents.productLink) ? (
+                        <a
+                          href={contents.productLink}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-block cursor-pointer transition-opacity hover:opacity-30">
+                          {contents.product}
+                        </a>
+                      ) : (
+                        contents.product
+                      )}
                     </span>
                   </div>
                 )}
               </div>
             )}
-            {(contents.keywordTitleVisible !== false || contents.keywordValueVisible !== false) && contents.keyword && (
+            {showKeyword && (
               <div className="flex flex-col gap-4">
                 {contents.keywordTitleVisible !== false && (
                   <h5
                     className={`text-[14px] leading-[130%] md:text-[16px] ${fontWeightClass[contents.keywordTitleFontWeight || 'bold']}`}>
-                    {contents.keywordTitle}
+                    {hasLink(contents.keywordLink) ? (
+                      <a
+                        href={contents.keywordLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-block cursor-pointer transition-opacity hover:opacity-60">
+                        {contents.keywordTitle}
+                      </a>
+                    ) : (
+                      contents.keywordTitle
+                    )}
                   </h5>
                 )}
                 {contents.keywordValueVisible !== false && (
                   <div className="flex flex-col">
                     <span
                       className={`text-[14px] leading-[130%] whitespace-pre-line md:text-[16px] ${fontWeightClass[contents.keywordValueFontWeight || 'medium']}`}>
-                      {Array.isArray(contents.keyword) ? contents.keyword.join('\n') : contents.keyword}
+                      {hasLink(contents.keywordLink) ? (
+                        <a
+                          href={contents.keywordLink}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-block cursor-pointer transition-opacity hover:opacity-60">
+                          {keywordText}
+                        </a>
+                      ) : (
+                        keywordText
+                      )}
                     </span>
                   </div>
                 )}
               </div>
             )}
           </div>
-          {/* 챌린지 */}
-          {(contents.challengeTitleVisible !== false || contents.challengeValueVisible !== false) &&
-            contents.challenge && (
-              <div className="flex flex-col gap-4">
-                {contents.challengeTitleVisible !== false && (
-                  <h5
-                    className={`text-[14px] leading-[130%] md:text-[16px] ${fontWeightClass[contents.challengeTitleFontWeight || 'bold']}`}>
-                    {contents.challengeTitle}
-                  </h5>
-                )}
-                {contents.challengeValueVisible !== false && (
-                  <div className="flex flex-col">
-                    <h4
-                      className={`leading-[122%] whitespace-pre-line md:leading-[130%] ${fontWeightClass[contents.challengeValueFontWeight || 'regular']}`}>
-                      {contents.challenge}
-                    </h4>
-                  </div>
-                )}
-              </div>
-            )}
         </div>
       </div>
       {/* Detail Images */}

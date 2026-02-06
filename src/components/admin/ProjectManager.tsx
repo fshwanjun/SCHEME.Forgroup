@@ -58,6 +58,8 @@ interface ProjectContent {
   product: string;
   keyword: string;
   challenge: string;
+  productLink: string;
+  keywordLink: string;
   thumbnail43: string;
   thumbnail34: string;
   detailImages: DetailImage[];
@@ -112,6 +114,8 @@ const defaultContent: ProjectContent = {
   product: '',
   keyword: '',
   challenge: '',
+  productLink: '',
+  keywordLink: '',
   thumbnail43: '',
   thumbnail34: '',
   detailImages: [],
@@ -952,7 +956,7 @@ export default function ProjectManager() {
                         value={contentData.productTitle}
                         onChange={(e) => handleContentChange('productTitle', e.target.value)}
                         className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
-                        placeholder="Product"
+                        placeholder="value"
                       />
                     </div>
                     <div className="space-y-1">
@@ -984,7 +988,16 @@ export default function ProjectManager() {
                         value={contentData.product}
                         onChange={(e) => handleContentChange('product', e.target.value)}
                         className="border-stone-800 bg-stone-950 text-sm text-stone-200"
-                        placeholder="Product description"
+                        placeholder="value"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-stone-500">Link (Optional)</Label>
+                      <Input
+                        value={contentData.productLink}
+                        onChange={(e) => handleContentChange('productLink', e.target.value)}
+                        className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
+                        placeholder="https://"
                       />
                     </div>
                   </div>
@@ -1019,7 +1032,7 @@ export default function ProjectManager() {
                         value={contentData.keywordTitle}
                         onChange={(e) => handleContentChange('keywordTitle', e.target.value)}
                         className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
-                        placeholder="Design Keywords"
+                        placeholder="value"
                       />
                     </div>
                     <div className="space-y-1">
@@ -1051,7 +1064,16 @@ export default function ProjectManager() {
                         value={contentData.keyword}
                         onChange={(e) => handleContentChange('keyword', e.target.value)}
                         className="border-stone-800 bg-stone-950 text-sm text-stone-200"
-                        placeholder="Design keywords"
+                        placeholder="value"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-stone-500">Link (Optional)</Label>
+                      <Input
+                        value={contentData.keywordLink}
+                        onChange={(e) => handleContentChange('keywordLink', e.target.value)}
+                        className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
+                        placeholder="https://"
                       />
                     </div>
                   </div>
@@ -1087,7 +1109,7 @@ export default function ProjectManager() {
                       value={contentData.challengeTitle}
                       onChange={(e) => handleContentChange('challengeTitle', e.target.value)}
                       className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
-                      placeholder="Challenge"
+                      placeholder="value"
                     />
                   </div>
                   <div className="space-y-1">
@@ -1119,7 +1141,7 @@ export default function ProjectManager() {
                       value={contentData.challenge}
                       onChange={(e) => handleContentChange('challenge', e.target.value)}
                       className="border-stone-800 bg-stone-950 text-stone-200"
-                      placeholder="Enter project challenges and detailed description"
+                      placeholder="value"
                     />
                   </div>
                 </div>
