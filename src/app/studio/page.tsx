@@ -8,6 +8,7 @@ import Header from '@/components/Header';
 import MobileMenu from '@/components/MobileMenu';
 import HomeContainer from '@/components/HomeContainer';
 import Image from 'next/image';
+import Link from 'next/link';
 
 // 리스트 아이템 타입 정의
 interface ListItem {
@@ -186,65 +187,26 @@ export default function StudioPage() {
               />
             )}
 
-            {/* 2. 하단 그리드 정보 */}
-            {/* md~xl: 1열, xl이상: 3열 */}
-            <div className="grid w-full gap-x-4 gap-y-10 xl:grid-cols-3">
-              {(data.experienceVisible ?? true) && (
-                <div className="grid grid-cols-5 flex-row md:flex md:flex-col md:gap-2 xl:gap-4">
-                  <h5 className="col-span-2">{data.experienceTitle}</h5>
-                  <div className="col-span-3 flex flex-col">
-                    <RenderList items={data.experience} />
-                  </div>
-                </div>
-              )}
-              {(data.servicesVisible ?? true) && (
-                <div className="grid grid-cols-5 flex-row md:flex md:flex-col md:gap-2 xl:gap-4">
-                  <h5 className="col-span-2">{data.servicesTitle}</h5>
-                  <div className="col-span-3 flex flex-col">
-                    <RenderList items={data.services} />
-                  </div>
-                </div>
-              )}
-              {(data.clientsVisible ?? true) && (
-                <div className="grid grid-cols-5 flex-row md:flex md:flex-col md:gap-2 xl:gap-4">
-                  <h5 className="col-span-2">{data.clientsTitle}</h5>
-                  <div className="col-span-3 flex flex-col">
-                    <RenderList items={data.clients} />
-                  </div>
-                </div>
-              )}
-              {(data.addressVisible ?? true) && (
-                <div className="hidden flex-col md:flex md:gap-2 xl:gap-4">
-                  <h5>{data.addressTitle}</h5>
-                  <span className="flex flex-col">{data.address}</span>
-                </div>
-              )}
-              {(data.contactVisible ?? true) && (
-                <div className="hidden flex-col md:flex md:gap-2 xl:gap-4">
-                  <h5>{data.contactTitle}</h5>
-                  <span className="flex flex-col">{data.contact}</span>
-                </div>
-              )}
-              {(data.socialVisible ?? true) && (
-                <div className="hidden flex-col md:flex md:gap-2 xl:gap-4">
-                  <h5>{data.socialTitle}</h5>
-                  <span className="flex flex-col">{data.social}</span>
-                </div>
-              )}
-
-              {/* 모바일 전용 하단 영역 */}
-              <div className="flex flex-col gap-8 py-16 pb-40 md:hidden">
-                {(data.contactVisible ?? true) && (
-                  <h4 className="text-center leading-[130%] font-semibold">{data.contact}</h4>
-                )}
-                {(data.addressVisible ?? true) && (
-                  <h4 className="text-center leading-[130%] font-semibold">{data.address}</h4>
-                )}
-                {(data.socialVisible ?? true) && (
-                  <h4 className="text-center leading-[130%] font-semibold">{data.social}</h4>
-                )}
-              </div>
+            {/* 2. 하단 푸터 정보 - 4열 (1200px 이하 2x2) */}
+            <div className="grid w-full grid-cols-2 gap-3 pt-4 min-[1200px]:flex min-[1200px]:flex-row min-[1200px]:items-center min-[1200px]:justify-between min-[1200px]:gap-4">
+              <a href="mailto:info@studio-for.com" className="transition-opacity hover:opacity-60">
+                info@studio-for.com
+              </a>
+              <a
+                href="https://instagram.com/studio__for"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-opacity hover:opacity-60">
+                @studio__for
+              </a>
+              <Link href="/privacy" className="transition-opacity hover:opacity-60">
+                Privacy Policy
+              </Link>
+              <span>©2026. All Rights Reserved</span>
             </div>
+
+            {/* 모바일 전용 하단 여백 */}
+            <div className="h-20 md:hidden" />
           </div>
         </motion.div>
       </HomeContainer>

@@ -34,7 +34,7 @@ export default function Header({
     setIsMobile(windowSize.isSm);
   }, [windowSize.isSm]);
 
-  const isVisible = pathname === '/' || pathname === '/studio' || pathname.startsWith('/projects');
+  const isVisible = pathname === '/' || pathname === '/studio' || pathname === '/privacy' || pathname.startsWith('/projects');
 
   if (!isVisible) return null;
 
@@ -67,8 +67,8 @@ export default function Header({
   // 모바일에서는 항상 fixed, 데스크톱에서만 isFixed prop에 따라 결정
   const effectiveIsFixed = mounted ? (isMobile ? true : isFixed) : isFixed;
 
-  // studio 페이지 여부 확인
-  const isStudioPage = pathname === '/studio';
+  // studio 또는 privacy 페이지 여부 확인
+  const isStudioPage = pathname === '/studio' || pathname === '/privacy';
 
   return (
     <header
