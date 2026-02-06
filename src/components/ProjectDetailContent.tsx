@@ -244,47 +244,43 @@ export default function ProjectDetailContent({
           delay: PROJECT_DETAIL_CONFIG.animation.delay,
           ease: PROJECT_DETAIL_CONFIG.animation.ease,
         }}
-        className="fixed bottom-0 left-0 z-10 grid w-full grid-cols-2 gap-4 px-7 pb-8 text-white mix-blend-difference md:flex md:justify-between md:px-10">
-        {(contents.projectTitleVisible !== false || contents.projectValueVisible !== false) && (
-          <div className="flex flex-col gap-1">
-            {contents.projectTitleVisible !== false && (
-              <h5 className={fontWeightClass[contents.projectTitleFontWeight || 'bold']}>{contents.projectTitle}</h5>
-            )}
-            {contents.projectValueVisible !== false && (
-              <h6 className={`whitespace-pre-line ${fontWeightClass[contents.projectValueFontWeight || 'regular']}`}>{contents.project}</h6>
-            )}
-          </div>
-        )}
-        {(contents.yearTitleVisible !== false || contents.yearValueVisible !== false) && contents.year && (
-          <div className="flex flex-col gap-1">
-            {contents.yearTitleVisible !== false && (
-              <h5 className={fontWeightClass[contents.yearTitleFontWeight || 'bold']}>{contents.yearTitle}</h5>
-            )}
-            {contents.yearValueVisible !== false && (
-              <h6 className={`whitespace-pre-line ${fontWeightClass[contents.yearValueFontWeight || 'regular']}`}>{contents.year}</h6>
-            )}
-          </div>
-        )}
-        {(contents.clientTitleVisible !== false || contents.clientValueVisible !== false) && contents.client && (
-          <div className="flex flex-col gap-1">
-            {contents.clientTitleVisible !== false && (
-              <h5 className={fontWeightClass[contents.clientTitleFontWeight || 'bold']}>{contents.clientTitle}</h5>
-            )}
-            {contents.clientValueVisible !== false && (
-              <h6 className={`whitespace-pre-line ${fontWeightClass[contents.clientValueFontWeight || 'regular']}`}>{contents.client}</h6>
-            )}
-          </div>
-        )}
-        {(contents.servicesTitleVisible !== false || contents.servicesValueVisible !== false) && contents.services && (
-          <div className="flex flex-col gap-1">
-            {contents.servicesTitleVisible !== false && (
-              <h5 className={fontWeightClass[contents.servicesTitleFontWeight || 'bold']}>{contents.servicesTitle}</h5>
-            )}
-            {contents.servicesValueVisible !== false && (
-              <h6 className={`whitespace-pre-line ${fontWeightClass[contents.servicesValueFontWeight || 'regular']}`}>{contents.services}</h6>
-            )}
-          </div>
-        )}
+        className="fixed bottom-0 left-0 z-10 grid w-full grid-cols-2 gap-4 px-7 pb-8 text-white mix-blend-difference md:grid-cols-4 md:px-10">
+        {/* Column 1: Project - 항상 구역 유지 */}
+        <div className="flex flex-col gap-1">
+          {contents.projectTitleVisible !== false && (
+            <h5 className={fontWeightClass[contents.projectTitleFontWeight || 'bold']}>{contents.projectTitle}</h5>
+          )}
+          {contents.projectValueVisible !== false && (
+            <h6 className={`whitespace-pre-line ${fontWeightClass[contents.projectValueFontWeight || 'regular']}`}>{contents.project}</h6>
+          )}
+        </div>
+        {/* Column 2: Year - 항상 구역 유지 */}
+        <div className="flex flex-col gap-1">
+          {contents.yearTitleVisible !== false && (
+            <h5 className={fontWeightClass[contents.yearTitleFontWeight || 'bold']}>{contents.yearTitle}</h5>
+          )}
+          {contents.yearValueVisible !== false && (
+            <h6 className={`whitespace-pre-line ${fontWeightClass[contents.yearValueFontWeight || 'regular']}`}>{contents.year}</h6>
+          )}
+        </div>
+        {/* Column 3: Client - 항상 구역 유지 */}
+        <div className="flex flex-col gap-1">
+          {contents.clientTitleVisible !== false && (
+            <h5 className={fontWeightClass[contents.clientTitleFontWeight || 'bold']}>{contents.clientTitle}</h5>
+          )}
+          {contents.clientValueVisible !== false && (
+            <h6 className={`whitespace-pre-line ${fontWeightClass[contents.clientValueFontWeight || 'regular']}`}>{contents.client}</h6>
+          )}
+        </div>
+        {/* Column 4: Services - 항상 구역 유지 */}
+        <div className="flex flex-col gap-1">
+          {contents.servicesTitleVisible !== false && (
+            <h5 className={fontWeightClass[contents.servicesTitleFontWeight || 'bold']}>{contents.servicesTitle}</h5>
+          )}
+          {contents.servicesValueVisible !== false && (
+            <h6 className={`whitespace-pre-line ${fontWeightClass[contents.servicesValueFontWeight || 'regular']}`}>{contents.services}</h6>
+          )}
+        </div>
       </motion.div>
       {heroImage && (
         <div className="relative h-svh w-full overflow-hidden">

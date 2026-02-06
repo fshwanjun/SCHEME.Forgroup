@@ -677,7 +677,7 @@ export default function ProjectManager() {
                         value={contentData.projectTitle}
                         onChange={(e) => handleContentChange('projectTitle', e.target.value)}
                         className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
-                        placeholder="Project"
+                        placeholder="title"
                       />
                     </div>
                     <div className="space-y-1">
@@ -709,7 +709,7 @@ export default function ProjectManager() {
                         value={contentData.project}
                         onChange={(e) => handleContentChange('project', e.target.value)}
                         className="border-stone-800 bg-stone-950 text-sm text-stone-200"
-                        placeholder="Project Name"
+                        placeholder="value"
                       />
                     </div>
                   </div>
@@ -744,7 +744,7 @@ export default function ProjectManager() {
                         value={contentData.yearTitle}
                         onChange={(e) => handleContentChange('yearTitle', e.target.value)}
                         className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
-                        placeholder="Year"
+                        placeholder="title"
                       />
                     </div>
                     <div className="space-y-1">
@@ -776,7 +776,7 @@ export default function ProjectManager() {
                         value={contentData.year}
                         onChange={(e) => handleContentChange('year', e.target.value)}
                         className="border-stone-800 bg-stone-950 text-sm text-stone-200"
-                        placeholder="2024"
+                        placeholder="value"
                       />
                     </div>
                   </div>
@@ -811,7 +811,7 @@ export default function ProjectManager() {
                         value={contentData.clientTitle}
                         onChange={(e) => handleContentChange('clientTitle', e.target.value)}
                         className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
-                        placeholder="Client"
+                        placeholder="title"
                       />
                     </div>
                     <div className="space-y-1">
@@ -843,7 +843,7 @@ export default function ProjectManager() {
                         value={contentData.client}
                         onChange={(e) => handleContentChange('client', e.target.value)}
                         className="border-stone-800 bg-stone-950 text-sm text-stone-200"
-                        placeholder="Client Name"
+                        placeholder="value"
                       />
                     </div>
                   </div>
@@ -878,7 +878,7 @@ export default function ProjectManager() {
                         value={contentData.servicesTitle}
                         onChange={(e) => handleContentChange('servicesTitle', e.target.value)}
                         className="h-8 border-stone-800 bg-stone-950 text-sm text-stone-300"
-                        placeholder="Services"
+                        placeholder="title"
                       />
                     </div>
                     <div className="space-y-1">
@@ -910,7 +910,7 @@ export default function ProjectManager() {
                         value={contentData.services}
                         onChange={(e) => handleContentChange('services', e.target.value)}
                         className="border-stone-800 bg-stone-950 text-sm text-stone-200"
-                        placeholder="Services"
+                        placeholder="value"
                       />
                     </div>
                   </div>
