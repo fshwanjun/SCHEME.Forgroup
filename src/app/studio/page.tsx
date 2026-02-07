@@ -188,7 +188,7 @@ export default function StudioPage() {
             )}
 
             {/* 2. 하단 푸터 정보 - 4열 (1200px 이하 2x2) */}
-            <div className="grid w-full grid-cols-2 gap-3 pt-4 min-[1200px]:flex min-[1200px]:flex-row min-[1200px]:items-center min-[1200px]:justify-between min-[1200px]:gap-4">
+            <div className="grid w-full grid-cols-1 gap-6 pt-4 min-[1200px]:flex min-[1200px]:flex-row min-[1200px]:items-center min-[1200px]:justify-between min-[1200px]:gap-4">
               <a href="mailto:info@studio-for.com" className="transition-opacity hover:opacity-60">
                 info@studio-for.com
               </a>
@@ -202,11 +202,11 @@ export default function StudioPage() {
               <Link href="/privacy" className="transition-opacity hover:opacity-60">
                 Privacy Policy
               </Link>
-              <span>©2026. For</span>
+              <span>©2026. FOR</span>
             </div>
 
             {/* 모바일 전용 하단 여백 */}
-            <div className="h-20 md:hidden" />
+            <div className="h-1 md:hidden" />
           </div>
         </motion.div>
       </HomeContainer>

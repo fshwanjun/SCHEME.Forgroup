@@ -19,17 +19,17 @@ export default function PrivacyPage() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}>
           {/* [좌측] 데스크탑 빈 영역 (50%) */}
-          <div className="hidden h-full md:block md:w-1/2" />
+          <div className="hidden h-full md:block md:w-2/5" />
 
           {/* [우측] 컨텐츠 영역 (50%) */}
-          <div className="flex w-full min-w-0 flex-col gap-8 md:w-1/2 md:overflow-y-auto md:pr-5">
+          <div className="flex w-full min-w-0 flex-col gap-8 md:w-3/5 md:overflow-y-auto md:pr-5">
             {/* 타이틀 */}
             <h3>Privacy Policy</h3>
 
             {/* Intro */}
             <p>
-              FOR (&ldquo;we&rdquo;, &ldquo;us&rdquo;) respects your privacy. This policy explains how we collect and use
-              personal information when you visit our website or contact us.
+              FOR (&ldquo;we&rdquo;, &ldquo;us&rdquo;) respects your privacy. This policy explains how we collect and
+              use personal information when you visit our website or contact us.
             </p>
 
             {/* Information We Collect */}

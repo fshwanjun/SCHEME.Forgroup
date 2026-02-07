@@ -122,13 +122,7 @@ export default function MobileMenu({ onProjectClick }: { onProjectClick?: () => 
               );
             })}
           </div>
-          <a
-            href={`https://instagram.com/${social.replace('@', '')}`}
-            className="absolute right-7 bottom-7 text-right"
-            target="_blank"
-            rel="noopener noreferrer">
-            {social}
-          </a>
+          <p className="absolute right-7 bottom-7 text-right">©2026. FOR</p>
         </nav>
       )}
     </>

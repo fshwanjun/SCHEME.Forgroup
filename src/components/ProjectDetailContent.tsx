@@ -475,7 +475,7 @@ export default function ProjectDetailContent({
       )}
 
       <div className="mx-auto grid min-h-2/3 w-full gap-20 overflow-hidden px-5 py-16 md:grid-cols-2 md:gap-4 md:px-5">
-        <h1 className="text-4xl leading-[124%] md:text-5xl">{title || contents.project}</h1>
+        <h1 className="text-4xl leading-[124%] md:pl-5 md:text-5xl">{title || contents.project}</h1>
         <div className="flex flex-col justify-between gap-8 md:gap-20">
           {/* 챌린지 */}
           {showChallenge && (
@@ -496,7 +496,7 @@ export default function ProjectDetailContent({
               )}
             </div>
           )}
-          <div className="flex w-2/3 flex-row justify-end gap-8 self-end md:w-full md:justify-start md:gap-12 md:self-start md:pb-20">
+          <div className="flex w-2/3 flex-row justify-start gap-8 self-start md:w-full md:justify-start md:gap-5 md:self-start md:pb-20">
             {showProduct && (
               <div className="flex flex-col gap-4 md:w-[20%]">
                 {contents.productTitleVisible !== false && (
