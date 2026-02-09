@@ -479,7 +479,7 @@ export default function ProjectDetailContent({
         <div className="flex flex-col justify-between gap-8 md:gap-20">
           {/* 챌린지 */}
           {showChallenge && (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-6">
               {contents.challengeTitleVisible !== false && (
                 <h5
                   className={`text-[14px] leading-[130%] md:text-[16px] ${fontWeightClass[contents.challengeTitleFontWeight || 'bold']}`}>
@@ -498,7 +498,7 @@ export default function ProjectDetailContent({
           )}
           <div className="flex w-2/3 flex-row justify-start gap-8 self-start md:w-full md:justify-start md:gap-5 md:self-start md:pb-20">
             {showProduct && (
-              <div className="flex flex-col gap-4 md:w-[20%]">
+              <div className="flex flex-col gap-4">
                 {contents.productTitleVisible !== false && (
                   <h5
                     className={`text-[14px] leading-[130%] md:text-[16px] ${fontWeightClass[contents.productTitleFontWeight || 'bold']}`}>

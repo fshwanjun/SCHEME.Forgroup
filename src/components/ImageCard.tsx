@@ -14,6 +14,7 @@ export default function ImageCard({
   onClickProject,
   aspectRatio,
   enableHoverEffect = true,
+  clickDisabled = false,
   distortionScale,
   radiusPx,
   blurStd,
@@ -27,6 +28,7 @@ export default function ImageCard({
   aspectRatio?: string; // 선택적으로 강제 비율, 예: "3 / 4" | "4 / 3"
   onClickProject?: (projectId?: string | number, rect?: DOMRect) => void;
   enableHoverEffect?: boolean;
+  clickDisabled?: boolean; // 클릭 비활성화 여부
   distortionScale?: number; // distortion 효과 강도 (기본값: 500)
   radiusPx?: number; // 왜곡 반경 픽셀 (기본값: 400)
   blurStd?: number; // 블러 강도 (기본값: 80)
@@ -187,7 +189,7 @@ export default function ImageCard({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       className={`relative block ${className ?? ''}`}
-      style={{ aspectRatio: computedAspect, lineHeight: 0, cursor: 'pointer' }}
+      style={{ aspectRatio: computedAspect, lineHeight: 0, cursor: clickDisabled ? 'default' : 'pointer' }}
       aria-label={projectId ? `Open project ${projectId}` : 'Open project'}>
       {imageContent}
     </div>

@@ -13,6 +13,7 @@ type ProjectImage = {
   horizontalSrc: string; // 가로 방향 이미지 소스 경로 (aspect-[4/3] 프레임용)
   orientation?: 'horizontal' | 'vertical'; // 이미지의 orientation (admin에서 설정한 값)
   frameIndex?: number; // 프로젝트 레이아웃에서 사용하는 프레임 인덱스
+  clickDisabled?: boolean; // 클릭 비활성화 여부
 };
 
 export type GallerySelection = {
@@ -669,6 +670,7 @@ function HomeGallery({
                 aspectRatio={aspectRatio}
                 className="h-full w-full"
                 enableHoverEffect={!isSelected && !isOtherSelected}
+                clickDisabled={assignment.clickDisabled}
                 distortionScale={distortionScale}
                 radiusPx={radiusPx}
                 blurStd={blurStd}
