@@ -48,13 +48,23 @@ export default function HoverDistortImage({
 }) {
   const windowSize = useWindowSize();
   const [mounted, setMounted] = useState(false);
+  const [isSafari, setIsSafari] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
 
   // 모바일에서는 distortion 효과 비활성화
   const isMobile = mounted && windowSize.isSm;
-  const actualDistortionEnabled = distortionEnabled && !isMobile;
+  // Safari에서는 SVG feImage + data URL 버그로 인해 displacement map 효과 비활성화
+  const actualDistortionEnabled = distortionEnabled && !isMobile && !isSafari;
+  // Safari 전용 CSS 기반 폴백 호버 효과
+  const useSafariFallback = mounted && distortionEnabled && !isMobile && isSafari;
 
   useEffect(() => {
     setMounted(true);
+    // Safari 감지 (Chrome, Edge 등 WebKit 기반 브라우저 제외)
+    if (typeof navigator !== 'undefined') {
+      const ua = navigator.userAgent;
+      setIsSafari(/^((?!chrome|android).)*safari/i.test(ua));
+    }
   }, []);
 
   const id = useId().replace(/:/g, '-');
@@ -429,13 +439,18 @@ export default function HoverDistortImage({
         onMouseMove: handleMove,
         onMouseLeave: handleLeave,
       }
-    : {};
+    : useSafariFallback
+      ? {
+          onMouseEnter: () => setIsHovering(true),
+          onMouseLeave: () => setIsHovering(false),
+        }
+      : {};
 
   return (
     <div
       ref={wrapperRef}
       {...eventHandlers}
-      className={`relative ${className ?? ''}`}
+      className={`relative ${useSafariFallback ? 'overflow-hidden' : ''} ${className ?? ''}`}
       role={alt ? 'img' : undefined}
       aria-label={alt || undefined}
       aria-hidden={alt ? undefined : 'true'}
@@ -445,7 +460,19 @@ export default function HoverDistortImage({
           lineHeight: 0,
         } as React.CSSProperties
       }>
-      <svg className="block h-full w-full" xmlns="http://www.w3.org/2000/svg" style={{ imageRendering: 'auto' }}>
+      <svg
+        className="block h-full w-full"
+        xmlns="http://www.w3.org/2000/svg"
+        style={{
+          imageRendering: 'auto',
+          ...(useSafariFallback
+            ? {
+                transition: 'filter 0.4s ease-out, transform 0.4s ease-out',
+                filter: isHovering ? 'blur(2px) brightness(1.05)' : 'none',
+                transform: isHovering ? 'scale(1.02)' : 'scale(1)',
+              }
+            : {}),
+        }}>
         {actualDistortionEnabled ? (
           <defs>
             {/* 메인 이미지용 필터 */}
@@ -520,6 +547,7 @@ export default function HoverDistortImage({
         <g mask={actualDistortionEnabled ? `url(#${maskId})` : undefined}>
           <image
             href={src}
+            xlinkHref={src}
             x="0"
             y="0"
             width="100%"
