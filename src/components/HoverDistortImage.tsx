@@ -468,7 +468,7 @@ export default function HoverDistortImage({
           ...(useSafariFallback
             ? {
                 transition: 'filter 0.4s ease-out, transform 0.4s ease-out',
-                filter: isHovering ? 'blur(2px) brightness(1.05)' : 'none',
+                filter: isHovering ? 'brightness(1.05)' : 'none',
                 transform: isHovering ? 'scale(1.02)' : 'scale(1)',
               }
             : {}),
