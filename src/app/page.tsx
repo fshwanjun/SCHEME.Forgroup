@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
+import dynamic from 'next/dynamic';
 import HomeGallery, { type GallerySelection } from '@/components/HomeGallery';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useZoom } from '@/hooks/useZoom';
@@ -9,10 +10,13 @@ import useWindowSize from '@/hooks/useWindowSize';
 import Header from '@/components/Header';
 import MobileMenu from '@/components/MobileMenu';
 import IntroLogo from '@/components/IntroLogo';
-import ProjectDetailContent from '@/components/ProjectDetailContent';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 import { HOME_DISTORT_CONFIG } from '@/config/distortConfig';
+
+const ProjectDetailContent = dynamic(() => import('@/components/ProjectDetailContent'), {
+  ssr: false,
+});
 
 // Landing Page 이미지 타입 정의
 interface LandingPageImage {

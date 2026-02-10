@@ -6,7 +6,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { PROJECT_DETAIL_CONFIG } from '@/config/appConfig';
 
 // 커스텀 스크롤 인디케이터 컴포넌트
-function ScrollIndicator({ useBlendMode }: { useBlendMode: boolean }) {
+function ScrollIndicator() {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [hasScrollableContent, setHasScrollableContent] = useState(true);
   const [isReady, setIsReady] = useState(false);
@@ -116,7 +116,7 @@ function ScrollIndicator({ useBlendMode }: { useBlendMode: boolean }) {
         width: 2,
         height: 'clamp(10vh, 15vh, 20vh)', // 최소 10vh, 기본 15vh, 최대 20vh
         opacity: hasScrollableContent && isReady ? 1 : 0,
-        mixBlendMode: useBlendMode ? 'difference' : 'normal',
+        mixBlendMode: 'difference',
       }}>
       {/* 트랙 (투명 배경) */}
       <div className="absolute inset-0 rounded-full bg-white/30" />
@@ -222,19 +222,11 @@ export default function ProjectDetailContent({
   // Hero 이미지 소스 결정: heroImageSrc가 있으면 우선 사용, 없으면 thumbnail43
   const heroImage = heroImageSrc || contents.thumbnail43;
   const [heroImageLoaded, setHeroImageLoaded] = useState(false);
-  const [isSafariBrowser, setIsSafariBrowser] = useState(false);
 
   // heroImage가 변경되면 로드 상태 리셋
   useEffect(() => {
     setHeroImageLoaded(false);
   }, [heroImage]);
-
-  useEffect(() => {
-    if (typeof navigator === 'undefined') return;
-    const ua = navigator.userAgent;
-    const isSafari = /Safari/i.test(ua) && !/Chrome|Chromium|CriOS|Edg|Android|FxiOS/i.test(ua);
-    setIsSafariBrowser(isSafari);
-  }, []);
 
   const handleHeroImageLoad = () => {
     setHeroImageLoaded(true);
@@ -270,7 +262,7 @@ export default function ProjectDetailContent({
   return (
     <>
       {/* 커스텀 스크롤 인디케이터 */}
-      <ScrollIndicator useBlendMode={!isSafariBrowser} />
+      <ScrollIndicator />
 
       <motion.div
         initial={{ opacity: 0 }}
@@ -280,9 +272,7 @@ export default function ProjectDetailContent({
           delay: PROJECT_DETAIL_CONFIG.animation.delay,
           ease: PROJECT_DETAIL_CONFIG.animation.ease,
         }}
-        className={`fixed bottom-0 left-0 z-10 grid w-full grid-cols-2 gap-4 px-7 pb-8 text-white md:flex md:justify-between md:px-10 ${
-          isSafariBrowser ? '' : 'mix-blend-difference'
-        }`}>
+        className="fixed bottom-0 left-0 z-10 grid w-full grid-cols-2 gap-4 px-7 pb-8 text-white mix-blend-difference md:flex md:justify-between md:px-10">
         <div className={`flex min-w-[80px] flex-col gap-1 md:min-w-[120px] ${showProject ? '' : 'opacity-0'}`}>
           {contents.projectTitleVisible !== false && (
             <h5 className={fontWeightClass[contents.projectTitleFontWeight || 'bold']}>{contents.projectTitle}</h5>
