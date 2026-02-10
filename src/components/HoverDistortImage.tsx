@@ -51,8 +51,12 @@ export default function HoverDistortImage({
   const [isSafariBrowser, setIsSafariBrowser] = useState(false);
   const [filterReady, setFilterReady] = useState(false);
 
-  const safariDistortionScale = isSafariBrowser ? Math.min(distortionScale, 220) : distortionScale;
-  const safariBlurStd = isSafariBrowser ? Math.min(blurStd, 36) : blurStd;
+  const useSafariOptimizedDistortion = isSafariBrowser;
+  const useMaskDistortion = !useSafariOptimizedDistortion;
+  const distortionScaleValue = useSafariOptimizedDistortion ? Math.min(distortionScale, 140) : distortionScale;
+  const blurStdValue = useSafariOptimizedDistortion ? Math.min(blurStd, 14) : blurStd;
+  const canvasMaxSize = useSafariOptimizedDistortion ? 128 : HOVER_DISTORT_CONFIG.canvas.maxSize;
+  const canvasDprLimit = useSafariOptimizedDistortion ? 1 : HOVER_DISTORT_CONFIG.canvas.devicePixelRatioLimit;
   const actualDistortionEnabled = distortionEnabled && canUseHoverDistortion;
 
   useEffect(() => {
@@ -261,9 +265,9 @@ export default function HoverDistortImage({
       if (r.width === 0 || r.height === 0) return;
 
       elemSizeRef.current = { w: r.width, h: r.height };
-      const dpr = Math.min(window.devicePixelRatio || 1, HOVER_DISTORT_CONFIG.canvas.devicePixelRatioLimit);
+      const dpr = Math.min(window.devicePixelRatio || 1, canvasDprLimit);
       const target = Math.min(
-        HOVER_DISTORT_CONFIG.canvas.maxSize,
+        canvasMaxSize,
         Math.max(HOVER_DISTORT_CONFIG.canvas.minSize, Math.max(r.width, r.height) * dpr),
       );
       const dim = Math.round(target);
@@ -289,15 +293,16 @@ export default function HoverDistortImage({
       clearTimeout(timeoutId);
       ro.disconnect();
     };
-  }, [actualDistortionEnabled, generateStaticMap, setStaticDisplacementMap]);
+  }, [actualDistortionEnabled, generateStaticMap, setStaticDisplacementMap, canvasMaxSize, canvasDprLimit]);
 
   // 애니메이션 루프: feOffset(dx, dy) + feDisplacementMap(scale)만 업데이트
   // feImage href는 절대 변경하지 않음 → Safari 호환
   const startAnimIfNeeded = useCallback(() => {
     if (!actualDistortionEnabled) return;
     if (!canvasRef.current || !feImageRef.current || !feDispRef.current) return;
-    if (!maskFeImageRef.current || !maskFeDispRef.current) return;
-    if (!feOffsetRef.current || !maskFeOffsetRef.current) return;
+    if (!feOffsetRef.current) return;
+    if (useMaskDistortion && !maskFeOffsetRef.current) return;
+    if (useMaskDistortion && (!maskFeImageRef.current || !maskFeDispRef.current)) return;
     if (animatingRef.current) return;
     animatingRef.current = true;
 
@@ -347,7 +352,7 @@ export default function HoverDistortImage({
       animRafRef.current = requestAnimationFrame(step);
     };
     animRafRef.current = requestAnimationFrame(step);
-  }, [actualDistortionEnabled, easingFactor]);
+  }, [actualDistortionEnabled, easingFactor, useMaskDistortion]);
 
   const handleEnter = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
@@ -391,7 +396,7 @@ export default function HoverDistortImage({
       prevMousePosRef.current = { x: px, y: py };
 
       const speed = Math.hypot(dx, dy);
-      targetScaleRef.current = Math.min(safariDistortionScale, speed * HOVER_DISTORT_CONFIG.scaleMultiplier);
+      targetScaleRef.current = Math.min(distortionScaleValue, speed * HOVER_DISTORT_CONFIG.scaleMultiplier);
 
       if (mouseMoveTimerRef.current) {
         clearTimeout(mouseMoveTimerRef.current);
@@ -409,7 +414,7 @@ export default function HoverDistortImage({
         startAnimIfNeeded();
       }
     },
-    [safariDistortionScale, startAnimIfNeeded, actualDistortionEnabled],
+    [distortionScaleValue, startAnimIfNeeded, actualDistortionEnabled],
   );
 
   const handleLeave = useCallback(() => {
@@ -467,7 +472,7 @@ export default function HoverDistortImage({
               <feOffset ref={feOffsetRef} in="rawMap" dx="0" dy="0" result="offsetMap" />
               {/* 이동된 맵을 중립 배경 위에 합성 */}
               <feComposite in="offsetMap" in2="neutral" operator="over" result="finalMap" />
-              <feGaussianBlur in="finalMap" stdDeviation={safariBlurStd} result="smap" />
+              <feGaussianBlur in="finalMap" stdDeviation={blurStdValue} result="smap" />
               <feDisplacementMap
                 ref={feDispRef}
                 in="SourceGraphic"
@@ -477,50 +482,54 @@ export default function HoverDistortImage({
                 yChannelSelector="G"
               />
             </filter>
-            {/* ===== 마스크용 필터 ===== */}
-            <filter
-              id={maskFilterId}
-              x="-50%"
-              y="-50%"
-              width="200%"
-              height="200%"
-              colorInterpolationFilters="sRGB">
-              <feFlood floodColor="rgb(128,128,0)" floodOpacity="1" result="maskNeutral" />
-              <feImage
-                ref={maskFeImageRef}
-                x="0"
-                y="0"
-                width="100%"
-                height="100%"
-                preserveAspectRatio="none"
-                result="maskRawMap"
-              />
-              <feOffset ref={maskFeOffsetRef} in="maskRawMap" dx="0" dy="0" result="maskOffsetMap" />
-              <feComposite in="maskOffsetMap" in2="maskNeutral" operator="over" result="maskFinalMap" />
-              <feGaussianBlur in="maskFinalMap" stdDeviation={safariBlurStd} result="maskSmap" />
-              <feDisplacementMap
-                ref={maskFeDispRef}
-                in="SourceGraphic"
-                in2="maskSmap"
-                scale={0}
-                xChannelSelector="R"
-                yChannelSelector="G"
-              />
-            </filter>
-            {/* 마스크 정의 */}
-            <mask id={maskId} maskUnits="objectBoundingBox">
-              <rect
-                x="0"
-                y="0"
-                width="100%"
-                height="100%"
-                fill="white"
-                filter={filterReady ? `url(#${maskFilterId})` : undefined}
-              />
-            </mask>
+            {useMaskDistortion && (
+              <>
+                {/* ===== 마스크용 필터 ===== */}
+                <filter
+                  id={maskFilterId}
+                  x="-50%"
+                  y="-50%"
+                  width="200%"
+                  height="200%"
+                  colorInterpolationFilters="sRGB">
+                  <feFlood floodColor="rgb(128,128,0)" floodOpacity="1" result="maskNeutral" />
+                  <feImage
+                    ref={maskFeImageRef}
+                    x="0"
+                    y="0"
+                    width="100%"
+                    height="100%"
+                    preserveAspectRatio="none"
+                    result="maskRawMap"
+                  />
+                  <feOffset ref={maskFeOffsetRef} in="maskRawMap" dx="0" dy="0" result="maskOffsetMap" />
+                  <feComposite in="maskOffsetMap" in2="maskNeutral" operator="over" result="maskFinalMap" />
+                  <feGaussianBlur in="maskFinalMap" stdDeviation={blurStdValue} result="maskSmap" />
+                  <feDisplacementMap
+                    ref={maskFeDispRef}
+                    in="SourceGraphic"
+                    in2="maskSmap"
+                    scale={0}
+                    xChannelSelector="R"
+                    yChannelSelector="G"
+                  />
+                </filter>
+                {/* 마스크 정의 */}
+                <mask id={maskId} maskUnits="objectBoundingBox">
+                  <rect
+                    x="0"
+                    y="0"
+                    width="100%"
+                    height="100%"
+                    fill="white"
+                    filter={filterReady ? `url(#${maskFilterId})` : undefined}
+                  />
+                </mask>
+              </>
+            )}
           </defs>
         ) : null}
-        <g mask={filterReady ? `url(#${maskId})` : undefined}>
+        <g mask={useMaskDistortion && filterReady ? `url(#${maskId})` : undefined}>
           <image
             href={src}
             xlinkHref={src}
