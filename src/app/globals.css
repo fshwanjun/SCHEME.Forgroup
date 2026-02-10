@@ -157,18 +157,11 @@ body {
 }
 
 img {
-  @apply touch-none;
-  touch-action: none !important;
-  -ms-touch-action: none;
+  touch-action: manipulation;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
   overscroll-behavior: none;
-  -webkit-overflow-scrolling: touch;
-}
-
-* {
-  touch-action: pan-x pan-y;
 }
 
 svg {

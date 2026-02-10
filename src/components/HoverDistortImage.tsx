@@ -2,7 +2,6 @@
 
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { HOVER_DISTORT_CONFIG } from '@/config/appConfig';
-import useWindowSize from '@/hooks/useWindowSize';
 
 const XLINK_NS = 'http://www.w3.org/1999/xlink';
 
@@ -48,16 +47,27 @@ export default function HoverDistortImage({
   distortionEnabled?: boolean;
   easingFactor?: number;
 }) {
-  const windowSize = useWindowSize();
-  const [mounted, setMounted] = useState(false);
+  const [canUseHoverDistortion, setCanUseHoverDistortion] = useState(false);
+  const [isSafariBrowser, setIsSafariBrowser] = useState(false);
   const [filterReady, setFilterReady] = useState(false);
 
-  // 모바일에서는 distortion 효과 비활성화
-  const isMobile = mounted && windowSize.isSm;
-  const actualDistortionEnabled = distortionEnabled && !isMobile;
+  const safariDistortionScale = isSafariBrowser ? Math.min(distortionScale, 220) : distortionScale;
+  const safariBlurStd = isSafariBrowser ? Math.min(blurStd, 36) : blurStd;
+  const actualDistortionEnabled = distortionEnabled && canUseHoverDistortion;
 
   useEffect(() => {
-    setMounted(true);
+    if (typeof window !== 'undefined') {
+      const supportsHoverWithFinePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+      setCanUseHoverDistortion(supportsHoverWithFinePointer);
+    }
+
+    if (typeof navigator !== 'undefined') {
+      const ua = navigator.userAgent;
+      const isSafari =
+        /Safari/i.test(ua) &&
+        !/Chrome|Chromium|CriOS|Edg|Edge|Android|FxiOS|OPR|SamsungBrowser/i.test(ua);
+      setIsSafariBrowser(isSafari);
+    }
   }, []);
 
   const id = useId().replace(/:/g, '-');
@@ -340,8 +350,9 @@ export default function HoverDistortImage({
   }, [actualDistortionEnabled, easingFactor]);
 
   const handleEnter = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
+    (e: React.PointerEvent<HTMLDivElement>) => {
       if (!actualDistortionEnabled) return;
+      if (e.pointerType !== 'mouse' && e.pointerType !== 'pen') return;
       if (!wrapperRef.current) return;
       if (!canvasRef.current || !feImageRef.current || !feDispRef.current) return;
 
@@ -361,8 +372,9 @@ export default function HoverDistortImage({
   );
 
   const handleMove = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
+    (e: React.PointerEvent<HTMLDivElement>) => {
       if (!actualDistortionEnabled) return;
+      if (e.pointerType !== 'mouse' && e.pointerType !== 'pen') return;
       if (!wrapperRef.current) return;
       if (!canvasRef.current || !feImageRef.current || !feDispRef.current) return;
 
@@ -379,7 +391,7 @@ export default function HoverDistortImage({
       prevMousePosRef.current = { x: px, y: py };
 
       const speed = Math.hypot(dx, dy);
-      targetScaleRef.current = Math.min(distortionScale, speed * HOVER_DISTORT_CONFIG.scaleMultiplier);
+      targetScaleRef.current = Math.min(safariDistortionScale, speed * HOVER_DISTORT_CONFIG.scaleMultiplier);
 
       if (mouseMoveTimerRef.current) {
         clearTimeout(mouseMoveTimerRef.current);
@@ -397,7 +409,7 @@ export default function HoverDistortImage({
         startAnimIfNeeded();
       }
     },
-    [distortionScale, startAnimIfNeeded, actualDistortionEnabled],
+    [safariDistortionScale, startAnimIfNeeded, actualDistortionEnabled],
   );
 
   const handleLeave = useCallback(() => {
@@ -413,9 +425,9 @@ export default function HoverDistortImage({
 
   const eventHandlers = actualDistortionEnabled
     ? {
-        onMouseEnter: handleEnter,
-        onMouseMove: handleMove,
-        onMouseLeave: handleLeave,
+        onPointerEnter: handleEnter,
+        onPointerMove: handleMove,
+        onPointerLeave: handleLeave,
       }
     : {};
 
@@ -427,12 +439,7 @@ export default function HoverDistortImage({
       role={alt ? 'img' : undefined}
       aria-label={alt || undefined}
       aria-hidden={alt ? undefined : 'true'}
-      style={
-        {
-          aspectRatio: aspectRatio,
-          lineHeight: 0,
-        } as React.CSSProperties
-      }>
+      style={{ aspectRatio: aspectRatio, lineHeight: 0 } as React.CSSProperties}>
       <svg className="block h-full w-full" xmlns="http://www.w3.org/2000/svg" style={{ imageRendering: 'auto' }}>
         {actualDistortionEnabled ? (
           <defs>
@@ -460,7 +467,7 @@ export default function HoverDistortImage({
               <feOffset ref={feOffsetRef} in="rawMap" dx="0" dy="0" result="offsetMap" />
               {/* 이동된 맵을 중립 배경 위에 합성 */}
               <feComposite in="offsetMap" in2="neutral" operator="over" result="finalMap" />
-              <feGaussianBlur in="finalMap" stdDeviation={blurStd} result="smap" />
+              <feGaussianBlur in="finalMap" stdDeviation={safariBlurStd} result="smap" />
               <feDisplacementMap
                 ref={feDispRef}
                 in="SourceGraphic"
@@ -490,7 +497,7 @@ export default function HoverDistortImage({
               />
               <feOffset ref={maskFeOffsetRef} in="maskRawMap" dx="0" dy="0" result="maskOffsetMap" />
               <feComposite in="maskOffsetMap" in2="maskNeutral" operator="over" result="maskFinalMap" />
-              <feGaussianBlur in="maskFinalMap" stdDeviation={blurStd} result="maskSmap" />
+              <feGaussianBlur in="maskFinalMap" stdDeviation={safariBlurStd} result="maskSmap" />
               <feDisplacementMap
                 ref={maskFeDispRef}
                 in="SourceGraphic"
