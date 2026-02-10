@@ -26,6 +26,7 @@ export default function Header({
   const pathname = usePathname();
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isSafariBrowser, setIsSafariBrowser] = useState(false);
   const windowSize = useWindowSize();
 
   // 클라이언트 사이드에서만 모바일 여부 업데이트 (hydration 불일치 방지)
@@ -33,6 +34,13 @@ export default function Header({
     setMounted(true);
     setIsMobile(windowSize.isSm);
   }, [windowSize.isSm]);
+
+  useEffect(() => {
+    if (typeof navigator === 'undefined') return;
+    const ua = navigator.userAgent;
+    const isSafari = /Safari/i.test(ua) && !/Chrome|Chromium|CriOS|Edg|Android|FxiOS/i.test(ua);
+    setIsSafariBrowser(isSafari);
+  }, []);
 
   const isVisible = pathname === '/' || pathname === '/studio' || pathname === '/privacy' || pathname.startsWith('/projects');
 
@@ -73,9 +81,10 @@ export default function Header({
   return (
     <header
       className={cn(
-        'w-full pt-5 text-white mix-blend-difference md:px-10',
+        'w-full pt-5 text-white md:px-10',
         // studio 페이지는 기존 padding 유지, 나머지는 px-8
         isStudioPage ? 'px-5 md:px-10' : 'px-5',
+        !isSafariBrowser && 'mix-blend-difference',
         // 모든 페이지에서 mix-blend-difference 사용
         effectiveIsFixed ? `pointer-events-none fixed top-0 right-0 left-0 ${zIndexClass}` : `relative ${zIndexClass}`,
       )}

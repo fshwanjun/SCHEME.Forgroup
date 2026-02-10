@@ -19,12 +19,20 @@ export default function MobileMenu({ onProjectClick }: { onProjectClick?: () => 
   const [mounted, setMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [social, setSocial] = useState<string>('@forforfor'); // 기본값
+  const [isSafariBrowser, setIsSafariBrowser] = useState(false);
 
   // 클라이언트 사이드에서만 모바일 여부 업데이트 (hydration 불일치 방지)
   useEffect(() => {
     setMounted(true);
     setIsMobile(windowSize.isSm);
   }, [windowSize.isSm]);
+
+  useEffect(() => {
+    if (typeof navigator === 'undefined') return;
+    const ua = navigator.userAgent;
+    const isSafari = /Safari/i.test(ua) && !/Chrome|Chromium|CriOS|Edg|Android|FxiOS/i.test(ua);
+    setIsSafariBrowser(isSafari);
+  }, []);
 
   // studio 페이지처럼 social 데이터 가져오기
   useEffect(() => {
@@ -78,7 +86,7 @@ export default function MobileMenu({ onProjectClick }: { onProjectClick?: () => 
         onClick={() => setIsMenuOpen(!isMenuOpen)}
         className={cn(
           'pointer-events-auto fixed right-[25px] z-400 flex h-8 w-8 items-center justify-center select-none',
-          !isMenuOpen && 'mix-blend-difference',
+          !isMenuOpen && !isSafariBrowser && 'mix-blend-difference',
         )}
         style={{
           position: 'fixed',

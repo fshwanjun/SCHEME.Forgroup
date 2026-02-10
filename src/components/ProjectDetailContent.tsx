@@ -6,7 +6,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { PROJECT_DETAIL_CONFIG } from '@/config/appConfig';
 
 // 커스텀 스크롤 인디케이터 컴포넌트
-function ScrollIndicator() {
+function ScrollIndicator({ useBlendMode }: { useBlendMode: boolean }) {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [hasScrollableContent, setHasScrollableContent] = useState(true);
   const [isReady, setIsReady] = useState(false);
@@ -116,7 +116,7 @@ function ScrollIndicator() {
         width: 2,
         height: 'clamp(10vh, 15vh, 20vh)', // 최소 10vh, 기본 15vh, 최대 20vh
         opacity: hasScrollableContent && isReady ? 1 : 0,
-        mixBlendMode: 'difference',
+        mixBlendMode: useBlendMode ? 'difference' : 'normal',
       }}>
       {/* 트랙 (투명 배경) */}
       <div className="absolute inset-0 rounded-full bg-white/30" />
@@ -219,35 +219,22 @@ export default function ProjectDetailContent({
   heroImageSrc,
   onHeroImageLoad,
 }: ProjectDetailContentProps) {
-  const didRenderLogRef = useRef(false);
   // Hero 이미지 소스 결정: heroImageSrc가 있으면 우선 사용, 없으면 thumbnail43
   const heroImage = heroImageSrc || contents.thumbnail43;
   const [heroImageLoaded, setHeroImageLoaded] = useState(false);
-  const footerRef = useRef<HTMLDivElement | null>(null);
-
-  if (!didRenderLogRef.current) {
-    didRenderLogRef.current = true;
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/21210756-054f-4427-9853-0c6cc03f9a44', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sessionId: 'debug-session',
-        runId: 'blend-debug-2',
-        hypothesisId: 'H0',
-        location: 'ProjectDetailContent.tsx:224',
-        message: 'Render entered',
-        data: { title, hasHeroImage: Boolean(heroImage) },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
-  }
+  const [isSafariBrowser, setIsSafariBrowser] = useState(false);
 
   // heroImage가 변경되면 로드 상태 리셋
   useEffect(() => {
     setHeroImageLoaded(false);
   }, [heroImage]);
+
+  useEffect(() => {
+    if (typeof navigator === 'undefined') return;
+    const ua = navigator.userAgent;
+    const isSafari = /Safari/i.test(ua) && !/Chrome|Chromium|CriOS|Edg|Android|FxiOS/i.test(ua);
+    setIsSafariBrowser(isSafari);
+  }, []);
 
   const handleHeroImageLoad = () => {
     setHeroImageLoaded(true);
@@ -280,129 +267,12 @@ export default function ProjectDetailContent({
     (contents.servicesTitleVisible !== false && hasText(contents.servicesTitle)) ||
     (contents.servicesValueVisible !== false && hasText(contents.services));
 
-  useEffect(() => {
-    const el = footerRef.current;
-    if (!el || typeof window === 'undefined') return;
-
-    const computed = getComputedStyle(el);
-    const ancestors: Array<{
-      tag: string;
-      className: string;
-      bgColor: string;
-      bgImage: string;
-      position: string;
-      zIndex: string;
-      isolation: string;
-      transform: string;
-    }> = [];
-
-    let node: HTMLElement | null = el.parentElement;
-    let depth = 0;
-    while (node && depth < 6) {
-      const cs = getComputedStyle(node);
-      ancestors.push({
-        tag: node.tagName,
-        className: node.className || '',
-        bgColor: cs.backgroundColor,
-        bgImage: cs.backgroundImage,
-        position: cs.position,
-        zIndex: cs.zIndex,
-        isolation: cs.isolation,
-        transform: cs.transform,
-      });
-      node = node.parentElement;
-      depth += 1;
-    }
-
-    const probe = document.elementFromPoint(20, window.innerHeight - 10) as HTMLElement | null;
-    const probeStyle = probe ? getComputedStyle(probe) : null;
-
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/21210756-054f-4427-9853-0c6cc03f9a44', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sessionId: 'debug-session',
-        runId: 'blend-debug-1',
-        hypothesisId: 'H1',
-        location: 'ProjectDetailContent.tsx:239',
-        message: 'Footer mounted',
-        data: { heroImageLoaded, hasHeroImage: Boolean(heroImage) },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
-
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/21210756-054f-4427-9853-0c6cc03f9a44', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sessionId: 'debug-session',
-        runId: 'blend-debug-1',
-        hypothesisId: 'H1',
-        location: 'ProjectDetailContent.tsx:258',
-        message: 'Footer computed style',
-        data: {
-          mixBlendMode: computed.mixBlendMode,
-          position: computed.position,
-          zIndex: computed.zIndex,
-          color: computed.color,
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
-
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/21210756-054f-4427-9853-0c6cc03f9a44', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sessionId: 'debug-session',
-        runId: 'blend-debug-1',
-        hypothesisId: 'H2',
-        location: 'ProjectDetailContent.tsx:276',
-        message: 'Ancestor backgrounds',
-        data: { ancestors },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
-
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/21210756-054f-4427-9853-0c6cc03f9a44', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sessionId: 'debug-session',
-        runId: 'blend-debug-1',
-        hypothesisId: 'H3',
-        location: 'ProjectDetailContent.tsx:290',
-        message: 'ElementFromPoint at footer',
-        data: probe
-          ? {
-              tag: probe.tagName,
-              className: probe.className || '',
-              bgColor: probeStyle?.backgroundColor,
-              bgImage: probeStyle?.backgroundImage,
-              position: probeStyle?.position,
-              zIndex: probeStyle?.zIndex,
-            }
-          : { missing: true },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
-  }, [heroImage, heroImageLoaded]);
-
   return (
     <>
       {/* 커스텀 스크롤 인디케이터 */}
-      <ScrollIndicator />
+      <ScrollIndicator useBlendMode={!isSafariBrowser} />
 
       <motion.div
-        ref={footerRef}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{
@@ -410,7 +280,9 @@ export default function ProjectDetailContent({
           delay: PROJECT_DETAIL_CONFIG.animation.delay,
           ease: PROJECT_DETAIL_CONFIG.animation.ease,
         }}
-        className="fixed bottom-0 left-0 z-10 grid w-full grid-cols-2 gap-4 px-7 pb-8 text-white mix-blend-difference md:flex md:justify-between md:px-10">
+        className={`fixed bottom-0 left-0 z-10 grid w-full grid-cols-2 gap-4 px-7 pb-8 text-white md:flex md:justify-between md:px-10 ${
+          isSafariBrowser ? '' : 'mix-blend-difference'
+        }`}>
         <div className={`flex min-w-[80px] flex-col gap-1 md:min-w-[120px] ${showProject ? '' : 'opacity-0'}`}>
           {contents.projectTitleVisible !== false && (
             <h5 className={fontWeightClass[contents.projectTitleFontWeight || 'bold']}>{contents.projectTitle}</h5>
@@ -688,7 +560,6 @@ export default function ProjectDetailContent({
                       width={0}
                       height={0}
                       sizes="100vw"
-                      unoptimized
                       draggable={false}
                       style={{ width: '100%', height: 'auto', objectFit: 'cover' }}
                     />
@@ -698,7 +569,6 @@ export default function ProjectDetailContent({
                       src={detailImage.url}
                       alt={`${contents.project || 'Project'} gallery image ${index + 1}`}
                       fill
-                      unoptimized
                       draggable={false}
                     />
                   </>
@@ -712,7 +582,6 @@ export default function ProjectDetailContent({
                       width={0}
                       height={0}
                       sizes="100vw"
-                      unoptimized
                       draggable={false}
                       style={{ width: '100%', height: 'auto', objectFit: 'cover' }}
                     />
@@ -723,7 +592,6 @@ export default function ProjectDetailContent({
                         src={detailImage.url}
                         alt={`${contents.project || 'Project'} gallery image ${index + 1}`}
                         fill
-                        unoptimized
                         draggable={false}
                       />
                     </div>
