@@ -139,12 +139,20 @@ function HomeGallery({
   const windowSize = useWindowSize();
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isSafariBrowser, setIsSafariBrowser] = useState(false);
 
   // 클라이언트 사이드에서만 모바일 여부 업데이트 (hydration 불일치 방지)
   useEffect(() => {
     setMounted(true);
     setIsMobile(windowSize.isSm);
   }, [windowSize.isSm]);
+
+  useEffect(() => {
+    if (typeof navigator === 'undefined') return;
+    const ua = navigator.userAgent;
+    const isSafari = /Safari/i.test(ua) && !/Chrome|Chromium|CriOS|Edg|Edge|Android|FxiOS|OPR|SamsungBrowser/i.test(ua);
+    setIsSafariBrowser(isSafari);
+  }, []);
 
   // 모바일 여부에 따라 사용할 프레임 클래스 선택 (마운트 전에는 데스크톱 기본값)
   const currentFrameClasses = useMemo(
@@ -212,13 +220,27 @@ function HomeGallery({
       return;
     }
 
+    // 이미지 데이터가 준비되기 전에는 애니메이션 초기화 시도를 하지 않음
+    if (projectCount === 0) {
+      setImagesReady(false);
+      return;
+    }
+
+    // 첫 섹션 애니메이션은 매 진입 시 다시 준비 상태로 초기화
+    setImagesReady(false);
+
     // 카드 요소들이 준비될 때까지 대기
     const initAnimation = () => {
       const cards = Array.from(cardRefs.current.entries())
         .filter(([, el]) => el !== null)
-        .map(([index, el]) => ({ index, el: el as HTMLDivElement }));
+        .map(([index, el]) => ({ index, el: el as HTMLDivElement }))
+        .filter(({ el }) => {
+          if (!el.isConnected) return false;
+          const rect = el.getBoundingClientRect();
+          return rect.width > 0 && rect.height > 0;
+        });
 
-      if (cards.length === 0) return;
+      if (cards.length === 0) return false;
 
       // 스크롤 컨테이너를 최상단으로 이동
       const scrollContainer = sectionRef.current?.closest('[class*="overflow-y"]') as HTMLElement | null;
@@ -317,41 +339,83 @@ function HomeGallery({
       const tl = gsap.timeline();
       gsapAnimationRef.current = tl;
 
-      // 1단계: 중앙에서 카드들이 하나씩 부드럽게 나타남 (scale: 0 → midScale, opacity: 0 → 1)
-      extendedCardData.forEach(({ el, midScale }, i) => {
-        tl.to(
-          el,
-          {
-            scale: midScale,
-            opacity: 1,
-            duration: 1.0, // 더 천천히 나타남
-            ease: 'expo.out', // 더 부드러운 감속
-          },
-          0.2 + i * 0.06, // 0.06초 간격으로 더 자연스럽게 순차 등장
-        );
-      });
+      if (isSafariBrowser) {
+        // Safari에서는 합성 레이어와 동시 애니메이션 수를 줄여 초기 버벅임 최소화
+        const maxAnimatedCards = 10;
+        const animatedCards = extendedCardData.slice(0, maxAnimatedCards);
+        const staticCards = extendedCardData.slice(maxAnimatedCards);
 
-      // 2단계: 카드들이 원래 자리로 흩어지며 커짐 (더 자연스러운 타이밍)
-      const scatterStartTime = 0.2 + extendedCardData.length * 0.06 + 0.3; // 1단계 중 일부 겹침
+        staticCards.forEach(({ el }) => {
+          gsap.set(el, { x: 0, y: 0, scale: 1, opacity: 1, visibility: 'visible' });
+        });
 
-      // 각 카드가 개별적으로 자연스럽게 흩어지도록 애니메이션
-      extendedCardData.forEach(({ el, scatterDuration, distance }) => {
-        // 거리에 따른 stagger delay (가까운 카드가 먼저)
-        const normalizedDistance = distance / maxDistance;
-        const staggerDelay = normalizedDistance * 0.3;
+        animatedCards.forEach(({ el, midScale }, i) => {
+          tl.to(
+            el,
+            {
+              scale: midScale,
+              opacity: 1,
+              duration: 1.0, // 기존 속도와 동일
+              ease: 'expo.out',
+            },
+            0.2 + i * 0.06,
+          );
+        });
 
-        tl.to(
-          el,
-          {
-            x: 0,
-            y: 0,
-            scale: 1,
-            duration: scatterDuration,
-            ease: 'expo.out', // 매우 부드러운 감속 곡선
-          },
-          scatterStartTime + staggerDelay,
-        );
-      });
+        const settleStart = 0.2 + animatedCards.length * 0.06 + 0.3;
+        animatedCards.forEach(({ el, scatterDuration, distance }) => {
+          const normalizedDistance = distance / maxDistance;
+          const staggerDelay = normalizedDistance * 0.3;
+
+          tl.to(
+            el,
+            {
+              x: 0,
+              y: 0,
+              scale: 1,
+              duration: scatterDuration,
+              ease: 'expo.out',
+            },
+            settleStart + staggerDelay,
+          );
+        });
+      } else {
+        // 1단계: 중앙에서 카드들이 하나씩 부드럽게 나타남 (scale: 0 → midScale, opacity: 0 → 1)
+        extendedCardData.forEach(({ el, midScale }, i) => {
+          tl.to(
+            el,
+            {
+              scale: midScale,
+              opacity: 1,
+              duration: 1.0, // 더 천천히 나타남
+              ease: 'expo.out', // 더 부드러운 감속
+            },
+            0.2 + i * 0.06, // 0.06초 간격으로 더 자연스럽게 순차 등장
+          );
+        });
+
+        // 2단계: 카드들이 원래 자리로 흩어지며 커짐 (더 자연스러운 타이밍)
+        const scatterStartTime = 0.2 + extendedCardData.length * 0.06 + 0.3; // 1단계 중 일부 겹침
+
+        // 각 카드가 개별적으로 자연스럽게 흩어지도록 애니메이션
+        extendedCardData.forEach(({ el, scatterDuration, distance }) => {
+          // 거리에 따른 stagger delay (가까운 카드가 먼저)
+          const normalizedDistance = distance / maxDistance;
+          const staggerDelay = normalizedDistance * 0.3;
+
+          tl.to(
+            el,
+            {
+              x: 0,
+              y: 0,
+              scale: 1,
+              duration: scatterDuration,
+              ease: 'expo.out', // 매우 부드러운 감속 곡선
+            },
+            scatterStartTime + staggerDelay,
+          );
+        });
+      }
 
       // 애니메이션 완료 후 상태 업데이트
       tl.call(() => {
@@ -359,20 +423,59 @@ function HomeGallery({
         // 인트로 애니메이션 완료 콜백 호출
         onIntroAnimationComplete?.();
       });
+
+      return true;
     };
 
-    // DOM이 완전히 렌더링된 후 애니메이션 초기화
-    const timer = setTimeout(initAnimation, 100);
+    let cancelled = false;
+    let retryCount = 0;
+    let retryTimer: number | null = null;
+    const MAX_RETRY_COUNT = 45;
+    const RETRY_DELAY_MS = 40;
+
+    const tryInitAnimation = () => {
+      if (cancelled) return;
+
+      // 기존 타임라인이 남아 있으면 정리 후 재시작
+      if (gsapAnimationRef.current) {
+        gsapAnimationRef.current.kill();
+        gsapAnimationRef.current = null;
+      }
+
+      const started = initAnimation();
+      if (started) return;
+
+      retryCount += 1;
+      if (retryCount >= MAX_RETRY_COUNT) {
+        // 끝까지 준비가 안 되면 최소한 카드가 보이도록 폴백
+        cardRefs.current.forEach((el) => {
+          if (!el || !el.isConnected) return;
+          gsap.set(el, { x: 0, y: 0, scale: 1, opacity: 1, visibility: 'visible' });
+        });
+        setImagesReady(true);
+        onIntroAnimationComplete?.();
+        return;
+      }
+
+      retryTimer = window.setTimeout(() => {
+        requestAnimationFrame(tryInitAnimation);
+      }, RETRY_DELAY_MS);
+    };
+
+    requestAnimationFrame(tryInitAnimation);
 
     return () => {
-      clearTimeout(timer);
+      cancelled = true;
+      if (retryTimer !== null) {
+        clearTimeout(retryTimer);
+      }
       // 컴포넌트 언마운트 시 애니메이션 정리
       if (gsapAnimationRef.current) {
         gsapAnimationRef.current.kill();
         gsapAnimationRef.current = null;
       }
     };
-  }, [isProjectLayout, mounted, projectCount, currentFrameClasses, isFirstSection, onIntroAnimationComplete]);
+  }, [isProjectLayout, mounted, projectCount, currentFrameClasses, isFirstSection, onIntroAnimationComplete, isSafariBrowser]);
 
   // 첫 번째 섹션이 아닌 경우 즉시 표시
   useEffect(() => {
@@ -654,9 +757,9 @@ function HomeGallery({
                   ? {
                       // 첫 번째 섹션: 초기에 숨김 (GSAP이 제어)
                       // 다른 섹션: CSS transition으로 페이드인
-                      opacity: isFirstSection ? 0 : imagesReady ? 1 : 0,
+                      opacity: isFirstSection ? (imagesReady ? 1 : 0) : imagesReady ? 1 : 0,
                       transition: isFirstSection ? 'none' : 'opacity 0.5s ease-out',
-                      willChange: isFirstSection ? 'transform, opacity' : 'opacity',
+                      willChange: isSafariBrowser ? 'auto' : isFirstSection ? 'transform, opacity' : 'opacity',
                       // 첫 번째 섹션: visibility로 초기 렌더링 방지
                       visibility: isFirstSection && !imagesReady ? 'hidden' : 'visible',
                     }

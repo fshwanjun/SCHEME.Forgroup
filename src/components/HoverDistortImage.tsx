@@ -53,10 +53,15 @@ export default function HoverDistortImage({
 
   const useSafariOptimizedDistortion = isSafariBrowser;
   const useMaskDistortion = !useSafariOptimizedDistortion;
-  const distortionScaleValue = useSafariOptimizedDistortion ? Math.min(distortionScale, 140) : distortionScale;
-  const blurStdValue = useSafariOptimizedDistortion ? Math.min(blurStd, 14) : blurStd;
-  const canvasMaxSize = useSafariOptimizedDistortion ? 128 : HOVER_DISTORT_CONFIG.canvas.maxSize;
+  const distortionScaleValue = useSafariOptimizedDistortion ? Math.min(distortionScale, 110) : distortionScale;
+  const blurStdValue = useSafariOptimizedDistortion ? Math.min(blurStd, 10) : blurStd;
+  const canvasMaxSize = useSafariOptimizedDistortion ? 96 : HOVER_DISTORT_CONFIG.canvas.maxSize;
   const canvasDprLimit = useSafariOptimizedDistortion ? 1 : HOVER_DISTORT_CONFIG.canvas.devicePixelRatioLimit;
+  const filterInset = useSafariOptimizedDistortion ? '-30%' : '-50%';
+  const filterSize = useSafariOptimizedDistortion ? '160%' : '200%';
+  const minFrameIntervalMs = useSafariOptimizedDistortion ? 1000 / 30 : 0;
+  const posQuantizeStep = useSafariOptimizedDistortion ? 0.5 : 0.01;
+  const scaleQuantizeStep = useSafariOptimizedDistortion ? 0.25 : 0.01;
   const actualDistortionEnabled = distortionEnabled && canUseHoverDistortion;
 
   useEffect(() => {
@@ -68,8 +73,7 @@ export default function HoverDistortImage({
     if (typeof navigator !== 'undefined') {
       const ua = navigator.userAgent;
       const isSafari =
-        /Safari/i.test(ua) &&
-        !/Chrome|Chromium|CriOS|Edg|Edge|Android|FxiOS|OPR|SamsungBrowser/i.test(ua);
+        /Safari/i.test(ua) && !/Chrome|Chromium|CriOS|Edg|Edge|Android|FxiOS|OPR|SamsungBrowser/i.test(ua);
       setIsSafariBrowser(isSafari);
     }
   }, []);
@@ -97,6 +101,8 @@ export default function HoverDistortImage({
 
   const prevMousePosRef = useRef<{ x: number; y: number } | null>(null);
   const mouseMoveTimerRef = useRef<number | null>(null);
+  const lastFrameTimeRef = useRef<number>(0);
+  const lastAppliedRef = useRef<{ dx: number; dy: number; scale: number } | null>(null);
 
   // Blob URL 관리 (초기 설정/리사이즈 시에만 사용, 호버 중에는 절대 변경 없음)
   const blobGenRef = useRef(0);
@@ -153,32 +159,29 @@ export default function HoverDistortImage({
   const setStaticDisplacementMap = useCallback((canvas: HTMLCanvasElement, onReady?: () => void) => {
     const gen = ++blobGenRef.current;
 
-    canvas.toBlob(
-      (blob) => {
-        if (!blob || gen !== blobGenRef.current) return;
+    canvas.toBlob((blob) => {
+      if (!blob || gen !== blobGenRef.current) return;
 
-        if (prevBlobUrlRef.current) {
-          URL.revokeObjectURL(prevBlobUrlRef.current);
-        }
+      if (prevBlobUrlRef.current) {
+        URL.revokeObjectURL(prevBlobUrlRef.current);
+      }
 
-        const url = URL.createObjectURL(blob);
-        prevBlobUrlRef.current = url;
+      const url = URL.createObjectURL(blob);
+      prevBlobUrlRef.current = url;
 
-        // href + xlink:href 동시 설정 (Safari는 xlink:href를 우선 인식)
-        if (feImageRef.current) {
-          feImageRef.current.setAttribute('href', url);
-          feImageRef.current.setAttributeNS(XLINK_NS, 'xlink:href', url);
-        }
-        if (maskFeImageRef.current) {
-          maskFeImageRef.current.setAttribute('href', url);
-          maskFeImageRef.current.setAttributeNS(XLINK_NS, 'xlink:href', url);
-        }
+      // href + xlink:href 동시 설정 (Safari는 xlink:href를 우선 인식)
+      if (feImageRef.current) {
+        feImageRef.current.setAttribute('href', url);
+        feImageRef.current.setAttributeNS(XLINK_NS, 'xlink:href', url);
+      }
+      if (maskFeImageRef.current) {
+        maskFeImageRef.current.setAttribute('href', url);
+        maskFeImageRef.current.setAttributeNS(XLINK_NS, 'xlink:href', url);
+      }
 
-        mapAppliedRef.current = true;
-        onReady?.();
-      },
-      'image/png',
-    );
+      mapAppliedRef.current = true;
+      onReady?.();
+    }, 'image/png');
   }, []);
 
   // 언마운트 시 Blob URL 정리
@@ -237,6 +240,8 @@ export default function HoverDistortImage({
     currentPctRef.current = { x: 50, y: 50 };
     targetPctRef.current = { x: 50, y: 50 };
     prevMousePosRef.current = null;
+    lastFrameTimeRef.current = 0;
+    lastAppliedRef.current = null;
     animatingRef.current = false;
     mapAppliedRef.current = false;
 
@@ -311,7 +316,16 @@ export default function HoverDistortImage({
       HOVER_DISTORT_CONFIG.animation.maxEasingFactor,
     );
 
-    const step = () => {
+    const step = (timestamp: number) => {
+      if (minFrameIntervalMs > 0) {
+        const elapsed = timestamp - lastFrameTimeRef.current;
+        if (elapsed < minFrameIntervalMs) {
+          animRafRef.current = requestAnimationFrame(step);
+          return;
+        }
+        lastFrameTimeRef.current = timestamp;
+      }
+
       const cp = currentPctRef.current;
       const tp = targetPctRef.current;
 
@@ -322,21 +336,34 @@ export default function HoverDistortImage({
 
       // feOffset으로 displacement map 위치 이동 (feImage href 변경 없음 → Safari 호환)
       const { w: ew, h: eh } = elemSizeRef.current;
-      const dx = (nx / 100 - 0.5) * ew;
-      const dy = (ny / 100 - 0.5) * eh;
-      feOffsetRef.current?.setAttribute('dx', dx.toFixed(2));
-      feOffsetRef.current?.setAttribute('dy', dy.toFixed(2));
-      maskFeOffsetRef.current?.setAttribute('dx', dx.toFixed(2));
-      maskFeOffsetRef.current?.setAttribute('dy', dy.toFixed(2));
+      const rawDx = (nx / 100 - 0.5) * ew;
+      const rawDy = (ny / 100 - 0.5) * eh;
+      const dx = Math.round(rawDx / posQuantizeStep) * posQuantizeStep;
+      const dy = Math.round(rawDy / posQuantizeStep) * posQuantizeStep;
 
       const cs = currentScaleRef.current;
       const ts = targetScaleRef.current;
 
-      const ns = cs + (ts - cs) * lerpFactor;
+      const rawNs = cs + (ts - cs) * lerpFactor;
+      const ns = Math.round(rawNs / scaleQuantizeStep) * scaleQuantizeStep;
 
       currentScaleRef.current = ns;
-      feDispRef.current?.setAttribute('scale', ns.toFixed(2));
-      maskFeDispRef.current?.setAttribute('scale', ns.toFixed(2));
+      const prevApplied = lastAppliedRef.current;
+      const changed = !prevApplied || prevApplied.dx !== dx || prevApplied.dy !== dy || prevApplied.scale !== ns;
+
+      if (changed) {
+        feOffsetRef.current?.setAttribute('dx', dx.toFixed(2));
+        feOffsetRef.current?.setAttribute('dy', dy.toFixed(2));
+        if (useMaskDistortion) {
+          maskFeOffsetRef.current?.setAttribute('dx', dx.toFixed(2));
+          maskFeOffsetRef.current?.setAttribute('dy', dy.toFixed(2));
+        }
+        feDispRef.current?.setAttribute('scale', ns.toFixed(2));
+        if (useMaskDistortion) {
+          maskFeDispRef.current?.setAttribute('scale', ns.toFixed(2));
+        }
+        lastAppliedRef.current = { dx, dy, scale: ns };
+      }
 
       const nearPos = Math.hypot(tp.x - nx, tp.y - ny) < HOVER_DISTORT_CONFIG.animation.nearPosThreshold;
       const nearScale = Math.abs(ts - ns) < HOVER_DISTORT_CONFIG.animation.nearScaleThreshold;
@@ -352,7 +379,14 @@ export default function HoverDistortImage({
       animRafRef.current = requestAnimationFrame(step);
     };
     animRafRef.current = requestAnimationFrame(step);
-  }, [actualDistortionEnabled, easingFactor, useMaskDistortion]);
+  }, [
+    actualDistortionEnabled,
+    easingFactor,
+    minFrameIntervalMs,
+    posQuantizeStep,
+    scaleQuantizeStep,
+    useMaskDistortion,
+  ]);
 
   const handleEnter = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
@@ -393,6 +427,7 @@ export default function HoverDistortImage({
         dx = px - prevMousePosRef.current.x;
         dy = py - prevMousePosRef.current.y;
       }
+      if (useSafariOptimizedDistortion && Math.hypot(dx, dy) < 0.8) return;
       prevMousePosRef.current = { x: px, y: py };
 
       const speed = Math.hypot(dx, dy);
@@ -414,7 +449,7 @@ export default function HoverDistortImage({
         startAnimIfNeeded();
       }
     },
-    [distortionScaleValue, startAnimIfNeeded, actualDistortionEnabled],
+    [distortionScaleValue, startAnimIfNeeded, actualDistortionEnabled, useSafariOptimizedDistortion],
   );
 
   const handleLeave = useCallback(() => {
@@ -451,10 +486,10 @@ export default function HoverDistortImage({
             {/* ===== 메인 이미지용 필터 ===== */}
             <filter
               id={filterId}
-              x="-50%"
-              y="-50%"
-              width="200%"
-              height="200%"
+              x={filterInset}
+              y={filterInset}
+              width={filterSize}
+              height={filterSize}
               colorInterpolationFilters="sRGB">
               {/* 중립 배경 (128,128,0 = 변위 없음) — feOffset 이동 후 빈 영역을 채움 */}
               <feFlood floodColor="rgb(128,128,0)" floodOpacity="1" result="neutral" />
@@ -487,10 +522,10 @@ export default function HoverDistortImage({
                 {/* ===== 마스크용 필터 ===== */}
                 <filter
                   id={maskFilterId}
-                  x="-50%"
-                  y="-50%"
-                  width="200%"
-                  height="200%"
+                  x={filterInset}
+                  y={filterInset}
+                  width={filterSize}
+                  height={filterSize}
                   colorInterpolationFilters="sRGB">
                   <feFlood floodColor="rgb(128,128,0)" floodOpacity="1" result="maskNeutral" />
                   <feImage

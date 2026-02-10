@@ -80,7 +80,8 @@ export default function ProjectPage() {
   const { setTriggerElement, renderSections } = useInfiniteScroll({
     initialSectionIds: [0, 1, 2, 3, 4, 5, 6, 7],
     triggerOffset: isMobile ? 2000 : 1500,
-    disabled: mode !== 'default',
+    // 인트로 애니메이션 중에는 섹션 0이 밀려나지 않도록 무한 스크롤 일시 중지
+    disabled: mode !== 'default' || introAnimating,
     maxSections: 8,
     scrollContainerRef,
   });
