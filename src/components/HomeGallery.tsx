@@ -669,7 +669,7 @@ function HomeGallery({
                 orientation={orientation}
                 aspectRatio={aspectRatio}
                 className="h-full w-full"
-                enableHoverEffect={!isSelected && !isOtherSelected}
+                enableHoverEffect={imagesReady && !isSelected && !isOtherSelected}
                 clickDisabled={assignment.clickDisabled}
                 distortionScale={distortionScale}
                 radiusPx={radiusPx}

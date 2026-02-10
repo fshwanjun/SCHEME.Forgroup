@@ -202,7 +202,7 @@ export default function StudioPage() {
               <Link href="/privacy" className="transition-opacity hover:opacity-60">
                 Privacy Policy
               </Link>
-              <span>©2026. FOR</span>
+              <span>©2026 FOR</span>
             </div>
 
             {/* 모바일 전용 하단 여백 */}

@@ -122,7 +122,7 @@ export default function MobileMenu({ onProjectClick }: { onProjectClick?: () => 
               );
             })}
           </div>
-          <p className="absolute right-7 bottom-7 text-right">©2026. FOR</p>
+          <p className="absolute right-7 bottom-7 text-right">©2026 FOR</p>
         </nav>
       )}
     </>

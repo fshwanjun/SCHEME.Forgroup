@@ -76,9 +76,9 @@ export default function ProjectPage() {
     debug: false,
   });
 
-  // 무한 스크롤 훅 사용
+  // 모든 섹션을 미리 생성 (스크롤 시 지연 방지)
   const { setTriggerElement, renderSections } = useInfiniteScroll({
-    initialSectionIds: [0, 1, 2],
+    initialSectionIds: [0, 1, 2, 3, 4, 5, 6, 7],
     triggerOffset: isMobile ? 2000 : 1500,
     disabled: mode !== 'default',
     maxSections: 8,
