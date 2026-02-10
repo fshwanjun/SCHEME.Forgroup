@@ -52,7 +52,7 @@ export default function HoverDistortImage({
   const [mounted, setMounted] = useState(false);
   const [filterReady, setFilterReady] = useState(false);
 
-  // 모바일에서는 distortion 효과 비활성화 (Safari 포함 모든 브라우저에서 SVG 사용)
+  // 모바일에서는 distortion 효과 비활성화
   const isMobile = mounted && windowSize.isSm;
   const actualDistortionEnabled = distortionEnabled && !isMobile;
 
@@ -68,8 +68,10 @@ export default function HoverDistortImage({
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const feImageRef = useRef<SVGFEImageElement | null>(null);
   const feDispRef = useRef<SVGFEDisplacementMapElement | null>(null);
+  const feOffsetRef = useRef<SVGFEOffsetElement | null>(null);
   const maskFeImageRef = useRef<SVGFEImageElement | null>(null);
   const maskFeDispRef = useRef<SVGFEDisplacementMapElement | null>(null);
+  const maskFeOffsetRef = useRef<SVGFEOffsetElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const elemSizeRef = useRef<{ w: number; h: number }>({ w: 0, h: 0 });
   const animRafRef = useRef<number | null>(null);
@@ -82,23 +84,65 @@ export default function HoverDistortImage({
   const prevMousePosRef = useRef<{ x: number; y: number } | null>(null);
   const mouseMoveTimerRef = useRef<number | null>(null);
 
-  // Blob URL 관리 (Safari 호환용)
+  // Blob URL 관리 (초기 설정/리사이즈 시에만 사용, 호버 중에는 절대 변경 없음)
   const blobGenRef = useRef(0);
   const prevBlobUrlRef = useRef<string | null>(null);
+  const mapAppliedRef = useRef(false);
 
   /**
-   * feImage에 displacement map URL을 적용하는 헬퍼.
-   * Safari 호환성을 위해 Blob URL + xlink:href를 사용합니다.
+   * 정적 displacement map 생성 (캔버스 중앙에 방사형 그라디언트).
+   * 호버 시에는 feOffset으로 위치만 이동하므로 맵은 초기화/리사이즈 시에만 생성합니다.
    */
-  const applyMapToFeImages = useCallback((canvas: HTMLCanvasElement, onApplied?: () => void) => {
+  const generateStaticMap = useCallback(
+    (canvas: HTMLCanvasElement) => {
+      const cw = canvas.width;
+      const ch = canvas.height;
+      const ctx = canvas.getContext('2d', { willReadFrequently: false });
+      if (!ctx) return;
+
+      const { w: ew, h: eh } = elemSizeRef.current;
+      const rx = Math.max(HOVER_DISTORT_CONFIG.canvas.minRadius, (radiusPx * cw) / Math.max(ew, 1));
+      const ry = Math.max(HOVER_DISTORT_CONFIG.canvas.minRadius, (radiusPx * ch) / Math.max(eh, 1));
+      const cx = cw / 2;
+      const cy = ch / 2;
+
+      const img = ctx.createImageData(cw, ch);
+      const data = img.data;
+      for (let j = 0; j < ch; j++) {
+        const dy = (j - cy) / ry;
+        for (let i = 0; i < cw; i++) {
+          const dx = (i - cx) / rx;
+          const idx = (j * cw + i) << 2;
+          const r2 = dx * dx + dy * dy;
+          let s = 0;
+          if (r2 < 1) {
+            const r = Math.sqrt(r2);
+            s = 1 - r;
+            s = s * s * (3 - 2 * s);
+          }
+          data[idx] = 128 + dx * s * 127;
+          data[idx + 1] = 128 + dy * s * 127;
+          data[idx + 2] = 0;
+          data[idx + 3] = 255;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+    },
+    [radiusPx],
+  );
+
+  /**
+   * Blob URL로 feImage에 displacement map을 1회 설정.
+   * Safari에서 feImage href를 반복 변경하면 이미지가 사라지는 버그를 방지하기 위해
+   * 초기화/리사이즈 시에만 호출합니다 (호버 중에는 feOffset만 변경).
+   */
+  const setStaticDisplacementMap = useCallback((canvas: HTMLCanvasElement, onReady?: () => void) => {
     const gen = ++blobGenRef.current;
 
     canvas.toBlob(
       (blob) => {
-        // 최신 generation만 적용 (이전 비동기 결과 무시)
         if (!blob || gen !== blobGenRef.current) return;
 
-        // 이전 Blob URL 해제
         if (prevBlobUrlRef.current) {
           URL.revokeObjectURL(prevBlobUrlRef.current);
         }
@@ -116,7 +160,8 @@ export default function HoverDistortImage({
           maskFeImageRef.current.setAttributeNS(XLINK_NS, 'xlink:href', url);
         }
 
-        onApplied?.();
+        mapAppliedRef.current = true;
+        onReady?.();
       },
       'image/png',
     );
@@ -132,10 +177,11 @@ export default function HoverDistortImage({
     };
   }, []);
 
-  // distortionEnabled가 false에서 true로 변경될 때 모든 상태 리셋
+  // distortionEnabled 변경 시 애니메이션 상태 리셋
   useEffect(() => {
     if (!actualDistortionEnabled) {
       setFilterReady(false);
+      mapAppliedRef.current = false;
       if (mouseMoveTimerRef.current) {
         clearTimeout(mouseMoveTimerRef.current);
         mouseMoveTimerRef.current = null;
@@ -160,67 +206,39 @@ export default function HoverDistortImage({
     };
   }, [actualDistortionEnabled]);
 
-  // distortion이 활성화될 때 모든 상태를 초기값으로 리셋
+  // distortion 활성화 시 캔버스 생성 + 상태 초기화
   useEffect(() => {
     if (!actualDistortionEnabled) return;
-    let cancelled = false;
 
-    const timeoutId = setTimeout(() => {
-      currentScaleRef.current = 0;
-      targetScaleRef.current = 0;
-      currentPctRef.current = { x: 50, y: 50 };
-      targetPctRef.current = { x: 50, y: 50 };
-      prevMousePosRef.current = null;
-      animatingRef.current = false;
-
-      if (feDispRef.current) feDispRef.current.setAttribute('scale', '0');
-      if (maskFeDispRef.current) maskFeDispRef.current.setAttribute('scale', '0');
-
-      if (!canvasRef.current || !feImageRef.current) return;
-
-      const c = canvasRef.current;
-      const ctx = c.getContext('2d', { willReadFrequently: false });
-      if (!ctx) return;
-
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-
-      if (c.width === 0 || c.height === 0) {
-        c.width = HOVER_DISTORT_CONFIG.canvas.minSize;
-        c.height = HOVER_DISTORT_CONFIG.canvas.minSize;
-      }
-
-      const img = ctx.createImageData(c.width, c.height);
-      const data = img.data;
-      for (let i = 0; i < data.length; i += 4) {
-        data[i] = 128;
-        data[i + 1] = 128;
-        data[i + 2] = 0;
-        data[i + 3] = 255;
-      }
-      ctx.putImageData(img, 0, 0);
-      // 초기 displacement map이 적용된 후에만 필터를 활성화 (Safari 화질 저하 방지)
-      applyMapToFeImages(c, () => {
-        if (!cancelled) setFilterReady(true);
-      });
-    }, 10);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timeoutId);
-    };
-  }, [actualDistortionEnabled, applyMapToFeImages]);
-
-  useEffect(() => {
-    if (!actualDistortionEnabled) return;
     if (!canvasRef.current) {
       const c = document.createElement('canvas');
       c.width = HOVER_DISTORT_CONFIG.canvas.minSize;
       c.height = HOVER_DISTORT_CONFIG.canvas.minSize;
       canvasRef.current = c;
     }
+
+    // 애니메이션 상태 초기화
+    currentScaleRef.current = 0;
+    targetScaleRef.current = 0;
+    currentPctRef.current = { x: 50, y: 50 };
+    targetPctRef.current = { x: 50, y: 50 };
+    prevMousePosRef.current = null;
+    animatingRef.current = false;
+    mapAppliedRef.current = false;
+
+    if (feDispRef.current) feDispRef.current.setAttribute('scale', '0');
+    if (maskFeDispRef.current) maskFeDispRef.current.setAttribute('scale', '0');
+    if (feOffsetRef.current) {
+      feOffsetRef.current.setAttribute('dx', '0');
+      feOffsetRef.current.setAttribute('dy', '0');
+    }
+    if (maskFeOffsetRef.current) {
+      maskFeOffsetRef.current.setAttribute('dx', '0');
+      maskFeOffsetRef.current.setAttribute('dy', '0');
+    }
   }, [actualDistortionEnabled]);
 
+  // ResizeObserver: 요소 크기 측정 + displacement map 생성/적용
   useEffect(() => {
     if (!actualDistortionEnabled) return;
     if (!wrapperRef.current) return;
@@ -239,26 +257,17 @@ export default function HoverDistortImage({
         Math.max(HOVER_DISTORT_CONFIG.canvas.minSize, Math.max(r.width, r.height) * dpr),
       );
       const dim = Math.round(target);
-      if (canvasRef.current.width !== dim || canvasRef.current.height !== dim) {
+
+      const needsResize = canvasRef.current.width !== dim || canvasRef.current.height !== dim;
+      if (needsResize) {
         canvasRef.current.width = dim;
         canvasRef.current.height = dim;
-        if (feImageRef.current) {
-          const ctx = canvasRef.current.getContext('2d', { willReadFrequently: false });
-          if (ctx) {
-            ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = 'high';
-            const img = ctx.createImageData(dim, dim);
-            const d = img.data;
-            for (let i = 0; i < d.length; i += 4) {
-              d[i] = 128;
-              d[i + 1] = 128;
-              d[i + 2] = 0;
-              d[i + 3] = 255;
-            }
-            ctx.putImageData(img, 0, 0);
-            applyMapToFeImages(canvasRef.current);
-          }
-        }
+      }
+
+      // 리사이즈 시 또는 아직 맵이 적용되지 않았으면 생성/적용
+      if (feImageRef.current && (needsResize || !mapAppliedRef.current)) {
+        generateStaticMap(canvasRef.current);
+        setStaticDisplacementMap(canvasRef.current, () => setFilterReady(true));
       }
     };
 
@@ -270,59 +279,15 @@ export default function HoverDistortImage({
       clearTimeout(timeoutId);
       ro.disconnect();
     };
-  }, [actualDistortionEnabled, applyMapToFeImages]);
+  }, [actualDistortionEnabled, generateStaticMap, setStaticDisplacementMap]);
 
-  const updateDisplacementMap = useCallback(
-    (xPct: number, yPct: number) => {
-      if (!actualDistortionEnabled) return;
-      const c = canvasRef.current;
-      if (!c || !feImageRef.current) return;
-      const cw = c.width;
-      const ch = c.height;
-      const ctx = c.getContext('2d', { willReadFrequently: false });
-      if (!ctx) return;
-
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-
-      const { w: ew, h: eh } = elemSizeRef.current;
-      const rx = Math.max(HOVER_DISTORT_CONFIG.canvas.minRadius, (radiusPx * cw) / Math.max(ew, 1));
-      const ry = Math.max(HOVER_DISTORT_CONFIG.canvas.minRadius, (radiusPx * ch) / Math.max(eh, 1));
-      const cx = (xPct / 100) * cw;
-      const cy = (yPct / 100) * ch;
-
-      const img = ctx.createImageData(cw, ch);
-      const data = img.data;
-      for (let j = 0; j < ch; j++) {
-        const dy = (j - cy) / ry;
-        for (let i = 0; i < cw; i++) {
-          const dx = (i - cx) / rx;
-          const idx = (j * cw + i) << 2;
-          const r2 = dx * dx + dy * dy;
-          let s = 0;
-          if (r2 < 1) {
-            const r = Math.sqrt(r2);
-            s = 1 - r;
-            s = s * s * (3 - 2 * s);
-          }
-          const xr = 128 + dx * s * 127;
-          const yg = 128 + dy * s * 127;
-          data[idx] = xr;
-          data[idx + 1] = yg;
-          data[idx + 2] = 0;
-          data[idx + 3] = 255;
-        }
-      }
-      ctx.putImageData(img, 0, 0);
-      applyMapToFeImages(c);
-    },
-    [radiusPx, actualDistortionEnabled, applyMapToFeImages],
-  );
-
+  // 애니메이션 루프: feOffset(dx, dy) + feDisplacementMap(scale)만 업데이트
+  // feImage href는 절대 변경하지 않음 → Safari 호환
   const startAnimIfNeeded = useCallback(() => {
     if (!actualDistortionEnabled) return;
     if (!canvasRef.current || !feImageRef.current || !feDispRef.current) return;
     if (!maskFeImageRef.current || !maskFeDispRef.current) return;
+    if (!feOffsetRef.current || !maskFeOffsetRef.current) return;
     if (animatingRef.current) return;
     animatingRef.current = true;
 
@@ -339,7 +304,15 @@ export default function HoverDistortImage({
       const ny = cp.y + (tp.y - cp.y) * lerpFactor;
 
       currentPctRef.current = { x: nx, y: ny };
-      updateDisplacementMap(nx, ny);
+
+      // feOffset으로 displacement map 위치 이동 (feImage href 변경 없음 → Safari 호환)
+      const { w: ew, h: eh } = elemSizeRef.current;
+      const dx = (nx / 100 - 0.5) * ew;
+      const dy = (ny / 100 - 0.5) * eh;
+      feOffsetRef.current?.setAttribute('dx', dx.toFixed(2));
+      feOffsetRef.current?.setAttribute('dy', dy.toFixed(2));
+      maskFeOffsetRef.current?.setAttribute('dx', dx.toFixed(2));
+      maskFeOffsetRef.current?.setAttribute('dy', dy.toFixed(2));
 
       const cs = currentScaleRef.current;
       const ts = targetScaleRef.current;
@@ -364,7 +337,7 @@ export default function HoverDistortImage({
       animRafRef.current = requestAnimationFrame(step);
     };
     animRafRef.current = requestAnimationFrame(step);
-  }, [actualDistortionEnabled, easingFactor, updateDisplacementMap]);
+  }, [actualDistortionEnabled, easingFactor]);
 
   const handleEnter = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -463,14 +436,17 @@ export default function HoverDistortImage({
       <svg className="block h-full w-full" xmlns="http://www.w3.org/2000/svg" style={{ imageRendering: 'auto' }}>
         {actualDistortionEnabled ? (
           <defs>
-            {/* 메인 이미지용 필터 */}
+            {/* ===== 메인 이미지용 필터 ===== */}
             <filter
               id={filterId}
-              x="0"
-              y="0"
-              width="100%"
-              height="100%"
+              x="-50%"
+              y="-50%"
+              width="200%"
+              height="200%"
               colorInterpolationFilters="sRGB">
+              {/* 중립 배경 (128,128,0 = 변위 없음) — feOffset 이동 후 빈 영역을 채움 */}
+              <feFlood floodColor="rgb(128,128,0)" floodOpacity="1" result="neutral" />
+              {/* 정적 displacement map (Blob URL, 1회만 설정됨) */}
               <feImage
                 ref={feImageRef}
                 x="0"
@@ -478,9 +454,13 @@ export default function HoverDistortImage({
                 width="100%"
                 height="100%"
                 preserveAspectRatio="none"
-                result="map"
+                result="rawMap"
               />
-              <feGaussianBlur in="map" stdDeviation={blurStd} result="smap" />
+              {/* 마우스 위치에 따라 displacement map 이동 (Safari 호환: href 변경 없음) */}
+              <feOffset ref={feOffsetRef} in="rawMap" dx="0" dy="0" result="offsetMap" />
+              {/* 이동된 맵을 중립 배경 위에 합성 */}
+              <feComposite in="offsetMap" in2="neutral" operator="over" result="finalMap" />
+              <feGaussianBlur in="finalMap" stdDeviation={blurStd} result="smap" />
               <feDisplacementMap
                 ref={feDispRef}
                 in="SourceGraphic"
@@ -490,14 +470,15 @@ export default function HoverDistortImage({
                 yChannelSelector="G"
               />
             </filter>
-            {/* 마스크용 필터 */}
+            {/* ===== 마스크용 필터 ===== */}
             <filter
               id={maskFilterId}
-              x="-5%"
-              y="-5%"
-              width="110%"
-              height="110%"
+              x="-50%"
+              y="-50%"
+              width="200%"
+              height="200%"
               colorInterpolationFilters="sRGB">
+              <feFlood floodColor="rgb(128,128,0)" floodOpacity="1" result="maskNeutral" />
               <feImage
                 ref={maskFeImageRef}
                 x="0"
@@ -505,9 +486,11 @@ export default function HoverDistortImage({
                 width="100%"
                 height="100%"
                 preserveAspectRatio="none"
-                result="maskMap"
+                result="maskRawMap"
               />
-              <feGaussianBlur in="maskMap" stdDeviation={blurStd} result="maskSmap" />
+              <feOffset ref={maskFeOffsetRef} in="maskRawMap" dx="0" dy="0" result="maskOffsetMap" />
+              <feComposite in="maskOffsetMap" in2="maskNeutral" operator="over" result="maskFinalMap" />
+              <feGaussianBlur in="maskFinalMap" stdDeviation={blurStd} result="maskSmap" />
               <feDisplacementMap
                 ref={maskFeDispRef}
                 in="SourceGraphic"
