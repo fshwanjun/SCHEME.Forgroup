@@ -914,7 +914,7 @@ export default function Home() {
               const src = item.orientation === 'horizontal' ? item.horizontalSrc : item.verticalSrc;
               loader.load(
                 src,
-                (texture: any) => {
+                (texture: THREE.Texture) => {
                   texture.colorSpace = THREE.SRGBColorSpace;
                   texture.wrapS = THREE.ClampToEdgeWrapping;
                   texture.wrapT = THREE.ClampToEdgeWrapping;
@@ -1193,7 +1193,7 @@ export default function Home() {
       cameraRef.current = null;
       raycasterRef.current = null;
     };
-  }, [setZoomLocked]);
+  }, [setZoomLocked, setZoomPhase]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
