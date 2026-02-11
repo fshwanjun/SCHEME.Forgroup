@@ -47,7 +47,6 @@ export default function HoverDistortImage({
   distortionEnabled?: boolean;
   easingFactor?: number;
 }) {
-  const [canUseHoverDistortion, setCanUseHoverDistortion] = useState(false);
   const [isSafariBrowser, setIsSafariBrowser] = useState(false);
   const [filterReady, setFilterReady] = useState(false);
 
@@ -62,14 +61,11 @@ export default function HoverDistortImage({
   const minFrameIntervalMs = useSafariOptimizedDistortion ? 1000 / 30 : 0;
   const posQuantizeStep = useSafariOptimizedDistortion ? 0.5 : 0.01;
   const scaleQuantizeStep = useSafariOptimizedDistortion ? 0.25 : 0.01;
-  const actualDistortionEnabled = distortionEnabled && canUseHoverDistortion;
+  const [isHovering, setIsHovering] = useState(false);
+  const canEnableDistortion = distortionEnabled;
+  const actualDistortionEnabled = canEnableDistortion && isHovering;
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const supportsHoverWithFinePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-      setCanUseHoverDistortion(supportsHoverWithFinePointer);
-    }
-
     if (typeof navigator !== 'undefined') {
       const ua = navigator.userAgent;
       const isSafari =
@@ -206,6 +202,10 @@ export default function HoverDistortImage({
       if (animRafRef.current) {
         cancelAnimationFrame(animRafRef.current);
         animRafRef.current = null;
+      }
+      if (prevBlobUrlRef.current) {
+        URL.revokeObjectURL(prevBlobUrlRef.current);
+        prevBlobUrlRef.current = null;
       }
       animatingRef.current = false;
       return;
@@ -463,11 +463,61 @@ export default function HoverDistortImage({
     startAnimIfNeeded();
   }, [startAnimIfNeeded, actualDistortionEnabled]);
 
-  const eventHandlers = actualDistortionEnabled
+  const handlePointerEnter = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!canEnableDistortion) return;
+      if (e.pointerType !== 'mouse' && e.pointerType !== 'pen') return;
+      setIsHovering(true);
+    },
+    [canEnableDistortion],
+  );
+
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!canEnableDistortion) return;
+      if (e.pointerType !== 'mouse' && e.pointerType !== 'pen') return;
+      // 첫 move에서 hover 상태를 켜고, 실제 distortion 계산은 다음 프레임부터 수행
+      if (!isHovering) {
+        setIsHovering(true);
+        return;
+      }
+      handleMove(e);
+    },
+    [canEnableDistortion, isHovering, handleMove],
+  );
+
+  const handleMouseEnter = useCallback(() => {
+    if (!canEnableDistortion) return;
+    setIsHovering(true);
+  }, [canEnableDistortion]);
+
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!canEnableDistortion) return;
+      if (!isHovering) {
+        setIsHovering(true);
+        return;
+      }
+      handleMove(e as unknown as React.PointerEvent<HTMLDivElement>);
+    },
+    [canEnableDistortion, isHovering, handleMove],
+  );
+
+  const handlePointerLeave = useCallback(() => {
+    if (actualDistortionEnabled) {
+      handleLeave();
+    }
+    setIsHovering(false);
+  }, [actualDistortionEnabled, handleLeave]);
+
+  const eventHandlers = canEnableDistortion
     ? {
-        onPointerEnter: handleEnter,
-        onPointerMove: handleMove,
-        onPointerLeave: handleLeave,
+        onPointerEnter: handlePointerEnter,
+        onPointerMove: handlePointerMove,
+        onPointerLeave: handlePointerLeave,
+        onMouseEnter: handleMouseEnter,
+        onMouseMove: handleMouseMove,
+        onMouseLeave: handlePointerLeave,
       }
     : {};
 
@@ -480,8 +530,18 @@ export default function HoverDistortImage({
       aria-label={alt || undefined}
       aria-hidden={alt ? undefined : 'true'}
       style={{ aspectRatio: aspectRatio, lineHeight: 0 } as React.CSSProperties}>
-      <svg className="block h-full w-full" xmlns="http://www.w3.org/2000/svg" style={{ imageRendering: 'auto' }}>
-        {actualDistortionEnabled ? (
+      <img
+        src={src}
+        alt={alt}
+        draggable={false}
+        className="block h-full w-full select-none"
+        style={{ objectFit: preserveAspect.includes('slice') ? 'cover' : 'contain', pointerEvents: 'none' }}
+      />
+      {actualDistortionEnabled && (
+        <svg
+          className="pointer-events-none absolute inset-0 block h-full w-full"
+          xmlns="http://www.w3.org/2000/svg"
+          style={{ imageRendering: 'auto' }}>
           <defs>
             {/* ===== 메인 이미지용 필터 ===== */}
             <filter
@@ -563,21 +623,21 @@ export default function HoverDistortImage({
               </>
             )}
           </defs>
-        ) : null}
-        <g mask={useMaskDistortion && filterReady ? `url(#${maskId})` : undefined}>
-          <image
-            href={src}
-            xlinkHref={src}
-            x="0"
-            y="0"
-            width="100%"
-            height="100%"
-            preserveAspectRatio={preserveAspect}
-            filter={filterReady ? `url(#${filterId})` : undefined}
-            imageRendering="optimizeQuality"
-          />
-        </g>
-      </svg>
+          <g mask={useMaskDistortion && filterReady ? `url(#${maskId})` : undefined}>
+            <image
+              href={src}
+              xlinkHref={src}
+              x="0"
+              y="0"
+              width="100%"
+              height="100%"
+              preserveAspectRatio={preserveAspect}
+              filter={filterReady ? `url(#${filterId})` : undefined}
+              imageRendering="optimizeQuality"
+            />
+          </g>
+        </svg>
+      )}
     </div>
   );
 }

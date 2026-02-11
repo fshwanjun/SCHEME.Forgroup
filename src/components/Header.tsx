@@ -34,7 +34,12 @@ export default function Header({
     setIsMobile(windowSize.isSm);
   }, [windowSize.isSm]);
 
-  const isVisible = pathname === '/' || pathname === '/studio' || pathname === '/privacy' || pathname.startsWith('/projects');
+  const isVisible =
+    pathname === '/' ||
+    pathname === '/studio' ||
+    pathname === '/privacy' ||
+    pathname === '/webgl' ||
+    pathname.startsWith('/projects');
 
   if (!isVisible) return null;
 
