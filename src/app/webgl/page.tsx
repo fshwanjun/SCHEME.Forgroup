@@ -100,7 +100,8 @@ const parseFrameClass = (frameClass: string): FrameSpec | null => {
 };
 
 interface CardNode {
-  mesh: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
+  mesh: THREE.Mesh<THREE.PlaneGeometry, THREE.ShaderMaterial>;
+  material: THREE.ShaderMaterial;
   xWorld: number;
   yContent: number;
   width: number;
@@ -108,6 +109,12 @@ interface CardNode {
   projectId: string;
   projectSlug?: string;
   src: string;
+  currentIntensity: number;
+  targetIntensity: number;
+  currentMeshPullFactor: number;
+  targetMeshPullFactor: number;
+  lastUv: THREE.Vector2;
+  targetUv: THREE.Vector2;
 }
 
 type ZoomPhase = 'none' | 'center' | 'cover';
@@ -126,9 +133,146 @@ interface CameraTween {
   completeAction: TweenCompleteAction;
 }
 
+interface PickResult {
+  card: CardNode;
+  uv: THREE.Vector2;
+}
+
 const DOM_EASE = { x1: 0.16, y1: 1, x2: 0.3, y2: 1 } as const;
-const DOM_DURATION_MS = 900;
+const DOM_DURATION_MS = 800;
 const DOM_EASE_CSS = 'cubic-bezier(0.16, 1, 0.3, 1)';
+
+type DistortPreset = {
+  radius: number;
+  strength: number;
+  edgeMix: number;
+  meshPull: number;
+  idleFloor: number;
+  maxIntensity: number;
+  speedMultiplierPx: number;
+  speedMultiplierUv: number;
+  mouseMoveTimerMs: number;
+  easing: number;
+  decay: number;
+  uniformLerp: number;
+};
+
+const DISTORT_PRESETS: Record<'subtle' | 'match' | 'strong', DistortPreset> = {
+  subtle: {
+    radius: 0.42,
+    strength: 0.4,
+    edgeMix: 0.14,
+    meshPull: 0.01,
+    idleFloor: 0.05,
+    maxIntensity: 0.78,
+    speedMultiplierPx: 0.009,
+    speedMultiplierUv: 7.5,
+    mouseMoveTimerMs: 100,
+    easing: 0.075,
+    decay: 0.9,
+    uniformLerp: 0.26,
+  },
+  match: {
+    radius: 0.48,
+    strength: 0.48,
+    edgeMix: 0.2,
+    meshPull: 0.014,
+    idleFloor: 0.08,
+    maxIntensity: 0.95,
+    speedMultiplierPx: 0.012,
+    speedMultiplierUv: 10,
+    mouseMoveTimerMs: 100,
+    easing: 0.08,
+    decay: 0.92,
+    uniformLerp: 0.3,
+  },
+  strong: {
+    radius: 0.6,
+    strength: 0.2,
+    edgeMix: 0,
+    meshPull: 0.2,
+    idleFloor: 0.2,
+    maxIntensity: 1.35,
+    speedMultiplierPx: 0.02,
+    speedMultiplierUv: 16,
+    mouseMoveTimerMs: 180,
+    easing: 0.05,
+    decay: 0.985,
+    uniformLerp: 0.16,
+  },
+};
+
+// 필요할 때 'subtle' | 'match' | 'strong'으로 빠르게 전환해 비교할 수 있습니다.
+const ACTIVE_DISTORT_PRESET: DistortPreset = DISTORT_PRESETS.strong;
+
+const CARD_VERTEX_SHADER = `
+varying vec2 vUv;
+uniform vec2 uPointer;
+uniform vec2 uPrevPointer;
+uniform float uIntensity;
+uniform float uRadius;
+uniform float uStrength;
+uniform float uAspect;
+uniform float uEdgeMix;
+uniform vec2 uMeshSize;
+uniform float uMeshPull;
+uniform float uMeshPullFactor;
+
+void main() {
+  vUv = uv;
+
+  vec3 pos = position;
+  vec2 delta = vUv - uPointer;
+  delta.x *= uAspect;
+  float dist = length(delta);
+  float localMask = smoothstep(uRadius, 0.0, dist);
+  float edgeFactor = smoothstep(0.55, 1.0, max(abs(vUv.x - 0.5) * 2.0, abs(vUv.y - 0.5) * 2.0));
+  float mask = clamp(localMask + edgeFactor * uEdgeMix, 0.0, 1.0);
+  float smoothMask = mask * mask * (3.0 - 2.0 * mask);
+  // 메쉬 끌림은 외곽 우선으로 제한해 내부 폴리곤 끊김을 줄입니다.
+  float meshMask = clamp(edgeFactor * (0.35 + 0.65 * localMask), 0.0, 1.0);
+  meshMask = meshMask * meshMask * (3.0 - 2.0 * meshMask);
+
+  vec2 velocity = (uPointer - uPrevPointer) * uStrength;
+  vec2 radialDir = normalize((vUv - uPointer) * vec2(uAspect, 1.0) + vec2(1e-5));
+  vec2 pullUv = (-velocity * 0.18 + radialDir * 0.06) * meshMask * uIntensity * uMeshPull * uMeshPullFactor;
+  vec2 pullObj = vec2(pullUv.x * uMeshSize.x, pullUv.y * uMeshSize.y);
+  pos.xy += pullObj;
+
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+}
+`;
+
+const CARD_FRAGMENT_SHADER = `
+uniform sampler2D uTexture;
+uniform vec2 uPointer;
+uniform vec2 uPrevPointer;
+uniform float uIntensity;
+uniform float uRadius;
+uniform float uStrength;
+uniform float uAspect;
+uniform float uAlpha;
+uniform float uEdgeMix;
+varying vec2 vUv;
+
+void main() {
+  vec2 delta = vUv - uPointer;
+  delta.x *= uAspect;
+  float dist = length(delta);
+  float localMask = smoothstep(uRadius, 0.0, dist);
+  float edgeFactor = smoothstep(0.55, 1.0, max(abs(vUv.x - 0.5) * 2.0, abs(vUv.y - 0.5) * 2.0));
+  float mask = clamp(localMask + edgeFactor * uEdgeMix, 0.0, 1.0);
+
+  vec2 velocity = (uPointer - uPrevPointer) * uStrength;
+  vec2 flowDistort = -velocity * mask * uIntensity;
+  vec2 distortedUv = clamp(vUv + flowDistort, vec2(0.001), vec2(0.999));
+
+  vec4 color = texture2D(uTexture, distortedUv);
+  gl_FragColor = vec4(color.rgb, color.a * uAlpha);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+}
+`;
 
 const sampleBezier = (t: number, a1: number, a2: number): number => {
   const inv = 1 - t;
@@ -155,11 +299,26 @@ const cubicBezierYFromX = (x: number, x1: number, y1: number, x2: number, y2: nu
   return sampleBezier(t, y1, y2);
 };
 
-const softenInitialEasing = (linearT: number, easedT: number): number => {
-  // DOM cubic-bezier(0.16, 1, 0.3, 1)는 초반 가속이 강해 WebGL 카메라에서는
-  // "뚝" 튀는 체감이 생길 수 있어, 선형 성분을 소량 혼합해 시작 구간을 완화합니다.
-  return easedT * 0.85 + linearT * 0.15;
-};
+const createCardMaterial = (texture: THREE.Texture, width: number, height: number) =>
+  new THREE.ShaderMaterial({
+    uniforms: {
+      uTexture: { value: texture },
+      uPointer: { value: new THREE.Vector2(0.5, 0.5) },
+      uPrevPointer: { value: new THREE.Vector2(0.5, 0.5) },
+      uIntensity: { value: 0 },
+      uRadius: { value: ACTIVE_DISTORT_PRESET.radius },
+      uStrength: { value: ACTIVE_DISTORT_PRESET.strength },
+      uEdgeMix: { value: ACTIVE_DISTORT_PRESET.edgeMix },
+      uMeshSize: { value: new THREE.Vector2(width, height) },
+      uMeshPull: { value: ACTIVE_DISTORT_PRESET.meshPull },
+      uMeshPullFactor: { value: 0 },
+      uAspect: { value: width / Math.max(height, 1) },
+      uAlpha: { value: 1 },
+    },
+    vertexShader: CARD_VERTEX_SHADER,
+    fragmentShader: CARD_FRAGMENT_SHADER,
+    transparent: true,
+  });
 
 export default function Home() {
   const [headerLogoTrigger, setHeaderLogoTrigger] = useState<number | undefined>(undefined);
@@ -218,6 +377,9 @@ export default function Home() {
   const coverRevealStartedRef = useRef(false);
   const pendingProjectRef = useRef<Project | null>(null);
   const pendingHeroImageSrcRef = useRef<string | undefined>(undefined);
+  const hoveredCardRef = useRef<CardNode | null>(null);
+  const pointerPrevPosRef = useRef<{ x: number; y: number } | null>(null);
+  const mouseMoveTimerRef = useRef<number | null>(null);
 
   const handleHeaderAnimationStart = useCallback(() => {
     const trigger = Date.now();
@@ -241,13 +403,7 @@ export default function Home() {
   }, []);
 
   const startCameraTween = useCallback(
-    (
-      toX: number,
-      toY: number,
-      toZoom: number,
-      isZoomOut: boolean,
-      completeAction: TweenCompleteAction = 'none',
-    ) => {
+    (toX: number, toY: number, toZoom: number, isZoomOut: boolean, completeAction: TweenCompleteAction = 'none') => {
       const camera = cameraRef.current;
       if (!camera) return;
 
@@ -439,12 +595,9 @@ export default function Home() {
             ? effectiveVerticalPool[(poolIndex + verticalOffset) % effectiveVerticalPool.length]
             : effectiveHorizontalPool[(poolIndex + horizontalOffset) % effectiveHorizontalPool.length];
 
-        const geometry = new THREE.PlaneGeometry(width, height);
-        const material = new THREE.MeshBasicMaterial({
-          map: asset.texture,
-          transparent: true,
-          opacity: 1,
-        });
+        // 메쉬 변형 시 끊김이 보이지 않도록 세그먼트 분할을 충분히 확보
+        const geometry = new THREE.PlaneGeometry(width, height, 36, 36);
+        const material = createCardMaterial(asset.texture, width, height);
         const mesh = new THREE.Mesh(geometry, material);
         const xWorld = x + width / 2 - viewportWidth / 2;
         const yWorld = viewportHeight / 2 - (yContent + height / 2 - scrollTop);
@@ -459,6 +612,13 @@ export default function Home() {
           projectId: asset.projectId,
           projectSlug: asset.projectSlug,
           src: asset.src,
+          material,
+          currentIntensity: 0,
+          targetIntensity: 0,
+          currentMeshPullFactor: 0,
+          targetMeshPullFactor: 0,
+          lastUv: new THREE.Vector2(0.5, 0.5),
+          targetUv: new THREE.Vector2(0.5, 0.5),
         });
       }
     }
@@ -467,21 +627,35 @@ export default function Home() {
     setScrollContentHeight(contentHeight);
   }, [activeLayout.gap, activeLayout.gridCols, activeLayout.horizontalPadding, sectionCount, visibleFrameSpecs]);
 
+  const pickCardAt = useCallback((clientX: number, clientY: number): PickResult | null => {
+    const camera = cameraRef.current;
+    const raycaster = raycasterRef.current;
+    if (!camera || !raycaster) return null;
+
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const pointer = new THREE.Vector2((clientX / viewportWidth) * 2 - 1, -(clientY / viewportHeight) * 2 + 1);
+    raycaster.setFromCamera(pointer, camera);
+    const intersects = raycaster.intersectObjects(
+      cardsRef.current.map((card) => card.mesh),
+      false,
+    );
+    if (intersects.length === 0) return null;
+
+    const hit = intersects[0];
+    const hitMesh = hit.object as THREE.Mesh<THREE.PlaneGeometry, THREE.ShaderMaterial>;
+    const hitCard = cardsRef.current.find((card) => card.mesh === hitMesh);
+    const hitUv = hit.uv ? hit.uv.clone() : new THREE.Vector2(0.5, 0.5);
+    if (!hitCard) return null;
+    return { card: hitCard, uv: hitUv };
+  }, []);
+
   const handleCanvasTap = useCallback(
     (clientX: number, clientY: number) => {
-      const camera = cameraRef.current;
-      const raycaster = raycasterRef.current;
-      if (!camera || !raycaster) return;
-
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
-
-      const pointer = new THREE.Vector2((clientX / viewportWidth) * 2 - 1, -(clientY / viewportHeight) * 2 + 1);
-      raycaster.setFromCamera(pointer, camera);
-      const intersects = raycaster.intersectObjects(cardsRef.current.map((card) => card.mesh), false);
-      const hitMesh =
-        intersects.length > 0 ? (intersects[0].object as THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>) : null;
-      const hitCard = hitMesh ? cardsRef.current.find((card) => card.mesh === hitMesh) || null : null;
+      const picked = pickCardAt(clientX, clientY);
+      const hitCard = picked?.card || null;
 
       if (selectedCardRef.current) {
         const selectedCard = selectedCardRef.current;
@@ -530,30 +704,14 @@ export default function Home() {
       const zoom = Math.min((viewportWidth * 0.82) / hitCard.width, (viewportHeight * 0.82) / hitCard.height);
       startCameraTween(hitCard.mesh.position.x, hitCard.mesh.position.y, Math.max(1, Math.min(4, zoom)), false, 'none');
       selectedCardRef.current = hitCard;
-      hitCard.mesh.material.opacity = 1;
+      hitCard.material.uniforms.uAlpha.value = 1;
       pendingProjectRef.current = findProjectByCard(hitCard);
       pendingHeroImageSrcRef.current = hitCard.src;
       setZoomPhase('center');
       setZoomLocked(true);
     },
-    [findProjectByCard, setZoomLocked, setZoomPhase, startCameraTween, startZoomOut],
+    [findProjectByCard, pickCardAt, setZoomLocked, setZoomPhase, startCameraTween, startZoomOut],
   );
-
-  const getHoveredCard = useCallback((clientX: number, clientY: number): CardNode | null => {
-    const camera = cameraRef.current;
-    const raycaster = raycasterRef.current;
-    if (!camera || !raycaster) return null;
-
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const pointer = new THREE.Vector2((clientX / viewportWidth) * 2 - 1, -(clientY / viewportHeight) * 2 + 1);
-    raycaster.setFromCamera(pointer, camera);
-    const intersects = raycaster.intersectObjects(cardsRef.current.map((card) => card.mesh), false);
-    if (intersects.length === 0) return null;
-
-    const hitMesh = intersects[0].object as THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
-    return cardsRef.current.find((card) => card.mesh === hitMesh) || null;
-  }, []);
 
   const handlePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     const scrollContainer = scrollContainerRef.current;
@@ -588,23 +746,96 @@ export default function Home() {
       const scrollContainer = scrollContainerRef.current;
       if (!scrollContainer) return;
 
+      const picked = pickCardAt(e.clientX, e.clientY);
+      const hoveredCard = picked?.card || null;
+
       if (zoomLockedRef.current) {
-        scrollContainer.style.cursor = 'default';
+        // center 단계에서는 선택된 중앙 카드 위에서만 pointer를 허용
+        if (zoomPhaseRef.current === 'center' && selectedCardRef.current) {
+          const isHoveredSelected = hoveredCard?.mesh === selectedCardRef.current.mesh;
+          scrollContainer.style.cursor = isHoveredSelected ? 'pointer' : 'default';
+          hoveredCardRef.current = isHoveredSelected ? hoveredCard : null;
+        } else {
+          scrollContainer.style.cursor = 'default';
+          hoveredCardRef.current = null;
+        }
+      } else {
+        scrollContainer.style.cursor = hoveredCard ? 'pointer' : 'default';
+        hoveredCardRef.current = hoveredCard;
+      }
+
+      if (zoomPhaseRef.current !== 'none') {
+        pointerPrevPosRef.current = null;
         return;
       }
 
-      const hovered = getHoveredCard(e.clientX, e.clientY);
-      scrollContainer.style.cursor = hovered ? 'pointer' : 'default';
+      if (hoveredCard && picked) {
+        const uv = picked.uv;
+        hoveredCard.targetUv.lerp(uv, 0.45);
+
+        let speedPx = 0;
+        if (pointerPrevPosRef.current) {
+          const dx = e.clientX - pointerPrevPosRef.current.x;
+          const dy = e.clientY - pointerPrevPosRef.current.y;
+          speedPx = Math.hypot(dx, dy);
+        }
+        pointerPrevPosRef.current = { x: e.clientX, y: e.clientY };
+
+        const speed = hoveredCard.lastUv.distanceTo(uv);
+        hoveredCard.lastUv.copy(uv);
+        const velocityBoost = Math.max(
+          speedPx * ACTIVE_DISTORT_PRESET.speedMultiplierPx,
+          speed * ACTIVE_DISTORT_PRESET.speedMultiplierUv,
+        );
+        hoveredCard.targetIntensity = Math.min(
+          ACTIVE_DISTORT_PRESET.maxIntensity,
+          Math.max(ACTIVE_DISTORT_PRESET.idleFloor, velocityBoost),
+        );
+
+        if (mouseMoveTimerRef.current) {
+          window.clearTimeout(mouseMoveTimerRef.current);
+        }
+        mouseMoveTimerRef.current = window.setTimeout(() => {
+          if (hoveredCardRef.current) {
+            hoveredCardRef.current.targetIntensity = ACTIVE_DISTORT_PRESET.idleFloor;
+          }
+          mouseMoveTimerRef.current = null;
+        }, ACTIVE_DISTORT_PRESET.mouseMoveTimerMs);
+      }
     },
-    [getHoveredCard],
+    [pickCardAt],
   );
 
   const handlePointerLeave = useCallback(() => {
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
     scrollContainer.style.cursor = 'default';
+    hoveredCardRef.current = null;
+    pointerPrevPosRef.current = null;
+    if (mouseMoveTimerRef.current) {
+      window.clearTimeout(mouseMoveTimerRef.current);
+      mouseMoveTimerRef.current = null;
+    }
   }, []);
 
+  useEffect(() => {
+    if (zoomPhase !== 'none') {
+      hoveredCardRef.current = null;
+      pointerPrevPosRef.current = null;
+      if (mouseMoveTimerRef.current) {
+        window.clearTimeout(mouseMoveTimerRef.current);
+        mouseMoveTimerRef.current = null;
+      }
+      for (const card of cardsRef.current) {
+        card.targetIntensity = 0;
+        card.currentIntensity = 0;
+        card.targetMeshPullFactor = 0;
+        card.currentMeshPullFactor = 0;
+        card.material.uniforms.uIntensity.value = 0;
+        card.material.uniforms.uMeshPullFactor.value = 0;
+      }
+    }
+  }, [zoomPhase]);
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -685,6 +916,8 @@ export default function Home() {
                 src,
                 (texture: any) => {
                   texture.colorSpace = THREE.SRGBColorSpace;
+                  texture.wrapS = THREE.ClampToEdgeWrapping;
+                  texture.wrapT = THREE.ClampToEdgeWrapping;
                   texture.minFilter = THREE.LinearFilter;
                   texture.magFilter = THREE.LinearFilter;
                   const image = texture.image as { width?: number; height?: number } | undefined;
@@ -809,6 +1042,8 @@ export default function Home() {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(width, height);
     renderer.setClearColor(0xffffff, 1);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.NoToneMapping;
     mount.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
@@ -832,18 +1067,63 @@ export default function Home() {
       const viewportHeight = window.innerHeight;
       const isZoomOutAnimating = cameraTweenRef.current?.isZoomOut === true;
       const shouldDimOthers = selectedCardRef.current !== null && !isZoomOutAnimating;
+      const distortionEnabled = zoomPhaseRef.current === 'none';
 
       for (const card of cardsRef.current) {
         card.mesh.position.y = viewportHeight / 2 - (card.yContent + card.height / 2 - scrollTop);
-        const mat = card.mesh.material;
+        if (distortionEnabled) {
+          const isHovered = hoveredCardRef.current?.mesh === card.mesh;
+          if (isHovered) {
+            // 호버 유지 시 왜곡이 계속 남아있도록 최소 강도 유지
+            card.targetIntensity = Math.max(card.targetIntensity, ACTIVE_DISTORT_PRESET.idleFloor);
+            card.targetMeshPullFactor = 0.85;
+          } else {
+            // DOM 흐름처럼 자연스럽게 감쇠
+            card.targetIntensity *= ACTIVE_DISTORT_PRESET.decay;
+            if (card.targetIntensity < 0.0005) {
+              card.targetIntensity = 0;
+            }
+            // 메쉬 끌림은 더 빠르게 복귀
+            card.targetMeshPullFactor *= 0.72;
+            if (card.targetMeshPullFactor < 0.0005) {
+              card.targetMeshPullFactor = 0;
+            }
+          }
+          card.currentIntensity += (card.targetIntensity - card.currentIntensity) * ACTIVE_DISTORT_PRESET.easing;
+          card.currentMeshPullFactor += (card.targetMeshPullFactor - card.currentMeshPullFactor) * 0.08;
+        } else {
+          card.targetIntensity = 0;
+          card.currentIntensity = 0;
+          card.targetMeshPullFactor = 0;
+          card.currentMeshPullFactor = 0;
+        }
+
+        const mat = card.material;
+        if (distortionEnabled) {
+          const uIntensity = mat.uniforms.uIntensity.value as number;
+          mat.uniforms.uIntensity.value =
+            uIntensity + (card.currentIntensity - uIntensity) * ACTIVE_DISTORT_PRESET.uniformLerp;
+          mat.uniforms.uMeshPullFactor.value = card.currentMeshPullFactor;
+        } else {
+          mat.uniforms.uIntensity.value = 0;
+          mat.uniforms.uMeshPullFactor.value = 0;
+        }
+
+        const pointer = mat.uniforms.uPointer.value as THREE.Vector2;
+        const prevPointer = mat.uniforms.uPrevPointer.value as THREE.Vector2;
+        // 즉시 반응하지 않고 점성 있게 따라오도록 포인터/이전포인터를 분리 보간
+        pointer.lerp(card.targetUv, 0.1);
+        prevPointer.lerp(pointer, 0.06);
+
         const isSelected = selectedCardRef.current?.mesh === card.mesh;
         if (isSelected) {
           // 선택된 카드는 항상 완전 불투명 유지
-          mat.opacity = 1;
+          mat.uniforms.uAlpha.value = 1;
         } else {
           // 줌아웃 시작과 동시에 비선택 카드 opacity를 원래대로 복원
           const targetOpacity = shouldDimOthers ? 0.22 : 1;
-          mat.opacity += (targetOpacity - mat.opacity) * 0.14;
+          const currentAlpha = mat.uniforms.uAlpha.value as number;
+          mat.uniforms.uAlpha.value = currentAlpha + (targetOpacity - currentAlpha) * 0.14;
         }
       }
 
@@ -851,8 +1131,7 @@ export default function Home() {
       if (tween) {
         const elapsed = performance.now() - tween.startAt;
         const t = Math.min(1, Math.max(0, elapsed / tween.durationMs));
-        const easedRaw = cubicBezierYFromX(t, DOM_EASE.x1, DOM_EASE.y1, DOM_EASE.x2, DOM_EASE.y2);
-        const eased = softenInitialEasing(t, easedRaw);
+        const eased = cubicBezierYFromX(t, DOM_EASE.x1, DOM_EASE.y1, DOM_EASE.x2, DOM_EASE.y2);
 
         currentCamera.position.x = tween.fromX + (tween.toX - tween.fromX) * eased;
         currentCamera.position.y = tween.fromY + (tween.toY - tween.fromY) * eased;
@@ -923,7 +1202,13 @@ export default function Home() {
       }
     };
     window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
+    return () => {
+      window.removeEventListener('keydown', handleEscape);
+      if (mouseMoveTimerRef.current) {
+        window.clearTimeout(mouseMoveTimerRef.current);
+        mouseMoveTimerRef.current = null;
+      }
+    };
   }, [startZoomOut]);
 
   return (
